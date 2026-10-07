@@ -4,8 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
-
 import torch
 from torch import Tensor, nn
 
@@ -63,7 +61,7 @@ def resolve_layers(model: nn.Module) -> nn.ModuleList:
     inner = getattr(model, "model", None)
     layers = getattr(inner, "layers", None)
     if not isinstance(layers, nn.ModuleList):
-        raise ValueError("expected model.model.layers ModuleList")
+        raise TypeError("expected model.model.layers ModuleList")
     return layers
 
 
