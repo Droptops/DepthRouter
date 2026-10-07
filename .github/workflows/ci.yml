@@ -315,3 +315,32 @@ jobs:
         with:
           name: semantic-batching-scan
           path: semantic_batching.json
+
+
+  vertical-sparsity-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Probe per-token vertical MLP sparsity on Qwen
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_vertical_sparsity.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --retain-fractions 0.25 0.50 0.75
+          --json-out vertical_sparsity.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vertical-sparsity-scan
+          path: vertical_sparsity.json
