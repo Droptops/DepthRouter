@@ -54,11 +54,13 @@ from .operator_pages import (
     sketch_address_scores,
 )
 from .swiglu_layout import (
+    PagedSwiGLUStats,
     SwiGLUPage,
     contiguous_swiglu_pages,
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
     page_importance,
+    paged_swiglu_reference,
     pages_for_mass,
     permute_swiglu_neurons_,
     swiglu_intermediate,
@@ -116,6 +118,8 @@ __all__ = [
     "page_importance",
     "page_masses",
     "page_output_weight_norms",
+    "paged_swiglu_reference",
+    "PagedSwiGLUStats",
     "PageLayout",
     "pages_for_mass",
     "permute_swiglu_neurons_",
