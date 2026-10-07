@@ -14,16 +14,16 @@ from .causal_memory import (
     smooth_address_entropy_nats,
     working_set_pages,
 )
+from .config import DepthRouterConfig
 from .conformal_memory import (
+    anytime_bonferroni_thresholds,
     aps_calibration_threshold,
     aps_prediction_mask,
-    anytime_bonferroni_thresholds,
     bytes_for_mask,
     empirical_coverage,
     mean_set_size,
     nested_anytime_masks,
 )
-from .config import DepthRouterConfig
 from .model import DepthRouterModel, ForwardStats, StackedTransformerBaseline
 from .solver import (
     KLFaultPolicy,
