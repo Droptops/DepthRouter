@@ -167,6 +167,65 @@ def greedy_required_pages(
     return selected
 
 
+@torch.no_grad()
+def exact_minimum_page_counts(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    *,
+    tolerance_nats: float,
+    max_pages: int = 12,
+) -> Tensor:
+    """Exact minimum page count by enumerating all subsets for small P.
+
+    This is a diagnostic oracle only. It validates whether apparent operator
+    sparsity is real rather than an artifact of the greedy oracle.
+    """
+
+    num_pages = trace.page_contributions.shape[1]
+    if num_pages > max_pages:
+        raise ValueError(
+            f"exact subset search limited to {max_pages} pages; got {num_pages}"
+        )
+    if tolerance_nats < 0:
+        raise ValueError("tolerance_nats must be non-negative")
+
+    subset_ids = torch.arange(1 << num_pages, dtype=torch.long)
+    bit_ids = torch.arange(num_pages, dtype=torch.long)
+    masks = ((subset_ids[:, None] >> bit_ids[None, :]) & 1).bool()
+    counts = masks.sum(dim=-1)
+
+    selected = torch.einsum(
+        "sp,npd->nsd",
+        masks.to(trace.page_contributions.dtype),
+        trace.page_contributions,
+    )
+    hidden = trace.base_without_linear2[:, None, :] + selected
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        hidden = hidden + bias.detach().cpu()
+
+    logits = classify_hidden(
+        model.cpu(),
+        hidden.reshape(-1, hidden.shape[-1]),
+    ).reshape(hidden.shape[0], hidden.shape[1], -1)
+    kl = kl_from_full(trace.full_logits[:, None, :], logits)
+    valid = kl <= tolerance_nats
+
+    large = torch.full_like(
+        counts,
+        fill_value=num_pages + 1,
+    )[None, :].expand(valid.shape[0], -1)
+    candidate_counts = torch.where(
+        valid,
+        counts[None, :].expand(valid.shape[0], -1),
+        large,
+    )
+    best = candidate_counts.min(dim=-1).values
+    if bool((best > num_pages).any()):
+        raise RuntimeError("dense full-page subset failed the distortion target")
+    return best
+
+
 def train_recurrent_model(
     *,
     config: DepthRouterConfig,
@@ -599,13 +658,25 @@ def evaluate(
             )
 
     oracle_pages = train.required_pages.sum(dim=-1).float()
+    exact_counts = exact_minimum_page_counts(
+        model,
+        test,
+        tolerance_nats=distortion_tolerance,
+    ).float()
     return {
         "num_operator_pages": len(pages),
         "dense_cold_bytes": dense_bytes,
         "distortion_tolerance_nats": distortion_tolerance,
-        "train_oracle_mean_required_pages": float(oracle_pages.mean().item()),
+        "train_greedy_mean_required_pages": float(oracle_pages.mean().item()),
         "train_zero_fault_rate": float(
             (oracle_pages == 0).float().mean().item()
+        ),
+        "test_exact_mean_required_pages": float(exact_counts.mean().item()),
+        "test_exact_p95_required_pages": float(
+            torch.quantile(exact_counts, 0.95).item()
+        ),
+        "test_exact_zero_fault_rate": float(
+            (exact_counts == 0).float().mean().item()
         ),
         "rows": rows,
     }
