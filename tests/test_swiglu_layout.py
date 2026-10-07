@@ -68,7 +68,10 @@ def test_codemand_compiler_groups_jointly_active_neurons() -> None:
     )
 
     first_page = set(permutation[:6].tolist())
-    assert first_page in {set(family_a.tolist()), set(family_b.tolist())}
+    assert (
+        first_page == set(family_a.tolist())
+        or first_page == set(family_b.tolist())
+    )
 
 
 def test_compiled_page_layout_can_reduce_mass_working_set() -> None:
