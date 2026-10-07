@@ -139,6 +139,97 @@ def learn_codemand_permutation(
     return torch.argsort(layout.state_to_page)
 
 
+
+def learn_balanced_codemand_permutation(
+    intermediate: Tensor,
+    down_proj: nn.Linear,
+    *,
+    units_per_page: int,
+    iterations: int = 6,
+    max_trace_tokens: int = 2048,
+    seed: int = 0,
+) -> Tensor:
+    """Balanced spherical clustering of neuron demand trajectories.
+
+    Co-demand affinity is a Gram matrix of per-neuron demand signatures. Rather
+    than materializing the O(N^2) Gram matrix, cluster those signatures directly.
+    The resulting pages have bounded capacity and approximate the same objective
+    with O(TN + NP) working memory, where P is the number of pages.
+    """
+
+    if units_per_page < 1:
+        raise ValueError("units_per_page must be >= 1")
+    if iterations < 1:
+        raise ValueError("iterations must be >= 1")
+    if max_trace_tokens < 1:
+        raise ValueError("max_trace_tokens must be >= 1")
+    if intermediate.ndim < 2:
+        raise ValueError("intermediate must contain examples and neurons")
+    if intermediate.shape[-1] != down_proj.in_features:
+        raise ValueError("intermediate width does not match down_proj")
+
+    flat = intermediate.reshape(-1, intermediate.shape[-1]).float().cpu()
+    generator = torch.Generator().manual_seed(seed)
+    if flat.shape[0] > max_trace_tokens:
+        selection = torch.randperm(flat.shape[0], generator=generator)[:max_trace_tokens]
+        flat = flat.index_select(0, selection)
+
+    column_norm = down_proj.weight.detach().float().norm(dim=0).cpu()
+    demand = flat.abs() * column_norm[None, :]
+    signatures = demand.T
+    signatures = signatures / signatures.norm(dim=1, keepdim=True).clamp_min(1e-12)
+
+    num_neurons = signatures.shape[0]
+    num_pages = (num_neurons + units_per_page - 1) // units_per_page
+    seed_order = torch.randperm(num_neurons, generator=generator)
+    centroids = signatures.index_select(0, seed_order[:num_pages]).clone()
+    centroids = centroids / centroids.norm(dim=1, keepdim=True).clamp_min(1e-12)
+
+    assignment = torch.full((num_neurons,), -1, dtype=torch.long)
+    capacities = torch.full((num_pages,), units_per_page, dtype=torch.long)
+    final_capacity = num_neurons - units_per_page * (num_pages - 1)
+    capacities[-1] = final_capacity
+
+    for _ in range(iterations):
+        similarity = signatures @ centroids.T
+        confidence = similarity.max(dim=1).values
+        neuron_order = torch.argsort(confidence, descending=True)
+
+        assignment.fill_(-1)
+        remaining = capacities.clone()
+        preferences = torch.argsort(similarity, dim=1, descending=True)
+
+        for neuron in neuron_order.tolist():
+            for page in preferences[neuron].tolist():
+                if int(remaining[page]) > 0:
+                    assignment[neuron] = page
+                    remaining[page] -= 1
+                    break
+
+        if bool((assignment < 0).any()):
+            raise RuntimeError("balanced assignment left neurons unassigned")
+
+        updated = []
+        for page in range(num_pages):
+            members = signatures[assignment == page]
+            if members.numel() == 0:
+                updated.append(centroids[page])
+            else:
+                center = members.mean(dim=0)
+                center = center / center.norm().clamp_min(1e-12)
+                updated.append(center)
+        centroids = torch.stack(updated)
+
+    similarity = signatures @ centroids.T
+    own_similarity = similarity[
+        torch.arange(num_neurons),
+        assignment,
+    ]
+    # Sorting by page gives contiguous physical pages. Within each page, place
+    # the most centroid-aligned neurons first for deterministic partial pages.
+    composite = assignment.to(torch.float64) * 2.0 - own_similarity.to(torch.float64)
+    return torch.argsort(composite)
+
 def learn_simhash_codemand_permutation(
     intermediate: Tensor,
     down_proj: nn.Linear,
