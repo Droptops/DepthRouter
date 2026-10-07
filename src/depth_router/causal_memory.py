@@ -112,6 +112,27 @@ def predictive_working_set_bytes(
     ) * layout.page_bytes
 
 
+def smooth_address_entropy_nats(
+    posterior: Tensor,
+    layout: PageLayout,
+    *,
+    mass_target: float = 0.95,
+) -> Tensor:
+    """Smooth Renyi-0 entropy of the page-demand support, in nats.
+
+    For fixed-size pages, exp(H0) is exactly the minimum number of pages needed
+    to cover mass_target posterior mass. This turns posterior concentration into
+    a physical working-set quantity.
+    """
+
+    pages = working_set_pages(
+        posterior,
+        layout,
+        mass_target=mass_target,
+    ).float()
+    return pages.log()
+
+
 def posterior_affinity(posterior: Tensor) -> Tensor:
     """Co-posterior affinity A_ij = E[q_i q_j].
 
