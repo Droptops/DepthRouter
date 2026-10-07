@@ -4,6 +4,7 @@ from torch import nn
 from depth_router.swiglu_layout import (
     contiguous_swiglu_pages,
     learn_codemand_permutation,
+    learn_simhash_codemand_permutation,
     page_importance,
     pages_for_mass,
     permute_swiglu_neurons_,
@@ -102,3 +103,27 @@ def test_compiled_page_layout_can_reduce_mass_working_set() -> None:
     ).float().mean()
 
     assert compiled_count < raw_count
+
+
+def test_simhash_codemand_permutation_is_valid_and_deterministic() -> None:
+    torch.manual_seed(4)
+    _, _, down = make_layers()
+    intermediate = torch.randn(128, 12)
+
+    first = learn_simhash_codemand_permutation(
+        intermediate,
+        down,
+        bits=8,
+        max_trace_tokens=64,
+        seed=11,
+    )
+    second = learn_simhash_codemand_permutation(
+        intermediate,
+        down,
+        bits=8,
+        max_trace_tokens=64,
+        seed=11,
+    )
+
+    assert torch.equal(first, second)
+    assert torch.equal(torch.sort(first).values, torch.arange(12))
