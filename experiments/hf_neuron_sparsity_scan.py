@@ -8,8 +8,6 @@ from typing import Any
 import torch
 from torch import Tensor, nn
 
-from depth_router import page_importance
-
 
 DEFAULT_TEXTS = [
     "Explain why a cache miss can dominate inference latency.",
