@@ -53,8 +53,7 @@ def aps_calibration_threshold(
 
     n = int(scores.numel())
     rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
-    if rank < 1:
-        rank = 1
+    rank = max(rank, 1)
     return float(torch.kthvalue(scores, rank).values.item())
 
 
