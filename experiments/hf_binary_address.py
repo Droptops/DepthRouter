@@ -124,7 +124,21 @@ def quantized_row_sketch(
         return code, scale
 
     qmax = (1 << (bits - 1)) - 1
-    scale = (w.abs().amax(dim=1) / qmax).clamp_min(1e-12)
+    if bits == 2:
+        # Ternary initialization keeps moderate-magnitude weights instead of
+        # letting one row outlier set the whole quantizer scale.
+        scale = w.abs().mean(dim=1).clamp_min(1e-12)
+    else:
+        scale = (w.abs().amax(dim=1) / qmax).clamp_min(1e-12)
+
+    # A few Lloyd-style least-squares refinements are cheap at compile time and
+    # materially improve the address approximation without changing metadata.
+    for _ in range(3):
+        code = torch.round(w / scale[:, None]).clamp(-qmax, qmax)
+        numerator = (w * code).sum(dim=1)
+        denominator = code.pow(2).sum(dim=1).clamp_min(1e-12)
+        scale = (numerator / denominator).abs().clamp_min(1e-12)
+
     code = torch.round(w / scale[:, None]).clamp(-qmax, qmax)
     return code, scale
 
