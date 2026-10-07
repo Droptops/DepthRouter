@@ -426,7 +426,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-steps", type=int, default=4)
     parser.add_argument("--units-per-page", type=int, default=8)
     parser.add_argument("--model-lr", type=float, default=1e-3)
-    parser.add_argument("--oracle-kl", type=float, default=0.05)
+    parser.add_argument("--oracle-kl", type=float, default=0.001)
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--summary-only", action="store_true")
@@ -497,6 +497,12 @@ def main() -> None:
         router_lr=args.router_lr,
         seed=args.seed + 100,
     )
+
+    if result["train_zero_fault_rate"] > 0.95:
+        raise RuntimeError(
+            "operator-page oracle is degenerate: >95% of training examples "
+            "need no cold page; tighten --oracle-kl before interpreting results"
+        )
 
     payload = {
         "experiment": "dense_operator_pages_v0",
