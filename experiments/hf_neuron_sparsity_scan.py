@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 from __future__ import annotations
 
 import argparse
@@ -124,7 +125,7 @@ def behavioral_topk_probe(
     result: dict[str, dict[str, float]] = {}
     width = u.shape[-1]
     for fraction in fractions:
-        k = max(1, min(width, int(round(width * fraction))))
+        k = max(1, min(width, round(width * fraction)))
         selected = order[:, :k]
         sparse = torch.zeros_like(u)
         values = torch.gather(u, 1, selected)
