@@ -1,0 +1,90 @@
+import torch
+from torch import nn
+
+from depth_router.operator_pages import (
+    contiguous_mlp_pages,
+    linear2_page_contributions,
+    page_bytes_tensor,
+    reconstruct_linear2,
+)
+
+
+def test_page_contributions_reconstruct_dense_linear2() -> None:
+    torch.manual_seed(0)
+    linear1 = nn.Linear(5, 12)
+    linear2 = nn.Linear(12, 4)
+    activation = torch.randn(3, 2, 12)
+
+    pages = contiguous_mlp_pages(
+        linear1,
+        linear2,
+        units_per_page=4,
+    )
+    contributions = linear2_page_contributions(
+        activation,
+        linear2,
+        pages,
+    )
+    reconstructed = reconstruct_linear2(contributions, linear2)
+
+    assert contributions.shape == (3, 2, 3, 4)
+    assert torch.allclose(
+        reconstructed,
+        linear2(activation),
+        atol=1e-6,
+    )
+
+
+def test_page_mask_skips_unselected_operator_pages() -> None:
+    torch.manual_seed(1)
+    linear1 = nn.Linear(4, 8)
+    linear2 = nn.Linear(8, 3)
+    activation = torch.randn(2, 8)
+    pages = contiguous_mlp_pages(
+        linear1,
+        linear2,
+        units_per_page=4,
+    )
+    contributions = linear2_page_contributions(
+        activation,
+        linear2,
+        pages,
+    )
+    mask = torch.tensor(
+        [
+            [True, False],
+            [False, True],
+        ]
+    )
+
+    got = reconstruct_linear2(
+        contributions,
+        linear2,
+        page_mask=mask,
+    )
+
+    expected0 = (
+        activation[0, :4] @ linear2.weight[:, :4].T
+        + linear2.bias
+    )
+    expected1 = (
+        activation[1, 4:] @ linear2.weight[:, 4:].T
+        + linear2.bias
+    )
+    assert torch.allclose(got[0], expected0, atol=1e-6)
+    assert torch.allclose(got[1], expected1, atol=1e-6)
+
+
+def test_page_bytes_cover_first_and_second_projection_slices() -> None:
+    linear1 = nn.Linear(5, 8, bias=True)
+    linear2 = nn.Linear(8, 3, bias=True)
+    pages = contiguous_mlp_pages(
+        linear1,
+        linear2,
+        units_per_page=4,
+    )
+    sizes = page_bytes_tensor(pages)
+
+    element_size = linear1.weight.element_size()
+    expected_per_page = (4 * 5 + 4 + 3 * 4) * element_size
+    assert sizes.tolist() == [expected_per_page, expected_per_page]
