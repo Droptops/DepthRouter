@@ -908,6 +908,7 @@ def rollout_fault_policy(
     model: DepthRouterModel,
     trace: TraceBatch,
     policy: nn.Linear,
+    pages: list[OperatorPage],
     *,
     tolerance_nats: float,
 ) -> dict[str, float]:
@@ -975,20 +976,10 @@ def rollout_fault_policy(
         parameter.numel() * parameter.element_size()
         for parameter in policy.parameters()
     )
-    page_bytes = torch.tensor(
-        [
-            page.weight_bytes
-            for page in contiguous_mlp_pages(
-                model.shared_block.linear1,
-                model.shared_block.linear2,
-                units_per_page=trace.page_contributions.shape[1]
-                and model.shared_block.linear1.out_features
-                // trace.page_contributions.shape[1],
-            )
-        ]
-    )
-    # All pages are equal-size in the toy experiment. Use the observed page
-    # count rather than hiding this assumption in the policy itself.
+    page_bytes = torch.tensor([page.weight_bytes for page in pages])
+    if page_bytes.numel() != num_pages:
+        raise ValueError("page layout does not match trace page count")
+    # All pages are equal-size in the toy experiment.
     mean_faults = float(fault_counts.float().mean().item())
 
     return {
@@ -1120,6 +1111,7 @@ def main() -> None:
         model,
         test,
         fault_policy,
+        pages,
         tolerance_nats=args.oracle_kl,
     )
 
