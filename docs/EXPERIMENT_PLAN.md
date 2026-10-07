@@ -1,108 +1,64 @@
 # Experiment plan
 
-DepthRouter should earn its claims empirically. The first harness is intentionally
-small and separates architectural questions from hardware claims.
+## Thesis
 
-## Hypotheses
+DepthRouter is a bandwidth-constrained fixed-point solver, not an adaptive-depth layer stack.
 
-### H1: parameter efficiency
+The state is:
 
-At equal width and nominal depth, a shared recurrent transformer should use
-substantially fewer parameters than an unshared stack.
+```text
+s_k = (h_k, c_k, p_k)
+```
 
-This is a bookkeeping claim and should hold by construction.
+and the legal moves are `spin`, `fault`, `write`, and `halt`.
 
-### H2: iterative-task quality
+The hot operator is an interpreter over `h_k`. The cold table is program memory. A fault loads cold program state; a spin advances the resident computation; KV write is legal once.
 
-On tasks that naturally require serial state updates, recurrent depth should
-recover useful accuracy as the number of passes increases.
+## First falsification experiment
 
-The first task is random pointer chasing: given a functional graph, a start node,
-and a hop count, predict the node reached after K hops.
+Pin one dense mid-stack block of a small decoder and run the same decode tokens under four schedules:
 
-### H3: low-rank depth specialization
+1. `stock`: one ordinary block evaluation.
+2. `naive4`: four full passes with independent per-pass KV.
+3. `kv_once4`: four full passes with a single KV write.
+4. `gated4`: one KV write, resident hot-core spins, and a cold MLP only when previous-spin logit KL clears the threshold.
 
-Pass-specific low-rank residual adapters should recover some of the expressive
-capacity lost by exact weight sharing while remaining much smaller than cloning
-the full block.
+The fourth schedule must batch tokens by predicted cold slice so identical misses are coalesced into one dense call.
 
-### H4: adaptive depth
+## Measurement
 
-A halting rule should reduce average logical sample-passes at a controlled
-quality loss.
-
-The v0 router uses normalized hidden-state residual:
-
-    rho_k = RMS(h_(k+1) - h_k) / max(RMS(h_k), eps)
-
-and halts when rho_k is at or below the configured threshold.
-
-This is a baseline heuristic, not a claim that hidden-state convergence is the
-optimal halting signal.
-
-## Required comparisons
-
-Run at least these arms:
-
-1. independent stacked blocks, fixed depth
-2. one shared block, fixed recurrence
-3. one shared block plus pass-specific low-rank adapters
-4. shared variants with adaptive halting enabled at evaluation
-
-Two fairness regimes matter:
-
-- iso-width / iso-evaluation-count: exposes the parameter-memory advantage
-  of sharing.
-- iso-parameter: widen the shared model until parameter counts are similar,
-  then compare quality and throughput.
-
-Do not collapse these into one comparison.
-
-## Metrics
+Use hardware counters, not an analytic byte model.
 
 Record:
 
-- task accuracy
-- total parameters
-- parameter storage bytes
-- mean logical sample-passes
-- physical dense block evaluations
-- examples/second
-- peak accelerator memory
-- wall-clock latency percentiles
+- DRAM / memory-controller bytes read and written
+- L2 read hit rate
+- final cross entropy on the same tokens
+- wall-clock decode latency as supporting telemetry
 
-Later hardware work should add profiler-derived:
+The sole promotion metric is:
 
-- HBM bytes read/written
-- L2 hit rate
-- achieved FLOP/s
-- arithmetic intensity
+```text
+nats_per_byte = (reference_CE - schedule_CE) / measured_DRAM_bytes
+```
 
-Analytic traffic bounds in the Python package are estimates only. They are not
-evidence of actual residency.
+The gate's own traffic belongs in the denominator.
 
-## Claim boundary
+## Gate
 
-The current adaptive router masks halted examples semantically, but it does not
-compact the active batch. Therefore lower logical sample-passes do not yet imply
-proportional wall-clock or energy savings.
+**FALSIFIED:** `gated4 nats_per_byte <= kv_once4 nats_per_byte`.
 
-A later sparse/compacted execution path is required before making that claim.
+**SUPPORTED FOR NEXT STAGE:** `gated4 nats_per_byte > kv_once4 nats_per_byte`.
 
-## Promotion gates
+No LoRA variant, learned halter, Anderson accelerator, or more elaborate policy should be promoted before this result exists.
 
-Before calling the idea promising:
+## After a pass
 
-- recurrent fixed-depth accuracy must show a repeatable advantage on at least
-  one explicitly iterative task under an appropriate budget comparison;
-- adaptive routing must produce a Pareto point: fewer logical passes for a
-  bounded, predeclared accuracy loss;
-- results must repeat across at least 5 seeds;
-- hardware residency claims require profiler evidence on a named device.
+Only after the hardware gate passes:
 
-Before calling it a systems win:
+- train a policy over the finite move set;
+- keep residency in the state;
+- train against measured move costs;
+- preserve coalesced faults as a hard systems constraint.
 
-- active-batch compaction or an equivalent sparse execution mechanism must show
-  measured latency/throughput improvement;
-- memory-traffic improvements must appear in profiler counters, not only in the
-  analytic model.
+The v0 pointer-chasing harness remains useful only as a software sanity check, not as evidence for the systems thesis.
