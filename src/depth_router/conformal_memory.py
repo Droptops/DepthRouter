@@ -57,6 +57,67 @@ def aps_calibration_threshold(
     return float(torch.kthvalue(scores, rank).values.item())
 
 
+def required_set_calibration_threshold(
+    probabilities: Tensor,
+    required_mask: Tensor,
+    *,
+    alpha: float,
+) -> float:
+    """Calibrate coverage for a *set* of required operator pages.
+
+    The score is the cumulative predicted mass through the worst-ranked
+    required page. A prediction set that reaches the calibrated threshold then
+    contains every required page with split-conformal marginal coverage under
+    exchangeability.
+    """
+
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+
+    p = _normalize(probabilities)
+    if required_mask.shape != p.shape:
+        raise ValueError("required_mask must match probabilities")
+    required = required_mask.to(dtype=torch.bool, device=p.device)
+    if bool((required.sum(dim=-1) == 0).any()):
+        raise ValueError("each example must require at least one page")
+
+    order = torch.argsort(p, dim=-1, descending=True)
+    sorted_p = torch.gather(p, 1, order)
+    sorted_required = torch.gather(required, 1, order)
+    cumulative = sorted_p.cumsum(dim=-1)
+
+    # The candidate set must reach at least the least-favored required page.
+    scores = torch.where(
+        sorted_required,
+        cumulative,
+        torch.zeros_like(cumulative),
+    ).max(dim=-1).values
+
+    n = int(scores.numel())
+    rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
+    rank = max(rank, 1)
+    return float(torch.kthvalue(scores, rank).values.item())
+
+
+def required_set_coverage(
+    prediction_mask: Tensor,
+    required_mask: Tensor,
+) -> float:
+    """Fraction of examples for which every required page is resident."""
+
+    if prediction_mask.ndim != 2:
+        raise ValueError("prediction_mask must have shape [examples, pages]")
+    if required_mask.shape != prediction_mask.shape:
+        raise ValueError("required_mask must match prediction_mask")
+
+    required = required_mask.to(
+        dtype=torch.bool,
+        device=prediction_mask.device,
+    )
+    covered = (prediction_mask | ~required).all(dim=-1)
+    return float(covered.float().mean().item())
+
+
 def aps_prediction_mask(
     probabilities: Tensor,
     threshold: float,
