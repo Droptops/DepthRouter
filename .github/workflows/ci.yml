@@ -38,3 +38,14 @@ jobs:
           --calibration-examples 1000
           --test-examples 1000
           --summary-only
+      - name: Dense operator-page smoke benchmark
+        if: matrix.python-version == '3.12'
+        run: >-
+          python experiments/dense_operator_pages.py
+          --train-steps 350
+          --router-steps 150
+          --train-examples 750
+          --calibration-examples 500
+          --test-examples 500
+          --model-batch-size 100
+          --summary-only
