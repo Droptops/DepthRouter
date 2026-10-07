@@ -11,6 +11,7 @@ from torch import Tensor, nn
 from depth_router.swiglu_layout import (
     contiguous_swiglu_pages,
     learn_codemand_permutation,
+    learn_simhash_codemand_permutation,
     page_importance,
     pages_for_mass,
     permute_swiglu_neurons_,
@@ -189,6 +190,12 @@ def main() -> None:
         help="-1 selects the middle decoder layer",
     )
     parser.add_argument("--units-per-page", type=int, default=256)
+    parser.add_argument(
+        "--compiler",
+        choices=["affinity", "simhash"],
+        default="simhash",
+    )
+    parser.add_argument("--simhash-bits", type=int, default=16)
     parser.add_argument("--mass-target", type=float, default=0.95)
     parser.add_argument("--max-length", type=int, default=256)
     parser.add_argument("--max-trace-tokens", type=int, default=4096)
@@ -281,13 +288,21 @@ def main() -> None:
         mass_target=args.mass_target,
     ).float()
 
-    permutation = learn_codemand_permutation(
-        intermediate,
-        down.cpu(),
-        units_per_page=args.units_per_page,
-    )
+    if args.compiler == "affinity":
+        permutation = learn_codemand_permutation(
+            intermediate,
+            down,
+            units_per_page=args.units_per_page,
+        )
+    else:
+        permutation = learn_simhash_codemand_permutation(
+            intermediate,
+            down,
+            bits=args.simhash_bits,
+            max_trace_tokens=args.max_trace_tokens,
+            seed=args.seed,
+        )
 
-    # Move the down projection back if the helper call above moved it to CPU.
     model.to(device)
     gate, up, down = resolve_swiglu(layers[layer_index])
     permute_swiglu_neurons_(gate, up, down, permutation)
@@ -324,6 +339,8 @@ def main() -> None:
         "layer_index": layer_index,
         "intermediate_width": gate.out_features,
         "units_per_page": args.units_per_page,
+        "compiler": args.compiler,
+        "simhash_bits": args.simhash_bits if args.compiler == "simhash" else None,
         "num_pages": len(compiled_pages),
         "mass_target": args.mass_target,
         "trace_tokens": int(intermediate.shape[0]),
