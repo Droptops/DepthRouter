@@ -7,6 +7,20 @@ from torch import Tensor, nn
 
 
 @dataclass(frozen=True)
+class InputPageSketch:
+    page_id: int
+    weight: Tensor
+    bias: Tensor | None
+
+    @property
+    def metadata_bytes(self) -> int:
+        total = self.weight.numel() * self.weight.element_size()
+        if self.bias is not None:
+            total += self.bias.numel() * self.bias.element_size()
+        return int(total)
+
+
+@dataclass(frozen=True)
 class OperatorPage:
     page_id: int
     start: int
@@ -103,6 +117,112 @@ def activation_address_scores(
     stacked = torch.stack(scores, dim=-1)
     return stacked / stacked.sum(dim=-1, keepdim=True).clamp_min(1e-12)
 
+
+
+def make_input_page_sketches(
+    linear1: nn.Linear,
+    pages: list[OperatorPage],
+    *,
+    sketch_dim: int,
+    seed: int = 0,
+) -> list[InputPageSketch]:
+    """Compress each cold input-projection page into resident JL metadata.
+
+    A page owns rows of linear1. For a random sign matrix R with shape
+    [sketch_dim, page_width], store R W1_j and R b1_j. At runtime the resident
+    sketch estimates the page's preactivation energy from the MLP input without
+    reading the cold W1_j payload itself.
+    """
+
+    if sketch_dim < 1:
+        raise ValueError("sketch_dim must be >= 1")
+    if not pages:
+        raise ValueError("at least one page is required")
+
+    generator = torch.Generator(device="cpu").manual_seed(seed)
+    sketches: list[InputPageSketch] = []
+
+    for page in pages:
+        if page.start < 0 or page.end > linear1.out_features or page.start >= page.end:
+            raise ValueError("invalid page range")
+        if sketch_dim > page.width:
+            raise ValueError("sketch_dim cannot exceed page width")
+
+        signs = torch.randint(
+            0,
+            2,
+            (sketch_dim, page.width),
+            generator=generator,
+            dtype=torch.int64,
+        ).float()
+        projection = (signs.mul_(2).sub_(1)) / (float(sketch_dim) ** 0.5)
+        projection = projection.to(
+            device=linear1.weight.device,
+            dtype=linear1.weight.dtype,
+        )
+
+        weight = linear1.weight[page.start : page.end]
+        compressed_weight = (projection @ weight).detach()
+        compressed_bias = None
+        if linear1.bias is not None:
+            compressed_bias = (
+                projection @ linear1.bias[page.start : page.end]
+            ).detach()
+
+        sketches.append(
+            InputPageSketch(
+                page_id=page.page_id,
+                weight=compressed_weight,
+                bias=compressed_bias,
+            )
+        )
+
+    return sketches
+
+
+def input_sketch_address_scores(
+    mlp_input: Tensor,
+    pages: list[OperatorPage],
+    sketches: list[InputPageSketch],
+    output_weight_norms: Tensor,
+) -> Tensor:
+    """Estimate cold-page value using only resident metadata and MLP input.
+
+    The score is estimated preactivation energy times the resident Frobenius
+    norm of the matching W2 page. This does not read either cold W1 or W2.
+    """
+
+    if len(sketches) != len(pages):
+        raise ValueError("one input sketch is required per page")
+    if output_weight_norms.ndim != 1 or output_weight_norms.numel() != len(pages):
+        raise ValueError("one output weight norm is required per page")
+
+    scores = []
+    for idx, (page, sketch) in enumerate(zip(pages, sketches, strict=True)):
+        if sketch.page_id != page.page_id:
+            raise ValueError("sketch page id does not match layout")
+        if sketch.weight.ndim != 2 or sketch.weight.shape[1] != mlp_input.shape[-1]:
+            raise ValueError("sketch input width does not match MLP input")
+
+        estimate = torch.matmul(
+            mlp_input.to(sketch.weight.dtype),
+            sketch.weight.T,
+        )
+        if sketch.bias is not None:
+            estimate = estimate + sketch.bias
+        energy = estimate.float().norm(dim=-1)
+        scores.append(
+            energy * output_weight_norms[idx].to(energy.device)
+        )
+
+    stacked = torch.stack(scores, dim=-1)
+    return stacked / stacked.sum(dim=-1, keepdim=True).clamp_min(1e-12)
+
+
+def input_sketch_metadata_bytes(sketches: list[InputPageSketch]) -> int:
+    if not sketches:
+        raise ValueError("at least one sketch is required")
+    return sum(sketch.metadata_bytes for sketch in sketches)
 
 def make_output_page_sketches(
     linear2: nn.Linear,
