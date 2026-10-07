@@ -103,6 +103,95 @@ def activation_address_scores(
     stacked = torch.stack(scores, dim=-1)
     return stacked / stacked.sum(dim=-1, keepdim=True).clamp_min(1e-12)
 
+
+def make_output_page_sketches(
+    linear2: nn.Linear,
+    pages: list[OperatorPage],
+    *,
+    sketch_dim: int,
+    seed: int = 0,
+) -> list[Tensor]:
+    """Precompute tiny random projections of cold output-weight pages.
+
+    For page j with payload W_j, store R W_j where R is a shared random sign
+    projection. Runtime scoring can estimate ||W_j a_j|| from this metadata
+    without reading W_j itself.
+    """
+
+    if sketch_dim < 1:
+        raise ValueError("sketch_dim must be >= 1")
+    if sketch_dim > linear2.out_features:
+        raise ValueError("sketch_dim cannot exceed output width")
+    if not pages:
+        raise ValueError("at least one page is required")
+
+    generator = torch.Generator(device="cpu").manual_seed(seed)
+    signs = torch.randint(
+        0,
+        2,
+        (sketch_dim, linear2.out_features),
+        generator=generator,
+        dtype=torch.int64,
+    ).float()
+    projection = (signs.mul_(2).sub_(1)) / (float(sketch_dim) ** 0.5)
+    projection = projection.to(
+        device=linear2.weight.device,
+        dtype=linear2.weight.dtype,
+    )
+
+    sketches: list[Tensor] = []
+    for page in pages:
+        if page.start < 0 or page.end > linear2.in_features or page.start >= page.end:
+            raise ValueError("invalid page range")
+        payload = linear2.weight[:, page.start : page.end]
+        sketches.append((projection @ payload).detach())
+    return sketches
+
+
+def sketch_address_scores(
+    activation: Tensor,
+    pages: list[OperatorPage],
+    sketches: list[Tensor],
+) -> Tensor:
+    """Estimate page contribution magnitude from resident random sketches."""
+
+    if len(sketches) != len(pages):
+        raise ValueError("one sketch is required per page")
+    if not pages:
+        raise ValueError("at least one page is required")
+
+    scores = []
+    for page, sketch in zip(pages, sketches, strict=True):
+        if page.start < 0 or page.end > activation.shape[-1] or page.start >= page.end:
+            raise ValueError("invalid page range")
+        if sketch.ndim != 2 or sketch.shape[1] != page.width:
+            raise ValueError("sketch width does not match page")
+        x = activation[..., page.start : page.end].to(sketch.dtype)
+        estimate = torch.matmul(x, sketch.T).float().norm(dim=-1)
+        scores.append(estimate)
+
+    stacked = torch.stack(scores, dim=-1)
+    return stacked / stacked.sum(dim=-1, keepdim=True).clamp_min(1e-12)
+
+
+def output_page_payload_bytes(
+    linear2: nn.Linear,
+    pages: list[OperatorPage],
+) -> Tensor:
+    """Bytes in each cold linear2 payload, excluding resident address metadata."""
+
+    if not pages:
+        raise ValueError("at least one page is required")
+    return torch.tensor(
+        [
+            linear2.weight[:, page.start : page.end].numel()
+            * linear2.weight.element_size()
+            for page in pages
+        ],
+        dtype=torch.long,
+        device=linear2.weight.device,
+    )
+
 def linear2_page_contributions(
     activation: Tensor,
     linear2: nn.Linear,
