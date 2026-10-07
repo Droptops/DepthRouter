@@ -15,11 +15,6 @@ from .causal_memory import (
     working_set_pages,
 )
 from .config import DepthRouterConfig
-from .economics import (
-    address_information_yield,
-    memory_arbitrage_ratio,
-    working_set_from_smooth_address_entropy,
-)
 from .conformal_memory import (
     anytime_bonferroni_thresholds,
     aps_calibration_threshold,
@@ -33,6 +28,11 @@ from .conformal_memory import (
     required_set_calibration_threshold,
     required_set_coverage,
     residency_tier_masks,
+)
+from .economics import (
+    address_information_yield,
+    memory_arbitrage_ratio,
+    working_set_from_smooth_address_entropy,
 )
 from .model import DepthRouterModel, ForwardStats, StackedTransformerBaseline
 from .operator_pages import (
