@@ -130,8 +130,8 @@ def capture_mlp_io(
         h2.remove()
 
     return (
-        torch.cat(xs)[:max_tokens].float(),
-        torch.cat(ys)[:max_tokens].float(),
+        torch.cat(xs)[:max_tokens].float().clone(),
+        torch.cat(ys)[:max_tokens].float().clone(),
     )
 
 
