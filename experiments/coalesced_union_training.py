@@ -158,6 +158,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cost-weight", type=float, default=1.0)
     parser.add_argument("--page-bytes", type=int, default=1 << 20)
     parser.add_argument("--seed", type=int, default=23)
+    parser.add_argument("--assert-gate", action="store_true")
     return parser.parse_args()
 
 
@@ -219,6 +220,21 @@ def main() -> None:
             "language-model speedup."
         ),
     }
+    if args.assert_gate:
+        comparison = payload["comparison"]
+        if results["independent"]["task_valid_fraction"] < 0.999:
+            raise RuntimeError("independent baseline failed the controlled task")
+        if results["union"]["task_valid_fraction"] < 0.999:
+            raise RuntimeError("union-byte objective failed the controlled task")
+        if comparison["unique_page_reduction_fraction"] < 0.50:
+            raise RuntimeError(
+                "union-byte objective did not reduce unique pages by at least 50%"
+            )
+        if comparison["coalesced_byte_reduction_fraction"] < 0.50:
+            raise RuntimeError(
+                "union-byte objective did not reduce coalesced bytes by at least 50%"
+            )
+
     print(json.dumps(payload, indent=2, sort_keys=True))
 
 
