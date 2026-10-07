@@ -1,56 +1,71 @@
 # DepthRouter
 
-**Hardware-aware adaptive recurrent inference.**
+**A bandwidth-constrained solver with an explicit memory hierarchy.**
 
-DepthRouter is an experimental research project for routing computation through transformer depth rather than treating model depth as fixed.
+The project started as an adaptive recurrent transformer experiment. The current
+formulation is narrower and more falsifiable: memory placement is part of the
+solver state rather than a penalty attached after the model has already moved
+the bytes.
 
-The core hypothesis is that a model can reuse a transformer block recurrently, allocate different numbers of passes to different inputs, and optimize quality against compute, memory traffic, and latency.
+```text
+s_k = (h_k, c_k, p_k)
+```
 
-A simplified objective is:
+- `h_k`: residual stream / scratchpad
+- `c_k`: residency set, which cold operator slices are currently hot
+- `p_k`: previous prediction distribution
 
-    min task_loss + lambda * FLOPs + mu * bytes_moved + gamma * latency
+The legal moves are `spin`, `fault`, `write`, and `halt`. Depth is the
+number of spins the policy bought. A KV write is legal once; cold program memory
+is fetched only on a fault.
 
-subject to a minimum quality target.
+## First gate
 
-## First milestone
+Before training a learned policy, run one systems experiment on the same decode
+tokens:
 
-The initial harness compares:
+1. stock forward
+2. naive K=4 recurrence with KV per pass
+3. K=4 recurrence with one KV write
+4. one-KV-write recurrence with the cold MLP faulted only when the prior
+   prediction KL is large enough
 
-- fixed unshared transformer depth
-- fixed shared recurrence
-- adaptive shared recurrence
-- shared recurrence with pass-specific low-rank residual adapters
+The only promotion metric is:
 
-The first task is random pointer chasing, chosen because the target naturally requires serial state updates.
+```text
+(stock cross-entropy - schedule cross-entropy) / measured DRAM bytes
+```
+
+Schedule 4 must beat schedule 3 **after including the gate's own memory traffic**.
+If it does not, the residency thesis fails and we stop before adding more learned
+machinery.
+
+## Why batching changes
+
+Per-token depth is not enough. Tokens are batched by predicted fault so one cold
+slice requested by many tokens becomes one packed operation over those tokens.
+The runtime should optimize coalesced misses, not merely token-level FLOPs.
+
+## Code
+
+`src/depth_router/solver.py` contains the state machine primitives, one-write
+invariant, KL value signal, and coalesced cold-fault execution.
+
+`docs/BANDWIDTH_SOLVER.md` defines the falsification boundary.
+
+The original pointer-chasing harness remains as a baseline for recurrence
+experiments, but it is no longer the main architectural thesis.
 
 ## Quick start
 
     python -m pip install -e ".[dev]"
     pytest
-    python experiments/toy_pointer_chase.py --device auto
-
-The experiment prints JSON containing accuracy, parameter count, parameter storage, and mean logical passes.
-
-## Important claim boundary
-
-The v0 adaptive router masks halted samples semantically but does not yet compact the active batch. Fewer logical sample-passes therefore do not imply proportional wall-clock or energy savings.
-
-Likewise, the analytic weight-traffic model is only a bound. HBM traffic, cache residency, arithmetic intensity, and throughput must be measured with hardware profilers before making systems claims.
-
-See docs/EXPERIMENT_PLAN.md for the falsifiable evaluation plan.
-
-## Research questions
-
-1. Can shared recurrent depth match or beat an unshared stack at a fixed parameter budget?
-2. Can adaptive halting reduce average passes without materially reducing task quality?
-3. Do pass-specific low-rank adapters recover useful depth-specific capacity?
-4. Can fixed-point or residual-based acceleration reduce physical block evaluations?
-5. When does weight reuse improve arithmetic intensity or memory traffic on real hardware?
 
 ## Principle
 
-> Route computation, not just tokens.
+> Route bytes through computation, not computation around a byte penalty.
 
 ## Status
 
-Bootstrap research harness. No performance claims are established yet.
+Research prototype. No bandwidth, latency, or quality win is claimed until the
+hardware-counter experiment passes.
