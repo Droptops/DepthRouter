@@ -215,6 +215,86 @@ def nested_anytime_masks(
     return nested
 
 
+def calibrate_required_set_tiers(
+    calibration_probabilities: Tensor,
+    required_mask: Tensor,
+    *,
+    alphas: list[float],
+) -> list[tuple[float, float]]:
+    """Calibrate nested risk levels for a physical memory hierarchy.
+
+    Alphas must be ordered from least conservative / fastest tier to most
+    conservative / slower tier, for example [0.20, 0.05, 0.01]. The returned
+    thresholds are cumulative residency sets: the HBM set contains the L2 set,
+    and a still lower-risk host set contains HBM.
+    """
+
+    if not alphas:
+        raise ValueError("at least one alpha is required")
+    if any(not 0 < alpha < 1 for alpha in alphas):
+        raise ValueError("alphas must be in (0, 1)")
+    if any(left <= right for left, right in zip(alphas, alphas[1:], strict=False)):
+        raise ValueError("alphas must strictly decrease across slower tiers")
+
+    calibrated = [
+        (
+            alpha,
+            required_set_calibration_threshold(
+                calibration_probabilities,
+                required_mask,
+                alpha=alpha,
+            ),
+        )
+        for alpha in alphas
+    ]
+
+    # Finite precision should not violate nesting. Project thresholds onto a
+    # monotone sequence toward the slower / safer tiers.
+    running = 0.0
+    monotone: list[tuple[float, float]] = []
+    for alpha, threshold in calibrated:
+        running = max(running, threshold)
+        monotone.append((alpha, running))
+    return monotone
+
+
+def residency_tier_masks(
+    probabilities: Tensor,
+    calibrations: list[tuple[float, float]],
+) -> list[Tensor]:
+    """Return cumulative page masks for each calibrated memory tier."""
+
+    if not calibrations:
+        raise ValueError("at least one calibration is required")
+
+    masks = [
+        aps_prediction_mask(probabilities, threshold)
+        for _alpha, threshold in calibrations
+    ]
+    for fast, slow in zip(masks, masks[1:], strict=False):
+        if bool((fast & ~slow).any()):
+            raise RuntimeError("residency tiers are not nested")
+    return masks
+
+
+def exclusive_residency_masks(cumulative_masks: list[Tensor]) -> list[Tensor]:
+    """Convert cumulative nested sets into bytes owned by each tier."""
+
+    if not cumulative_masks:
+        raise ValueError("at least one mask is required")
+
+    exclusive: list[Tensor] = []
+    previous = torch.zeros_like(cumulative_masks[0], dtype=torch.bool)
+    for current in cumulative_masks:
+        if current.shape != previous.shape:
+            raise ValueError("all tier masks must have the same shape")
+        if bool((previous & ~current).any()):
+            raise ValueError("cumulative masks must be nested")
+        exclusive.append(current & ~previous)
+        previous = current
+    return exclusive
+
+
 def bytes_for_mask(mask: Tensor, *, page_bytes: int) -> Tensor:
     if page_bytes < 1:
         raise ValueError("page_bytes must be >= 1")
