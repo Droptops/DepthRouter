@@ -230,6 +230,99 @@ def permute_swiglu_neurons_(
         up_proj.bias.copy_(up_proj.bias.index_select(0, up_order))
 
 
+
+@dataclass(frozen=True)
+class PagedSwiGLUStats:
+    requested_page_uses: int
+    unique_pages_loaded: int
+    selected_payload_bytes: int
+
+
+def paged_swiglu_reference(
+    hidden: Tensor,
+    gate_proj: nn.Linear,
+    up_proj: nn.Linear,
+    down_proj: nn.Linear,
+    pages: list[SwiGLUPage],
+    page_mask: Tensor,
+) -> tuple[Tensor, PagedSwiGLUStats]:
+    """CPU/PyTorch semantic reference for page-selective SwiGLU execution.
+
+    This groups work by physical page. Each selected page is conceptually loaded
+    once for every batch window and serves all rows requesting it. The function
+    is a correctness model for a future fused GPU kernel; PyTorch slicing itself
+    is not evidence of reduced HBM traffic.
+    """
+
+    if hidden.ndim != 2:
+        raise ValueError("hidden must have shape [rows, d_model]")
+    if page_mask.shape != (hidden.shape[0], len(pages)):
+        raise ValueError("page_mask must have shape [rows, pages]")
+    if gate_proj.in_features != hidden.shape[-1]:
+        raise ValueError("hidden width does not match gate projection")
+    if gate_proj.out_features != up_proj.out_features:
+        raise ValueError("gate/up intermediate widths do not match")
+    if down_proj.in_features != gate_proj.out_features:
+        raise ValueError("down projection width does not match SwiGLU width")
+
+    output = torch.zeros(
+        hidden.shape[0],
+        down_proj.out_features,
+        device=hidden.device,
+        dtype=hidden.dtype,
+    )
+    if down_proj.bias is not None:
+        output = output + down_proj.bias.to(output.dtype)
+
+    requested = int(page_mask.to(torch.long).sum().item())
+    unique = 0
+    selected_payload = 0
+
+    for page_idx, page in enumerate(pages):
+        active = page_mask[:, page_idx].to(dtype=torch.bool, device=hidden.device)
+        if not bool(active.any()):
+            continue
+
+        unique += 1
+        selected_payload += page.payload_bytes
+
+        x = hidden[active]
+        gate_weight = gate_proj.weight[page.start : page.end]
+        up_weight = up_proj.weight[page.start : page.end]
+        down_weight = down_proj.weight[:, page.start : page.end]
+
+        gate = torch.nn.functional.linear(
+            x,
+            gate_weight,
+            (
+                gate_proj.bias[page.start : page.end]
+                if gate_proj.bias is not None
+                else None
+            ),
+        )
+        up = torch.nn.functional.linear(
+            x,
+            up_weight,
+            (
+                up_proj.bias[page.start : page.end]
+                if up_proj.bias is not None
+                else None
+            ),
+        )
+        intermediate = torch.nn.functional.silu(gate) * up
+        contribution = torch.nn.functional.linear(
+            intermediate,
+            down_weight,
+            bias=None,
+        )
+        output[active] = output[active] + contribution
+
+    return output, PagedSwiGLUStats(
+        requested_page_uses=requested,
+        unique_pages_loaded=unique,
+        selected_payload_bytes=selected_payload,
+    )
+
 def page_importance(
     intermediate: Tensor,
     down_proj: nn.Linear,
