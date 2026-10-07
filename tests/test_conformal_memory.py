@@ -8,6 +8,8 @@ from depth_router.conformal_memory import (
     empirical_coverage,
     mean_set_size,
     nested_anytime_masks,
+    required_set_calibration_threshold,
+    required_set_coverage,
 )
 
 
@@ -85,3 +87,47 @@ def test_anytime_calibration_returns_one_threshold_per_spin() -> None:
     thresholds = anytime_bonferroni_thresholds(spins, labels, alpha=0.10)
     assert len(thresholds) == 2
     assert all(0 < threshold <= 1 for threshold in thresholds)
+
+
+def test_required_set_conformal_covers_all_required_pages() -> None:
+    calibration = torch.tensor(
+        [
+            [0.55, 0.30, 0.10, 0.05],
+            [0.50, 0.25, 0.20, 0.05],
+            [0.45, 0.35, 0.15, 0.05],
+            [0.60, 0.20, 0.15, 0.05],
+        ]
+    )
+    required = torch.tensor(
+        [
+            [True, True, False, False],
+            [True, False, True, False],
+            [True, True, False, False],
+            [True, False, True, False],
+        ]
+    )
+
+    threshold = required_set_calibration_threshold(
+        calibration,
+        required,
+        alpha=0.25,
+    )
+    prediction = aps_prediction_mask(calibration, threshold)
+
+    assert required_set_coverage(prediction, required) >= 0.75
+
+
+def test_required_set_calibration_rejects_empty_targets() -> None:
+    probabilities = torch.tensor([[0.6, 0.4]])
+    required = torch.tensor([[False, False]])
+
+    try:
+        required_set_calibration_threshold(
+            probabilities,
+            required,
+            alpha=0.1,
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("empty required-page set must be rejected")
