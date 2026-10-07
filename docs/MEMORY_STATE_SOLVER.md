@@ -118,7 +118,123 @@ fault(j)       = load the next required program fragment
 This is a hypothesis to falsify, not a claim that hidden states literally encode
 a conventional instruction pointer.
 
-## 6. The useful mathematical import from anomaly / inflow ideas
+## 6. Belief state: the vector is an anytime posterior, not just a hidden state
+
+There are two different notions of time and they should not be conflated:
+
+```text
+t = user / token / interaction time
+k = internal solver iteration
+```
+
+Let `z_t` be the latent task or trajectory state at interaction time `t`: the
+"where are we on the timeline?" variable. The observable history is `x_(1:t)`.
+
+The solver should be interpreted as maintaining an approximate belief state
+
+```text
+q_(t,k)(z) ~= P(z_t = z | x_(1:t))
+```
+
+and spending compute to refine that approximation.
+
+A spin does not create new external evidence. It performs another inference step
+over the same evidence:
+
+```text
+q_(t,k+1) = Phi(q_(t,k), x_(1:t), c_(t,k))
+```
+
+The output distribution is the posterior predictive:
+
+```text
+p_(t,k)(y) = sum_z P(y | z) q_(t,k)(z)
+```
+
+This makes the recurring vector interpretable as an **anytime probability
+trajectory**. More FLOPs are useful only if they move the approximate posterior
+toward a better predictive distribution. They are not assumed to help
+monotonically; that has to be measured.
+
+The previous `h_k` remains the implementation state, but conceptually it should
+encode only what is needed to update the belief: a compact program counter,
+scratchpad, and sufficient statistics for `q`.
+
+### Cache the posterior support
+
+The residency state should cache the operator / knowledge slices most likely to
+be needed under the current belief.
+
+For cold slice `j`, let
+
+```text
+r_j = P(slice j will be needed | q_(t,k))
+```
+
+and let `g_j` be the expected predictive gain if that slice is available.
+
+The cache set is a capacity-constrained placement problem:
+
+```text
+C* = argmax_C sum_(j in C) r_j * g_j * reuse_j
+     subject to sum_(j in C) size_j <= cache_capacity
+```
+
+So "cache the top percentage" should not mean top posterior probability alone.
+It should mean top **expected value per resident byte**, including batch reuse.
+
+A useful score is
+
+```text
+score_j = r_j * E[Delta CE_j] * reuse_j / size_j
+```
+
+or the corresponding logit-information estimate when labels are unavailable.
+
+This is where repeated user behavior becomes useful: if many requests collapse
+onto a small set of latent trajectories, the posterior concentrates and the hot
+working set becomes small. That is an empirical hypothesis, not an assumption.
+
+### Halt and fault are both posterior decisions
+
+The same belief state determines both whether to continue and what to load.
+
+A `spin` is worth buying when the expected change in the predictive
+distribution per resident byte is high enough.
+
+A `fault(j)` is worth buying when the expected gain from resolving probability
+mass associated with slice `j` exceeds the transfer cost.
+
+A `halt` is optimal when no available spin or fault has positive enough value:
+
+```text
+max_a E[ predictive_gain(a) | q_(t,k), c_(t,k) ] / bytes(a) <= eta
+```
+
+The observable proxy can be the KL movement of the output distribution:
+
+```text
+Delta I_k = KL(p_(t,k+1) || p_(t,k))
+```
+
+This turns adaptive depth into approximate Bayesian inference under a memory
+budget. Depth is simply how many inference refinements were worth purchasing.
+
+### Batch by posterior fault
+
+For a batch of tokens, the scheduler should group tokens by their highest-value
+predicted cold slice:
+
+```text
+token -> q_(t,k) -> predicted fault j -> coalesced transfer
+```
+
+The unit of optimization is therefore not "passes per token." It is
+**posterior mass resolved per coalesced byte transfer**.
+
+This is the formulation to test before adding any new architecture.
+
+## 7. The useful mathematical import from anomaly / inflow ideas
 
 There is no claim that DepthRouter is a topological field theory. The useful
 structural idea is **global consistency of a local description**.
@@ -153,7 +269,7 @@ memory state is sufficient  <=>  A(gamma) ~= 0 across held-out schedules
 
 This is a state-identification test, not a physics analogy presented as evidence.
 
-## 7. One decisive experiment
+## 8. One decisive experiment
 
 Use one pinned mid-stack block on one small model and the same token stream for
 all schedules.
@@ -196,7 +312,7 @@ If it does, the next training target is the policy over
 `{spin, fault(j), write, halt}`, with coalesced faults. Do not add another
 adapter, accelerator, or residual penalty before that measurement.
 
-## 8. Claim boundary
+## 9. Claim boundary
 
 A successful result would establish only this:
 
