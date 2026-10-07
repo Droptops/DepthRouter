@@ -430,7 +430,7 @@ jobs:
           --device cpu
           --dtype float32
           --max-length 32
-          --address-bits 2 4
+          --address-bits 2 3 4
           --fractions 0.10 0.25
           --json-out global_lowbit_decode.json
       - uses: actions/upload-artifact@v4
