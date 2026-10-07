@@ -784,6 +784,30 @@ def evaluate(
     }
 
 
+def fault_policy_features(
+    trace: TraceBatch,
+    current: Tensor,
+    selected: Tensor,
+    rows: Tensor | None = None,
+) -> Tensor:
+    """Resident state for conditional page acquisition.
+
+    The pre-MLP input is available before any cold W1/W2 page is fetched.
+    Current partial output and the selected-page bitmap make page value
+    conditional on faults already paid for.
+    """
+
+    context = trace.mlp_inputs_by_spin[-1]
+    if rows is not None:
+        context = context[rows]
+        current = current[rows]
+        selected = selected[rows]
+    return torch.cat(
+        [context, current, selected.float()],
+        dim=-1,
+    )
+
+
 @torch.no_grad()
 def collect_fault_policy_examples(
     model: DepthRouterModel,
@@ -811,12 +835,11 @@ def collect_fault_policy_examples(
         should_halt = (~done) & (current_kl <= tolerance_nats)
 
         if bool(should_halt.any()):
-            halt_features = torch.cat(
-                [
-                    current[should_halt],
-                    selected[should_halt].float(),
-                ],
-                dim=-1,
+            halt_features = fault_policy_features(
+                trace,
+                current,
+                selected,
+                row_ids[should_halt],
             )
             feature_rows.append(halt_features)
             targets.append(
@@ -847,12 +870,11 @@ def collect_fault_policy_examples(
         )
         best = candidate_kl.argmin(dim=-1)
 
-        active_features = torch.cat(
-            [
-                current[active],
-                selected[active].float(),
-            ],
-            dim=-1,
+        active_features = fault_policy_features(
+            trace,
+            current,
+            selected,
+            row_ids[active],
         )
         feature_rows.append(active_features)
         targets.append(best[active].cpu())
@@ -965,9 +987,11 @@ def collect_dagger_examples(
             break
 
         active_rows = rows[active]
-        features = torch.cat(
-            [current[active], selected[active].float()],
-            dim=-1,
+        features = fault_policy_features(
+            trace,
+            current,
+            selected,
+            active_rows,
         )
         current_logits = classify_hidden(model.cpu(), current[active])
         current_kl = kl_from_full(
@@ -1105,7 +1129,11 @@ def fault_policy_prefix_distortions(
         if step == num_pages:
             break
 
-        features = torch.cat([current, selected.float()], dim=-1)
+        features = fault_policy_features(
+            trace,
+            current,
+            selected,
+        )
         logits = policy(features)[:, :num_pages]
         logits = logits.masked_fill(selected, float("-inf"))
         page = logits.argmax(dim=-1)
@@ -1203,12 +1231,11 @@ def rollout_fault_policy(
         if not bool(active.any()):
             break
 
-        features = torch.cat(
-            [
-                current[active],
-                selected[active].float(),
-            ],
-            dim=-1,
+        features = fault_policy_features(
+            trace,
+            current,
+            selected,
+            active_rows,
         )
         logits = policy(features)
         active_selected = selected[active]
