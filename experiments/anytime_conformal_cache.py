@@ -10,9 +10,9 @@ from torch import Tensor, nn
 from depth_router import DepthRouterConfig, DepthRouterModel
 from depth_router.causal_memory import posterior_entropy
 from depth_router.conformal_memory import (
+    anytime_bonferroni_thresholds,
     aps_calibration_threshold,
     aps_prediction_mask,
-    anytime_bonferroni_thresholds,
     empirical_coverage,
     mean_set_size,
     nested_anytime_masks,
