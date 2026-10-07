@@ -1,56 +1,57 @@
 # DepthRouter
 
-**Hardware-aware adaptive recurrent inference.**
+**A bandwidth-constrained fixed-point solver with an explicit memory hierarchy.**
 
-DepthRouter is an experimental research project for routing computation through transformer depth rather than treating model depth as fixed.
+The state is not only the residual stream. The current formulation is
 
-The core hypothesis is that a model can reuse a transformer block recurrently, allocate different numbers of passes to different inputs, and optimize quality against compute, memory traffic, and latency.
+```text
+s_k = (h_k, c_k, p_k)
+```
 
-A simplified objective is:
+where `h_k` is the residual/scratch state, `c_k` is the residency set for cold operator slices, and `p_k` is the previous prediction distribution.
 
-    min task_loss + lambda * FLOPs + mu * bytes_moved + gamma * latency
+The solver chooses from four moves:
 
-subject to a minimum quality target.
+- `spin`: execute resident work without intentionally fetching a cold slice
+- `fault`: bring in one cold slice, coalesced across all tokens requesting it
+- `write`: emit the single legal KV update
+- `halt`: commit the current prediction
 
-## First milestone
+Depth is therefore the number of spins the policy buys. It is not the primary state variable.
 
-The initial harness compares:
+## Promotion gate
 
-- fixed unshared transformer depth
-- fixed shared recurrence
-- adaptive shared recurrence
-- shared recurrence with pass-specific low-rank residual adapters
+Do not promote another routing, adapter, acceleration, or halting mechanism until the hardware claim survives one measurement.
 
-The first task is random pointer chasing, chosen because the target naturally requires serial state updates.
+On the same decode tokens, profile:
 
-## Quick start
+1. stock forward
+2. naive four-pass loop
+3. four-pass loop with KV written once
+4. KV written once plus a cold MLP that is skipped unless previous-spin logit KL exceeds a threshold
 
-    python -m pip install -e ".[dev]"
-    pytest
-    python experiments/toy_pointer_chase.py --device auto
+Measure actual memory-controller / DRAM bytes and L2 hit rate. The decision metric is:
 
-The experiment prints JSON containing accuracy, parameter count, parameter storage, and mean logical passes.
+```text
+(reference cross entropy - schedule cross entropy) / measured bytes moved
+```
 
-## Important claim boundary
+The placement thesis is falsified if schedule 4 does not beat schedule 3 after charging the gate's own traffic.
 
-The v0 adaptive router masks halted samples semantically but does not yet compact the active batch. Fewer logical sample-passes therefore do not imply proportional wall-clock or energy savings.
+Tokens requesting the same cold slice must be batched together. Per-token depth without coalesced misses is not a bandwidth optimization.
 
-Likewise, the analytic weight-traffic model is only a bound. HBM traffic, cache residency, arithmetic intensity, and throughput must be measured with hardware profilers before making systems claims.
+## Code
 
-See docs/EXPERIMENT_PLAN.md for the falsifiable evaluation plan.
+The original toy recurrent-transformer harness remains in `src/depth_router/model.py` as an ablation scaffold.
 
-## Research questions
+The memory-explicit state and coalescing primitives are in:
 
-1. Can shared recurrent depth match or beat an unshared stack at a fixed parameter budget?
-2. Can adaptive halting reduce average passes without materially reducing task quality?
-3. Do pass-specific low-rank adapters recover useful depth-specific capacity?
-4. Can fixed-point or residual-based acceleration reduce physical block evaluations?
-5. When does weight reuse improve arithmetic intensity or memory traffic on real hardware?
+```text
+src/depth_router/placement.py
+```
 
-## Principle
+The DGX Spark/Qwen implementation and Nsight Compute falsification harness are carried in the companion `loopkit` package.
 
-> Route computation, not just tokens.
+## Claim boundary
 
-## Status
-
-Bootstrap research harness. No performance claims are established yet.
+No hardware-efficiency claim is established until a named GPU reports profiler-derived bytes and cache behavior. Parameter sharing alone is not evidence of reduced memory traffic.
