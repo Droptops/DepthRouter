@@ -333,6 +333,13 @@ def main() -> None:
         final_layer,
         encoded,
     )
+    # capture_final_layer runs under inference_mode; rematerialize ordinary
+    # tensors before using them in module ops outside that context.
+    reference_logits = reference_logits.detach().clone()
+    base_hidden = base_hidden.detach().clone()
+    dense_hidden = dense_hidden.detach().clone()
+    activation = activation.detach().clone()
+
     reconstructed = base_hidden + torch.nn.functional.linear(
         activation,
         mlp.down_proj.weight,
