@@ -11,6 +11,7 @@ from torch import Tensor, nn
 
 from depth_router import (
     contiguous_swiglu_pages,
+    greedy_pages_for_relative_output_error,
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
     page_importance,
@@ -290,6 +291,15 @@ def main() -> None:
         raw_scores,
         mass_target=args.mass_target,
     ).float()
+    raw_behavioral = {
+        tolerance: greedy_pages_for_relative_output_error(
+            intermediate.to(down.weight.device),
+            down,
+            raw_pages,
+            relative_error=tolerance,
+        ).float().cpu()
+        for tolerance in (0.10, 0.05, 0.01)
+    }
 
     if args.compiler == "affinity":
         permutation = learn_codemand_permutation(
@@ -332,6 +342,15 @@ def main() -> None:
         compiled_scores,
         mass_target=args.mass_target,
     ).float()
+    compiled_behavioral = {
+        tolerance: greedy_pages_for_relative_output_error(
+            compiled_intermediate.to(down.weight.device),
+            down,
+            compiled_pages,
+            relative_error=tolerance,
+        ).float().cpu()
+        for tolerance in (0.10, 0.05, 0.01)
+    }
 
     raw_mean = float(raw_working_set.mean().item())
     compiled_mean = float(compiled_working_set.mean().item())
@@ -363,6 +382,24 @@ def main() -> None:
         "compiled_mean_payload_bytes_for_mass": (
             compiled_mean * payload / len(compiled_pages)
         ),
+        "behavioral_page_counts": {
+            str(tolerance): {
+                "raw_mean": float(raw_behavioral[tolerance].mean().item()),
+                "compiled_mean": float(
+                    compiled_behavioral[tolerance].mean().item()
+                ),
+                "raw_p95": float(
+                    torch.quantile(raw_behavioral[tolerance], 0.95).item()
+                ),
+                "compiled_p95": float(
+                    torch.quantile(
+                        compiled_behavioral[tolerance],
+                        0.95,
+                    ).item()
+                ),
+            }
+            for tolerance in (0.10, 0.05, 0.01)
+        },
         "claim_boundary": (
             "This validates exact function-preserving physical neuron repacking "
             "and a structural co-demand locality metric on a real pretrained "
