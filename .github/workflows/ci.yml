@@ -30,3 +30,11 @@ jobs:
           --train-samples 1000
           --test-samples 1000
           --summary-only
+      - name: Anytime conformal cache smoke benchmark
+        if: matrix.python-version == '3.12'
+        run: >-
+          python experiments/anytime_conformal_cache.py
+          --train-steps 500
+          --calibration-examples 1000
+          --test-examples 1000
+          --summary-only
