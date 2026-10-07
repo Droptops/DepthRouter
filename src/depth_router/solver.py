@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Hashable, Iterable
 from dataclasses import dataclass, field, replace
 from enum import Enum
-from typing import Hashable, Iterable
 
 import torch
 from torch import Tensor, nn
@@ -27,12 +27,12 @@ class SolverState:
     faults: int = 0
     bytes_moved: int = 0
 
-    def after_write(self, write_bytes: int = 0) -> "SolverState":
+    def after_write(self, write_bytes: int = 0) -> SolverState:
         if self.kv_written:
             raise RuntimeError("WRITE is legal only once")
         return replace(self, kv_written=True, bytes_moved=self.bytes_moved + int(write_bytes))
 
-    def after_fault(self, slice_id: Hashable, fault_bytes: int = 0) -> "SolverState":
+    def after_fault(self, slice_id: Hashable, fault_bytes: int = 0) -> SolverState:
         return replace(
             self,
             resident=self.resident | frozenset((slice_id,)),
@@ -40,7 +40,12 @@ class SolverState:
             bytes_moved=self.bytes_moved + int(fault_bytes),
         )
 
-    def after_spin(self, hidden: Tensor, log_probs: Tensor | None, spin_bytes: int = 0) -> "SolverState":
+    def after_spin(
+        self,
+        hidden: Tensor,
+        log_probs: Tensor | None,
+        spin_bytes: int = 0,
+    ) -> SolverState:
         return replace(
             self,
             hidden=hidden,
@@ -75,11 +80,17 @@ def coalesce_faults(slice_ids: Tensor, active: Tensor | None = None) -> dict[int
 
     plan: dict[int, Tensor] = {}
     for sid in torch.unique(slice_ids[active]).tolist():
-        plan[int(sid)] = torch.nonzero(active & (slice_ids == int(sid)), as_tuple=False).flatten()
+        plan[int(sid)] = torch.nonzero(
+            active & (slice_ids == int(sid)),
+            as_tuple=False,
+        ).flatten()
     return plan
 
 
-def unique_fault_bytes(requested_slices: Iterable[Hashable], slice_bytes: dict[Hashable, int]) -> int:
+def unique_fault_bytes(
+    requested_slices: Iterable[Hashable],
+    slice_bytes: dict[Hashable, int],
+) -> int:
     return sum(int(slice_bytes[s]) for s in set(requested_slices))
 
 
@@ -134,7 +145,13 @@ class KLFaultPolicy:
             raise ValueError("threshold must be non-negative")
         self.threshold = float(threshold)
 
-    def fault_mask(self, pass_idx: int, previous_kl: Tensor | float | None, *, like: Tensor | None = None) -> Tensor:
+    def fault_mask(
+        self,
+        pass_idx: int,
+        previous_kl: Tensor | float | None,
+        *,
+        like: Tensor | None = None,
+    ) -> Tensor:
         if pass_idx == 0 or previous_kl is None:
             return torch.tensor(True) if like is None else torch.ones_like(like, dtype=torch.bool)
         return torch.as_tensor(previous_kl) > self.threshold
