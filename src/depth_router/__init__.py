@@ -15,6 +15,11 @@ from .causal_memory import (
     working_set_pages,
 )
 from .config import DepthRouterConfig
+from .economics import (
+    address_information_yield,
+    memory_arbitrage_ratio,
+    working_set_from_smooth_address_entropy,
+)
 from .conformal_memory import (
     anytime_bonferroni_thresholds,
     aps_calibration_threshold,
@@ -56,6 +61,7 @@ __all__ = [
     "SolverState",
     "StackedTransformerBaseline",
     "SwitchableColdMLP",
+    "address_information_yield",
     "anytime_bonferroni_thresholds",
     "aps_calibration_threshold",
     "aps_prediction_mask",
@@ -68,6 +74,7 @@ __all__ = [
     "kl_nats",
     "linear2_page_contributions",
     "mean_set_size",
+    "memory_arbitrage_ratio",
     "nested_anytime_masks",
     "page_bytes_tensor",
     "page_masses",
@@ -83,5 +90,6 @@ __all__ = [
     "smooth_address_entropy_nats",
     "unique_fault_bytes",
     "value_per_byte",
+    "working_set_from_smooth_address_entropy",
     "working_set_pages",
 ]
