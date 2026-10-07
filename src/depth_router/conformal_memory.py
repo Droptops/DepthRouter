@@ -158,8 +158,9 @@ def distortion_prefix_calibration_threshold(
     the top-k pages under probabilities[n]. Column 0 is the zero-page
     candidate; the final column must meet tolerance.
 
-    The nonconformity score is the cumulative predicted mass at the first prefix
-    that meets the distortion target. Split-conformal calibration then chooses
+    Because distortion can be non-monotone as pages are added, the
+    nonconformity score uses one plus the last violating prefix, expressed as
+    cumulative predicted mass. Split-conformal calibration then chooses
     a global mass threshold whose selected prefix meets the target with marginal
     probability at least 1 - alpha under exchangeability.
     """
@@ -177,20 +178,34 @@ def distortion_prefix_calibration_threshold(
     if bool((prefix_distortions[:, -1] > tolerance).any()):
         raise ValueError("the full-page prefix must meet the distortion tolerance")
 
-    meets = prefix_distortions <= tolerance
-    first_k = meets.to(torch.int64).argmax(dim=-1)
+    # Distortion need not be monotone as pages are added: two pages can
+    # cancel, and adding one of them alone can move logits away from dense.
+    # Therefore "first prefix that passes" is not a valid monotone conformal
+    # score. Use one plus the *last violating prefix*. Any longer prefix is then
+    # safe by construction on the calibration example.
+    violating = prefix_distortions > tolerance
+    indices = torch.arange(
+        prefix_distortions.shape[1],
+        device=p.device,
+    )[None, :]
+    last_bad = torch.where(
+        violating,
+        indices,
+        torch.full_like(indices, -1),
+    ).max(dim=-1).values
+    required_k = last_bad + 1
 
     order = torch.argsort(p, dim=-1, descending=True)
     sorted_p = torch.gather(p, 1, order)
     cumulative = sorted_p.cumsum(dim=-1)
 
     scores = torch.zeros(p.shape[0], dtype=p.dtype, device=p.device)
-    positive = first_k > 0
+    positive = required_k > 0
     if bool(positive.any()):
         rows = torch.arange(p.shape[0], device=p.device)[positive]
         scores[positive] = cumulative[
             rows,
-            first_k[positive] - 1,
+            required_k[positive] - 1,
         ]
 
     n = int(scores.numel())
