@@ -323,6 +323,72 @@ def paged_swiglu_reference(
         selected_payload_bytes=selected_payload,
     )
 
+
+@torch.no_grad()
+def greedy_pages_for_relative_output_error(
+    intermediate: Tensor,
+    down_proj: nn.Linear,
+    pages: list[SwiGLUPage],
+    *,
+    relative_error: float,
+) -> Tensor:
+    """Greedy page count needed to reproduce the dense MLP contribution.
+
+    The metric operates on the additive down-projection contribution before any
+    residual connection. At each step it chooses the page that most reduces the
+    remaining squared output error for that row.
+    """
+
+    if not 0 <= relative_error < 1:
+        raise ValueError("relative_error must be in [0, 1)")
+    if intermediate.ndim != 2:
+        raise ValueError("intermediate must have shape [rows, neurons]")
+
+    contributions = swiglu_page_contributions(
+        intermediate,
+        down_proj,
+        pages,
+    ).float()
+    full = contributions.sum(dim=1)
+    residual = full.clone()
+    denominator = full.pow(2).sum(dim=-1).clamp_min(1e-20)
+    target = float(relative_error) ** 2
+
+    selected = torch.zeros(
+        contributions.shape[:2],
+        dtype=torch.bool,
+        device=contributions.device,
+    )
+    counts = torch.zeros(
+        contributions.shape[0],
+        dtype=torch.long,
+        device=contributions.device,
+    )
+    done = residual.pow(2).sum(dim=-1) / denominator <= target
+    rows = torch.arange(contributions.shape[0], device=contributions.device)
+
+    for _ in range(contributions.shape[1]):
+        active = ~done
+        if not bool(active.any()):
+            break
+
+        candidate_residual = residual[:, None, :] - contributions
+        candidate_error = candidate_residual.pow(2).sum(dim=-1)
+        candidate_error = candidate_error.masked_fill(selected, float("inf"))
+        best = candidate_error.argmin(dim=-1)
+
+        selected[rows[active], best[active]] = True
+        residual[active] = (
+            residual[active]
+            - contributions[rows[active], best[active]]
+        )
+        counts = counts + active.long()
+        done = residual.pow(2).sum(dim=-1) / denominator <= target
+
+    if not bool(done.all()):
+        raise RuntimeError("full page set failed to reconstruct dense output")
+    return counts
+
 def page_importance(
     intermediate: Tensor,
     down_proj: nn.Linear,
