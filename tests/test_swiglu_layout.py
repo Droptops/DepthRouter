@@ -6,6 +6,7 @@ from depth_router.swiglu_layout import (
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
     page_importance,
+    paged_swiglu_reference,
     pages_for_mass,
     permute_swiglu_neurons_,
     swiglu_intermediate,
@@ -127,3 +128,56 @@ def test_simhash_codemand_permutation_is_valid_and_deterministic() -> None:
 
     assert torch.equal(first, second)
     assert torch.equal(torch.sort(first).values, torch.arange(12))
+
+
+def test_paged_swiglu_full_mask_matches_dense_and_coalesces_page_loads() -> None:
+    torch.manual_seed(5)
+    gate, up, down = make_layers()
+    hidden = torch.randn(9, 6)
+    pages = contiguous_swiglu_pages(gate, up, down, units_per_page=4)
+    mask = torch.ones(9, len(pages), dtype=torch.bool)
+
+    got, stats = paged_swiglu_reference(
+        hidden,
+        gate,
+        up,
+        down,
+        pages,
+        mask,
+    )
+    expected = swiglu_output(hidden, gate, up, down)
+
+    assert torch.allclose(got, expected, atol=1e-6)
+    assert stats.requested_page_uses == 9 * len(pages)
+    assert stats.unique_pages_loaded == len(pages)
+    assert stats.selected_payload_bytes == sum(page.payload_bytes for page in pages)
+
+
+def test_paged_swiglu_partial_mask_groups_tokens_by_page() -> None:
+    torch.manual_seed(6)
+    gate, up, down = make_layers()
+    hidden = torch.randn(6, 6)
+    pages = contiguous_swiglu_pages(gate, up, down, units_per_page=6)
+    mask = torch.tensor(
+        [
+            [True, False],
+            [True, False],
+            [True, False],
+            [False, True],
+            [False, True],
+            [False, True],
+        ]
+    )
+
+    _, stats = paged_swiglu_reference(
+        hidden,
+        gate,
+        up,
+        down,
+        pages,
+        mask,
+    )
+
+    assert stats.requested_page_uses == 6
+    assert stats.unique_pages_loaded == 2
+    assert stats.selected_payload_bytes == sum(page.payload_bytes for page in pages)
