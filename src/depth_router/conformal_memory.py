@@ -78,9 +78,6 @@ def required_set_calibration_threshold(
     if required_mask.shape != p.shape:
         raise ValueError("required_mask must match probabilities")
     required = required_mask.to(dtype=torch.bool, device=p.device)
-    if bool((required.sum(dim=-1) == 0).any()):
-        raise ValueError("each example must require at least one page")
-
     order = torch.argsort(p, dim=-1, descending=True)
     sorted_p = torch.gather(p, 1, order)
     sorted_required = torch.gather(required, 1, order)
@@ -124,11 +121,13 @@ def aps_prediction_mask(
 ) -> Tensor:
     """Return the smallest top-probability set reaching the APS threshold."""
 
-    if threshold <= 0:
-        raise ValueError("threshold must be positive")
+    if threshold < 0:
+        raise ValueError("threshold must be non-negative")
 
     p = _normalize(probabilities)
     threshold = min(float(threshold), 1.0)
+    if threshold == 0:
+        return torch.zeros_like(p, dtype=torch.bool)
 
     order = torch.argsort(p, dim=-1, descending=True)
     sorted_p = torch.gather(p, 1, order)
