@@ -290,7 +290,7 @@ def main() -> None:
     except ImportError as exc:
         raise SystemExit('Install with: pip install -e ".[hf]"') from exc
 
-    if any(bits not in (1, 2, 4) for bits in args.address_bits):
+    if any(bits not in (1, 2, 3, 4) for bits in args.address_bits):
         raise ValueError("address bits must be in {1, 2, 3, 4}")
 
     device = resolve_device(args.device)
