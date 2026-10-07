@@ -107,11 +107,26 @@ def metrics(reference: Tensor, candidate: Tensor) -> dict[str, float]:
     }
 
 
-def binary_row_sketch(weight: Tensor) -> tuple[Tensor, Tensor]:
+def quantized_row_sketch(
+    weight: Tensor,
+    *,
+    bits: int,
+) -> tuple[Tensor, Tensor]:
+    """Return dequantized integer codes plus one fp16 scale per row."""
+
+    if bits not in (1, 2, 4):
+        raise ValueError("bits must be one of {1, 2, 4}")
+
     w = weight.detach().float()
-    scale = w.abs().mean(dim=1)
-    sign = torch.where(w >= 0, torch.ones_like(w), -torch.ones_like(w))
-    return sign, scale
+    if bits == 1:
+        scale = w.abs().mean(dim=1).clamp_min(1e-12)
+        code = torch.where(w >= 0, torch.ones_like(w), -torch.ones_like(w))
+        return code, scale
+
+    qmax = (1 << (bits - 1)) - 1
+    scale = (w.abs().amax(dim=1) / qmax).clamp_min(1e-12)
+    code = torch.round(w / scale[:, None]).clamp(-qmax, qmax)
+    return code, scale
 
 
 def act_fn(mlp: nn.Module) -> Callable[[Tensor], Tensor]:
@@ -125,17 +140,23 @@ def address_scores(
     hidden: Tensor,
     mlp: nn.Module,
     *,
-    binary: bool,
+    address_bits: int | None,
 ) -> tuple[Tensor, Tensor]:
     gate = mlp.gate_proj
     up = mlp.up_proj
     down = mlp.down_proj
 
-    if binary:
-        gate_sign, gate_scale = binary_row_sketch(gate.weight)
-        up_sign, up_scale = binary_row_sketch(up.weight)
-        gate_hat = torch.matmul(hidden.float(), gate_sign.T.to(hidden.device))
-        up_hat = torch.matmul(hidden.float(), up_sign.T.to(hidden.device))
+    if address_bits is not None:
+        gate_code, gate_scale = quantized_row_sketch(
+            gate.weight,
+            bits=address_bits,
+        )
+        up_code, up_scale = quantized_row_sketch(
+            up.weight,
+            bits=address_bits,
+        )
+        gate_hat = torch.matmul(hidden.float(), gate_code.T.to(hidden.device))
+        up_hat = torch.matmul(hidden.float(), up_code.T.to(hidden.device))
         gate_hat = gate_hat * gate_scale.to(hidden.device)
         up_hat = up_hat * up_scale.to(hidden.device)
         activation = act_fn(mlp)(gate_hat) * up_hat
@@ -200,7 +221,7 @@ def install_sparse_last_token_hook(
     mlp: nn.Module,
     *,
     fraction: float,
-    binary_address: bool,
+    address_bits: int | None,
     overlap_sink: list[float],
 ):
     width = mlp.down_proj.in_features
@@ -215,7 +236,7 @@ def install_sparse_last_token_hook(
         predicted_score, _ = address_scores(
             hidden,
             mlp,
-            binary=binary_address,
+            address_bits=address_bits,
         )
         selected = torch.topk(
             predicted_score,
@@ -224,8 +245,8 @@ def install_sparse_last_token_hook(
             sorted=False,
         ).indices
 
-        if binary_address:
-            true_score, _ = address_scores(hidden, mlp, binary=False)
+        if address_bits is not None:
+            true_score, _ = address_scores(hidden, mlp, address_bits=None)
             true_selected = torch.topk(
                 true_score,
                 k=k,
@@ -247,7 +268,12 @@ def install_sparse_last_token_hook(
     return mlp.register_forward_hook(hook)
 
 
-def analytic_bytes(mlp: nn.Module, fraction: float) -> dict[str, float]:
+def analytic_bytes(
+    mlp: nn.Module,
+    fraction: float,
+    *,
+    address_bits: int,
+) -> dict[str, float]:
     gate = mlp.gate_proj
     up = mlp.up_proj
     down = mlp.down_proj
@@ -263,9 +289,11 @@ def analytic_bytes(mlp: nn.Module, fraction: float) -> dict[str, float]:
     )
     cold_bytes = full_parameters * 2
 
-    # One bit per gate/up weight plus fp16 row scales and down-column norms.
-    address_bits = gate.weight.numel() + up.weight.numel()
-    address_bytes = (address_bits + 7) // 8
+    # Quantized gate/up address weights plus fp16 row scales and down-column norms.
+    packed_bits = address_bits * (
+        gate.weight.numel() + up.weight.numel()
+    )
+    address_bytes = (packed_bits + 7) // 8
     address_bytes += width * 3 * 2
 
     selected_parameters = selected * hidden * 3
@@ -302,6 +330,12 @@ def main() -> None:
         "--dtype",
         choices=["float32", "float16", "bfloat16"],
         default="bfloat16",
+    )
+    parser.add_argument(
+        "--address-bits",
+        nargs="+",
+        type=int,
+        default=[1, 2, 4],
     )
     parser.add_argument("--json-out")
     args = parser.parse_args()
@@ -344,13 +378,18 @@ def main() -> None:
 
     baseline = last_logits(model, encoded)
     rows = []
+    if any(bits not in (1, 2, 4) for bits in args.address_bits):
+        raise ValueError("--address-bits values must be in {1, 2, 4}")
+
     for fraction in args.fractions:
-        for address_mode in ("true", "binary1"):
+        modes: list[int | None] = [None, *args.address_bits]
+        for address_bits in modes:
+            address_mode = "true" if address_bits is None else f"int{address_bits}"
             overlap: list[float] = []
             handle = install_sparse_last_token_hook(
                 mlp,
                 fraction=fraction,
-                binary_address=address_mode == "binary1",
+                address_bits=address_bits,
                 overlap_sink=overlap,
             )
             try:
@@ -366,7 +405,41 @@ def main() -> None:
                     "mean_topk_overlap_with_true": (
                         sum(overlap) / len(overlap) if overlap else 1.0
                     ),
-                    **analytic_bytes(mlp, fraction),
+                    **analytic_bytes(
+                        mlp,
+                        fraction,
+                        address_bits=address_bits or 0,
+                    ) if address_bits is not None else {
+                        "selected_neurons": max(
+                            1,
+                            min(
+                                mlp.down_proj.in_features,
+                                round(mlp.down_proj.in_features * fraction),
+                            ),
+                        ),
+                        "cold_mlp_bytes_fp16": analytic_bytes(
+                            mlp,
+                            fraction,
+                            address_bits=1,
+                        )["cold_mlp_bytes_fp16"],
+                        "address_metadata_bytes": 0,
+                        "address_metadata_fraction": 0.0,
+                        "selected_payload_bytes_fp16": analytic_bytes(
+                            mlp,
+                            fraction,
+                            address_bits=1,
+                        )["selected_payload_bytes_fp16"],
+                        "selected_payload_fraction": analytic_bytes(
+                            mlp,
+                            fraction,
+                            address_bits=1,
+                        )["selected_payload_fraction"],
+                        "address_plus_selected_fraction": analytic_bytes(
+                            mlp,
+                            fraction,
+                            address_bits=1,
+                        )["selected_payload_fraction"],
+                    },
                     **metrics(baseline, candidate),
                 }
             )
@@ -376,7 +449,7 @@ def main() -> None:
         "model": args.model,
         "rows": rows,
         "claim_boundary": (
-            "The 1-bit address is evaluated from resident-style sign sketches, "
+            "Low-bit addresses are evaluated from resident-style row-quantized gate/up sketches, "
             "then selected neurons use exact payload weights. PyTorch still "
             "executes the dense MLP before the diagnostic hook, so byte savings "
             "are analytic until a fused page-selective kernel is profiled."
