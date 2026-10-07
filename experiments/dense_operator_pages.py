@@ -1150,22 +1150,31 @@ def calibrate_fault_budget(
     tolerance_nats: float,
     alpha: float,
 ) -> int:
-    """Split-conformal global fault budget for a fixed conditional chooser."""
+    """Split-conformal safe-tail fault budget for a fixed conditional chooser."""
 
     if calibration_prefix_distortions.ndim != 2:
         raise ValueError("prefix distortions must have shape [examples, steps]")
     if not 0 < alpha < 1:
         raise ValueError("alpha must be in (0, 1)")
 
-    meets = calibration_prefix_distortions <= tolerance_nats
-    if bool((~meets[:, -1]).any()):
+    violating = calibration_prefix_distortions > tolerance_nats
+    if bool(violating[:, -1].any()):
         raise ValueError("full fault budget must meet the distortion target")
-    first = meets.to(torch.int64).argmax(dim=-1)
 
-    n = int(first.numel())
+    indices = torch.arange(
+        calibration_prefix_distortions.shape[1],
+    )[None, :]
+    last_bad = torch.where(
+        violating,
+        indices,
+        torch.full_like(indices, -1),
+    ).max(dim=-1).values
+    safe_tail_budget = last_bad + 1
+
+    n = int(safe_tail_budget.numel())
     rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
     rank = max(rank, 1)
-    return int(torch.kthvalue(first, rank).values.item())
+    return int(torch.kthvalue(safe_tail_budget, rank).values.item())
 
 
 @torch.no_grad()
