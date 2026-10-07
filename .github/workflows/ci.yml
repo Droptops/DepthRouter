@@ -50,3 +50,36 @@ jobs:
           --model-batch-size 100
           --oracle-kl 0.001
           --summary-only
+
+
+  real-model-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Compile a real pretrained SwiGLU block
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_swiglu_compile.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-trace-tokens 512
+          --units-per-page 128
+          --mass-target 0.95
+          --compiler simhash
+          --simhash-bits 16
+          --json-out real_model_gate.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: real-model-gate
+          path: real_model_gate.json
