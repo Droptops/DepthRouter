@@ -23,6 +23,8 @@ from .conformal_memory import (
     empirical_coverage,
     mean_set_size,
     nested_anytime_masks,
+    required_set_calibration_threshold,
+    required_set_coverage,
 )
 from .model import DepthRouterModel, ForwardStats, StackedTransformerBaseline
 from .solver import (
@@ -63,6 +65,8 @@ __all__ = [
     "predictive_working_set_bytes",
     "random_layout",
     "requested_pages",
+    "required_set_calibration_threshold",
+    "required_set_coverage",
     "sequential_layout",
     "smooth_address_entropy_nats",
     "unique_fault_bytes",
