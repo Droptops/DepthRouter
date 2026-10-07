@@ -5,11 +5,14 @@ from depth_router.conformal_memory import (
     aps_calibration_threshold,
     aps_prediction_mask,
     bytes_for_mask,
+    calibrate_required_set_tiers,
     empirical_coverage,
+    exclusive_residency_masks,
     mean_set_size,
     nested_anytime_masks,
     required_set_calibration_threshold,
     required_set_coverage,
+    residency_tier_masks,
 )
 
 
@@ -131,3 +134,39 @@ def test_required_set_calibration_supports_zero_fault_targets() -> None:
     assert threshold == 0.0
     assert prediction.tolist() == [[False, False]]
     assert required_set_coverage(prediction, required) == 1.0
+
+
+def test_risk_coded_memory_tiers_are_nested() -> None:
+    calibration = torch.tensor(
+        [
+            [0.70, 0.20, 0.08, 0.02],
+            [0.55, 0.25, 0.15, 0.05],
+            [0.45, 0.30, 0.20, 0.05],
+            [0.60, 0.20, 0.15, 0.05],
+            [0.35, 0.30, 0.25, 0.10],
+            [0.50, 0.25, 0.20, 0.05],
+        ]
+    )
+    required = torch.tensor(
+        [
+            [True, False, False, False],
+            [True, True, False, False],
+            [True, False, True, False],
+            [True, False, False, False],
+            [True, True, True, False],
+            [True, False, True, False],
+        ]
+    )
+
+    tiers = calibrate_required_set_tiers(
+        calibration,
+        required,
+        alphas=[0.30, 0.10, 0.01],
+    )
+    masks = residency_tier_masks(calibration, tiers)
+    exclusive = exclusive_residency_masks(masks)
+
+    assert tiers[0][1] <= tiers[1][1] <= tiers[2][1]
+    assert torch.all(masks[0] <= masks[1])
+    assert torch.all(masks[1] <= masks[2])
+    assert torch.equal(exclusive[0] | exclusive[1] | exclusive[2], masks[2])
