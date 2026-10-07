@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 from __future__ import annotations
 
 import argparse
@@ -47,7 +48,7 @@ def resolve_mlp(layer: nn.Module) -> nn.Module:
         raise ValueError("layer has no .mlp")
     for name in ("gate_proj", "up_proj", "down_proj"):
         if not isinstance(getattr(mlp, name, None), nn.Linear):
-            raise ValueError("layer is not a gate/up/down SwiGLU block")
+            raise TypeError("layer is not a gate/up/down SwiGLU block")
     return mlp
 
 
