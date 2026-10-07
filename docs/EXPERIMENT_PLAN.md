@@ -1,108 +1,123 @@
 # Experiment plan
 
-DepthRouter should earn its claims empirically. The first harness is intentionally
-small and separates architectural questions from hardware claims.
+DepthRouter should be falsified with a hardware measurement before adding more
+architecture.
 
-## Hypotheses
+The current target is not "does looping work?" It is:
 
-### H1: parameter efficiency
+> Does explicit cache-aware scheduling improve predictive gain per byte moved?
 
-At equal width and nominal depth, a shared recurrent transformer should use
-substantially fewer parameters than an unshared stack.
+## State under test
 
-This is a bookkeeping claim and should hold by construction.
+The solver state is
 
-### H2: iterative-task quality
+```text
+s_k = (h_k, c_k, p_k)
+```
 
-On tasks that naturally require serial state updates, recurrent depth should
-recover useful accuracy as the number of passes increases.
+with actions
 
-The first task is random pointer chasing: given a functional graph, a start node,
-and a hop count, predict the node reached after K hops.
+```text
+spin | fault(j) | write | halt
+```
 
-### H3: low-rank depth specialization
+The cache state `c_k` includes residency and one-shot KV-write status.
 
-Pass-specific low-rank residual adapters should recover some of the expressive
-capacity lost by exact weight sharing while remaining much smaller than cloning
-the full block.
+## One-box experiment
 
-### H4: adaptive depth
+Use one pinned mid-stack block from one small model. Hold model weights, token
+stream, batch shape, decode length, seeds, and evaluation examples constant.
 
-A halting rule should reduce average logical sample-passes at a controlled
-quality loss.
+Run four schedules:
 
-The v0 router uses normalized hidden-state residual:
+1. **stock**: ordinary forward;
+2. **naive-k4**: the selected block is recurrent for four passes;
+3. **kv-once-k4**: four passes, but KV is written once and later passes are read-only;
+4. **gated-cold-k4**: schedule 3, with a cold MLP slice skipped unless the previous
+   spin's logit movement exceeds a fixed threshold.
 
-    rho_k = RMS(h_(k+1) - h_k) / max(RMS(h_k), eps)
+Do not train another router or add another adapter before this experiment.
 
-and halts when rho_k is at or below the configured threshold.
+## Measurements
 
-This is a baseline heuristic, not a claim that hidden-state convergence is the
-optimal halting signal.
+For every schedule record:
 
-## Required comparisons
+- cross-entropy in nats/token;
+- HBM / memory-controller bytes read and written;
+- L2 hit rate;
+- total bytes moved;
+- decode latency;
+- token count and exact schedule parameters.
 
-Run at least these arms:
+Profiler-derived bytes are authoritative. Analytic parameter-size estimates are
+diagnostic only.
 
-1. independent stacked blocks, fixed depth
-2. one shared block, fixed recurrence
-3. one shared block plus pass-specific low-rank adapters
-4. shared variants with adaptive halting enabled at evaluation
+## Primary metric
 
-Two fairness regimes matter:
+Let pass 1 be the common reference point. For schedule `sigma`:
 
-- iso-width / iso-evaluation-count: exposes the parameter-memory advantage
-  of sharing.
-- iso-parameter: widen the shared model until parameter counts are similar,
-  then compare quality and throughput.
+```text
+eta_sigma =
+    (CE_after_pass1 - CE_sigma)
+    / max(B_sigma - B_after_pass1, epsilon)
+```
 
-Do not collapse these into one comparison.
+Units: nats / byte.
 
-## Metrics
+Report the distribution across examples as well as the aggregate value.
 
-Record:
+The cache-aware residency thesis passes the first gate only if
+`gated-cold-k4` produces a strictly better quality-per-byte frontier than
+`kv-once-k4` after including the gate's own memory traffic.
 
-- task accuracy
-- total parameters
-- parameter storage bytes
-- mean logical sample-passes
-- physical dense block evaluations
-- examples/second
-- peak accelerator memory
-- wall-clock latency percentiles
+If not, stop and record the falsification.
 
-Later hardware work should add profiler-derived:
+## State-sufficiency check
 
-- HBM bytes read/written
-- L2 hit rate
-- achieved FLOP/s
-- arithmetic intensity
+The measured transition costs should compose.
 
-Analytic traffic bounds in the Python package are estimates only. They are not
-evidence of actual residency.
+For any recorded execution trajectory `gamma`, compute:
+
+```text
+A(gamma) = B_hw(gamma) - sum_k b(s_k, a_k)
+```
+
+where `B_hw` is profiler-measured traffic and `b(s_k, a_k)` is the local
+transition-cost model.
+
+A systematic non-zero `A` means `c_k` is incomplete. Add only the missing
+hardware state required to explain the discrepancy, then rerun the same
+experiment.
+
+This is the only "anomaly" concept used by the project: a failure of local
+accounting to reproduce a global measured quantity. It is a mathematical
+consistency test, not a claim that the model is a physical TQFT.
+
+## Batch scheduling requirement
+
+When multiple tokens predict the same `fault(j)`, batch them so the slice is
+transferred once and reused.
+
+Report both:
+
+- per-token requested faults;
+- unique/coalesced cold transfers.
+
+The second number is the systems target.
+
+## Decision rule
+
+**Pass:** schedule 4 improves nats/byte over schedule 3 by a repeatable margin,
+while the accounting residual is within profiler noise.
+
+**Fail:** schedule 4 does not improve the frontier after gate traffic, or the
+claimed byte savings disappear in profiler counters.
+
+Only after a pass should the next experiment train the policy over
+`{spin, fault(j), write, halt}`.
 
 ## Claim boundary
 
-The current adaptive router masks halted examples semantically, but it does not
-compact the active batch. Therefore lower logical sample-passes do not yet imply
-proportional wall-clock or energy savings.
-
-A later sparse/compacted execution path is required before making that claim.
-
-## Promotion gates
-
-Before calling the idea promising:
-
-- recurrent fixed-depth accuracy must show a repeatable advantage on at least
-  one explicitly iterative task under an appropriate budget comparison;
-- adaptive routing must produce a Pareto point: fewer logical passes for a
-  bounded, predeclared accuracy loss;
-- results must repeat across at least 5 seeds;
-- hardware residency claims require profiler evidence on a named device.
-
-Before calling it a systems win:
-
-- active-batch compaction or an equivalent sparse execution mechanism must show
-  measured latency/throughput improvement;
-- memory-traffic improvements must appear in profiler counters, not only in the
-  analytic model.
+A pass establishes only a model-and-hardware-specific result. It does not prove
+that recurrence is universally bandwidth-efficient or that the same placement
+policy transfers to a different memory hierarchy.
