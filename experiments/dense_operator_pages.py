@@ -16,8 +16,10 @@ from depth_router.conformal_memory import (
 )
 from depth_router.operator_pages import (
     OperatorPage,
+    activation_address_scores,
     contiguous_mlp_pages,
     linear2_page_contributions,
+    page_output_weight_norms,
 )
 from depth_router.toy import PointerChaseSpec, pointer_chase_batch
 
@@ -25,6 +27,7 @@ from depth_router.toy import PointerChaseSpec, pointer_chase_batch
 @dataclass
 class TraceBatch:
     features_by_spin: list[Tensor]
+    activations_by_spin: list[Tensor]
     required_pages: Tensor
     base_without_linear2: Tensor
     page_contributions: Tensor
@@ -35,7 +38,7 @@ class TraceBatch:
 def capture_forward(
     model: DepthRouterModel,
     input_ids: Tensor,
-) -> tuple[Tensor, list[Tensor], Tensor, Tensor]:
+) -> tuple[Tensor, list[Tensor], Tensor, list[Tensor]]:
     block_inputs: list[Tensor] = []
     block_outputs: list[Tensor] = []
     ff_activations: list[Tensor] = []
@@ -77,9 +80,9 @@ def capture_forward(
         raise RuntimeError("did not capture every recurrent spin")
 
     features = [hidden[:, -1] for hidden in block_inputs]
+    activations = [activation[:, -1] for activation in ff_activations]
     base = block_outputs[-1][:, -1] - linear2_outputs[-1][:, -1]
-    activation = ff_activations[-1][:, -1]
-    return logits, features, base, activation
+    return logits, features, base, activations
 
 
 def classify_hidden(model: DepthRouterModel, hidden: Tensor) -> Tensor:
@@ -223,6 +226,9 @@ def collect_dataset(
     features: list[list[Tensor]] = [
         [] for _ in range(model.config.max_steps)
     ]
+    activations: list[list[Tensor]] = [
+        [] for _ in range(model.config.max_steps)
+    ]
     required: list[Tensor] = []
     bases: list[Tensor] = []
     contributions: list[Tensor] = []
@@ -234,12 +240,12 @@ def collect_dataset(
     while remaining > 0:
         current = min(batch_size, remaining)
         input_ids, targets, _ = pointer_chase_batch(current, spec)
-        logits, spin_features, base, activation = capture_forward(
+        logits, spin_features, base, spin_activations = capture_forward(
             model,
             input_ids,
         )
         page_contrib = linear2_page_contributions(
-            activation,
+            spin_activations[-1],
             model.shared_block.linear2,
             pages,
         )
@@ -254,6 +260,8 @@ def collect_dataset(
 
         for idx, values in enumerate(spin_features):
             features[idx].append(values.cpu())
+        for idx, values in enumerate(spin_activations):
+            activations[idx].append(values.cpu())
         required.append(required_mask.cpu())
         bases.append(base.cpu())
         contributions.append(page_contrib.cpu())
@@ -263,6 +271,7 @@ def collect_dataset(
 
     return TraceBatch(
         features_by_spin=[torch.cat(rows) for rows in features],
+        activations_by_spin=[torch.cat(rows) for rows in activations],
         required_pages=torch.cat(required),
         base_without_linear2=torch.cat(bases),
         page_contributions=torch.cat(contributions),
@@ -353,36 +362,33 @@ def evaluate(
 ) -> dict:
     page_bytes = torch.tensor([page.weight_bytes for page in pages])
     dense_bytes = int(page_bytes.sum().item())
+    output_norms = page_output_weight_norms(
+        model.shared_block.linear2,
+        pages,
+    ).cpu()
     rows = []
 
-    for spin in range(model.config.max_steps):
-        router = train_page_router(
-            train.features_by_spin[spin],
-            train.required_pages,
-            steps=router_steps,
-            lr=router_lr,
-            seed=seed + spin,
-        )
-        calibration_scores = router_scores(
-            router,
-            calibration.features_by_spin[spin],
-        )
+    def evaluate_scores(
+        *,
+        method: str,
+        spin: int,
+        calibration_scores: Tensor,
+        test_scores: Tensor,
+    ) -> None:
         threshold = required_set_calibration_threshold(
             calibration_scores,
             calibration.required_pages,
             alpha=alpha,
         )
-
-        test_scores = router_scores(router, test.features_by_spin[spin])
         mask = aps_prediction_mask(test_scores, threshold)
         coverage = required_set_coverage(mask, test.required_pages)
         resident_bytes = (
             mask.to(torch.long) * page_bytes[None, :]
         ).sum(dim=-1)
-
         quality = sparse_quality(model, test, mask)
         rows.append(
             {
+                "method": method,
                 "spin": spin + 1,
                 "conformal_threshold": threshold,
                 "required_set_coverage": coverage,
@@ -398,6 +404,42 @@ def evaluate(
                 ),
                 **quality,
             }
+        )
+
+    for spin in range(model.config.max_steps):
+        router = train_page_router(
+            train.features_by_spin[spin],
+            train.required_pages,
+            steps=router_steps,
+            lr=router_lr,
+            seed=seed + spin,
+        )
+        evaluate_scores(
+            method="learned_router",
+            spin=spin,
+            calibration_scores=router_scores(
+                router,
+                calibration.features_by_spin[spin],
+            ),
+            test_scores=router_scores(
+                router,
+                test.features_by_spin[spin],
+            ),
+        )
+
+        evaluate_scores(
+            method="intrinsic_address",
+            spin=spin,
+            calibration_scores=activation_address_scores(
+                calibration.activations_by_spin[spin],
+                pages,
+                output_norms,
+            ),
+            test_scores=activation_address_scores(
+                test.activations_by_spin[spin],
+                pages,
+                output_norms,
+            ),
         )
 
     oracle_pages = train.required_pages.sum(dim=-1).float()
