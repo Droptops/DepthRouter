@@ -11,6 +11,7 @@ from .causal_memory import (
     random_layout,
     requested_pages,
     sequential_layout,
+    smooth_address_entropy_nats,
     working_set_pages,
 )
 from .conformal_memory import (
@@ -63,6 +64,7 @@ __all__ = [
     "random_layout",
     "requested_pages",
     "sequential_layout",
+    "smooth_address_entropy_nats",
     "unique_fault_bytes",
     "value_per_byte",
     "working_set_pages",
