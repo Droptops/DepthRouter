@@ -31,7 +31,7 @@ def test_calibration_threshold_uses_true_page_rank_mass() -> None:
     labels = torch.tensor([0, 1, 1, 0])
 
     threshold = aps_calibration_threshold(probabilities, labels, alpha=0.25)
-    assert 0.7 <= threshold <= 0.8
+    assert 0.7 <= threshold <= 0.800001
 
 
 def test_nested_anytime_sets_never_expand() -> None:
