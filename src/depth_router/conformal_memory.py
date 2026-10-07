@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from itertools import pairwise
 
 import torch
 from torch import Tensor
@@ -233,7 +234,7 @@ def calibrate_required_set_tiers(
         raise ValueError("at least one alpha is required")
     if any(not 0 < alpha < 1 for alpha in alphas):
         raise ValueError("alphas must be in (0, 1)")
-    if any(left <= right for left, right in zip(alphas, alphas[1:], strict=False)):
+    if any(left <= right for left, right in pairwise(alphas)):
         raise ValueError("alphas must strictly decrease across slower tiers")
 
     calibrated = [
@@ -271,7 +272,7 @@ def residency_tier_masks(
         aps_prediction_mask(probabilities, threshold)
         for _alpha, threshold in calibrations
     ]
-    for fast, slow in zip(masks, masks[1:], strict=False):
+    for fast, slow in pairwise(masks):
         if bool((fast & ~slow).any()):
             raise RuntimeError("residency tiers are not nested")
     return masks
