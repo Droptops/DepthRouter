@@ -10,6 +10,10 @@ import torch
 from torch import Tensor, nn
 
 from depth_router import DepthRouterConfig, DepthRouterModel
+from depth_router.causal_memory import (
+    greedy_affinity_layout,
+    posterior_affinity,
+)
 from depth_router.conformal_memory import (
     aps_prediction_mask,
     distortion_coverage,
@@ -1474,6 +1478,142 @@ def rollout_fault_policy(
     }
 
 
+def learn_codemand_neuron_order(
+    model: DepthRouterModel,
+    train: TraceBatch,
+    *,
+    units_per_page: int,
+) -> Tensor:
+    """Function-preserving physical order learned from neuron co-demand.
+
+    Intermediate MLP neurons can be permuted if the corresponding W1 rows and
+    W2 columns are permuted together. We learn only the permutation here; the
+    full model function is unchanged.
+    """
+
+    activation = train.activations_by_spin[-1].float()
+    column_norm = model.shared_block.linear2.weight.detach().float().norm(dim=0).cpu()
+    importance = activation.abs() * column_norm[None, :]
+    importance = importance / importance.sum(dim=-1, keepdim=True).clamp_min(1e-12)
+
+    layout = greedy_affinity_layout(
+        posterior_affinity(importance),
+        states_per_page=units_per_page,
+        page_bytes=1,
+    )
+    return torch.argsort(layout.state_to_page)
+
+
+def repack_trace_contributions(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    neuron_order: Tensor,
+    *,
+    units_per_page: int,
+    tolerance_nats: float,
+) -> TraceBatch:
+    """Recompute cold page contributions after a physical neuron permutation."""
+
+    activation = trace.activations_by_spin[-1][:, neuron_order]
+    weight = model.shared_block.linear2.weight.detach().cpu()[:, neuron_order]
+    contributions = []
+    for start in range(0, activation.shape[-1], units_per_page):
+        end = min(start + units_per_page, activation.shape[-1])
+        contributions.append(
+            torch.matmul(
+                activation[:, start:end],
+                weight[:, start:end].T,
+            )
+        )
+    page_contributions = torch.stack(contributions, dim=1)
+
+    if not torch.allclose(
+        page_contributions.sum(dim=1),
+        trace.page_contributions.sum(dim=1),
+        atol=1e-5,
+        rtol=1e-5,
+    ):
+        raise RuntimeError("neuron repacking changed the dense MLP output")
+
+    placeholder = torch.zeros(
+        page_contributions.shape[:2],
+        dtype=torch.bool,
+    )
+    repacked = TraceBatch(
+        features_by_spin=trace.features_by_spin,
+        mlp_inputs_by_spin=trace.mlp_inputs_by_spin,
+        activations_by_spin=[
+            values[:, neuron_order]
+            for values in trace.activations_by_spin
+        ],
+        required_pages=placeholder,
+        base_without_linear2=trace.base_without_linear2,
+        page_contributions=page_contributions,
+        targets=trace.targets,
+        full_logits=trace.full_logits,
+    )
+    repacked.required_pages = greedy_required_pages(
+        model,
+        base_without_linear2=repacked.base_without_linear2,
+        page_contributions=repacked.page_contributions,
+        full_logits=repacked.full_logits,
+        tolerance_nats=tolerance_nats,
+    )
+    return repacked
+
+
+@torch.no_grad()
+def evaluate_codemand_repacking(
+    model: DepthRouterModel,
+    train: TraceBatch,
+    test: TraceBatch,
+    *,
+    units_per_page: int,
+    tolerance_nats: float,
+) -> dict[str, float]:
+    order = learn_codemand_neuron_order(
+        model,
+        train,
+        units_per_page=units_per_page,
+    )
+    repacked_train = repack_trace_contributions(
+        model,
+        train,
+        order,
+        units_per_page=units_per_page,
+        tolerance_nats=tolerance_nats,
+    )
+    repacked_test = repack_trace_contributions(
+        model,
+        test,
+        order,
+        units_per_page=units_per_page,
+        tolerance_nats=tolerance_nats,
+    )
+
+    exact = exact_minimum_page_counts(
+        model,
+        repacked_test,
+        tolerance_nats=tolerance_nats,
+    ).float()
+    greedy = repacked_test.required_pages.sum(dim=-1).float()
+
+    return {
+        "test_exact_mean_required_pages": float(exact.mean().item()),
+        "test_exact_p95_required_pages": float(
+            torch.quantile(exact, 0.95).item()
+        ),
+        "test_exact_zero_fault_rate": float(
+            (exact == 0).float().mean().item()
+        ),
+        "test_greedy_mean_required_pages": float(greedy.mean().item()),
+        "train_greedy_mean_required_pages": float(
+            repacked_train.required_pages.sum(dim=-1).float().mean().item()
+        ),
+        "permutation_is_function_preserving": True,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--train-steps", type=int, default=700)
@@ -1659,6 +1799,14 @@ def main() -> None:
         "selected_payload_bytes": value_fault_budget * page_bytes_mean,
         "selected_payload_fraction": value_fault_budget / len(pages),
     }
+
+    result["codemand_neuron_repacking"] = evaluate_codemand_repacking(
+        model,
+        train,
+        test,
+        units_per_page=args.units_per_page,
+        tolerance_nats=args.oracle_kl,
+    )
 
     if result["train_zero_fault_rate"] > 0.95:
         raise RuntimeError(
