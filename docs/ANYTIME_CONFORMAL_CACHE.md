@@ -148,7 +148,37 @@ These are complementary:
 
 The compound metric is bytes at fixed coverage, not cache hit rate alone.
 
-## 6. Important dependence caveat
+## 6. Risk-coded physical memory hierarchy
+
+The same page scores can define several nested residency sets with different
+declared miss risks.
+
+For example:
+
+```text
+C_L2    = conformal set at alpha = 0.20
+C_HBM   = conformal set at alpha = 0.05
+C_HOST  = conformal set at alpha = 0.01
+```
+
+with
+
+```text
+C_L2 subset C_HBM subset C_HOST
+```
+
+The fastest tier holds the smallest, highest-confidence working set. Slower
+tiers progressively insure the tail of the operator-demand distribution.
+
+This turns the physical memory hierarchy into a **risk-coded uncertainty
+hierarchy**. Confidence is no longer only metadata attached to an answer; it
+directly determines where model bytes should live.
+
+A future runtime should choose the risk allocation jointly with measured tier
+latencies and bandwidths. The current code only performs calibration and
+nesting; it does not claim an optimal risk allocation.
+
+## 7. Important dependence caveat
 
 Language-model traffic is not i.i.d. Tokens within a conversation and repeated
 requests from the same user are dependent.
@@ -165,7 +195,7 @@ session level**, and should report both:
 If dependence invalidates the conformal assumptions, the guarantee must be
 weakened rather than silently retained.
 
-## 7. First experiment
+## 8. First experiment
 
 `experiments/anytime_conformal_cache.py` uses the recurrent pointer-chasing
 model as a controlled proxy.
