@@ -140,7 +140,9 @@ def model_logits(model: nn.Module, encoded: dict[str, Tensor]) -> Tensor:
     logits = getattr(output, "logits", None)
     if logits is None:
         raise ValueError("model output has no logits")
-    return logits.detach().float().cpu()
+    # Last-token logits are sufficient for the exact-function gate and avoid
+    # retaining a full [batch, sequence, vocabulary] tensor on CPU.
+    return logits[:, -1, :].detach().float().cpu()
 
 
 def logit_kl(reference: Tensor, candidate: Tensor) -> Tensor:
