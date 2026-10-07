@@ -177,15 +177,16 @@ def fit_ridge_operator(
     return mean_x, mean_y, weight
 
 
-def low_rank_predict(
+def low_rank_predict_from_svd(
     x: Tensor,
     mean_x: Tensor,
     mean_y: Tensor,
-    weight: Tensor,
+    u: Tensor,
+    s: Tensor,
+    vh: Tensor,
     *,
     rank: int,
 ) -> Tensor:
-    u, s, vh = torch.linalg.svd(weight, full_matrices=False)
     rank = min(rank, s.numel())
     left = (x - mean_x) @ u[:, :rank]
     left = left * s[:rank]
@@ -229,6 +230,13 @@ def main() -> None:
         default="bfloat16",
     )
     parser.add_argument("--ridge", type=float, default=1e-3)
+    parser.add_argument(
+        "--layer-indices",
+        nargs="+",
+        type=int,
+        default=[],
+        help="default scans five evenly spaced layers",
+    )
     parser.add_argument(
         "--ranks",
         nargs="+",
@@ -279,8 +287,25 @@ def main() -> None:
         max_tokens=args.max_test_tokens,
     )
 
+    if args.layer_indices:
+        selected_layers = args.layer_indices
+    else:
+        last = len(layers) - 1
+        selected_layers = sorted(
+            {
+                0,
+                last // 4,
+                last // 2,
+                (3 * last) // 4,
+                last,
+            }
+        )
+    if any(idx < 0 or idx >= len(layers) for idx in selected_layers):
+        raise ValueError("layer index out of range")
+
     rows = []
-    for idx, layer in enumerate(layers):
+    for idx in selected_layers:
+        layer = layers[idx]
         x_train, y_train = train[idx]
         x_test, y_test = test[idx]
         mean_x, mean_y, weight = fit_ridge_operator(
@@ -288,6 +313,8 @@ def main() -> None:
             y_train,
             ridge=args.ridge,
         )
+
+        u, s, vh = torch.linalg.svd(weight, full_matrices=False)
 
         mlp = resolve_mlp(layer)
         cold_bytes = mlp_weight_bytes(mlp)
@@ -302,11 +329,13 @@ def main() -> None:
         }
 
         for rank in args.ranks:
-            prediction = low_rank_predict(
+            prediction = low_rank_predict_from_svd(
                 x_test,
                 mean_x,
                 mean_y,
-                weight,
+                u,
+                s,
+                vh,
                 rank=rank,
             )
             # Runtime representation: two dense factors plus output bias/mean.
