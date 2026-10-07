@@ -443,7 +443,7 @@ def greedy_pages_for_relative_output_error(
     full = contributions.sum(dim=1)
     residual = full.clone()
     denominator = full.pow(2).sum(dim=-1).clamp_min(1e-20)
-    target = float(relative_error) ** 2
+    target = max(float(relative_error) ** 2, 1e-12)
 
     selected = torch.zeros(
         contributions.shape[:2],
