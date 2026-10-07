@@ -1,9 +1,9 @@
 import torch
 
 from depth_router.conformal_memory import (
+    anytime_bonferroni_thresholds,
     aps_calibration_threshold,
     aps_prediction_mask,
-    anytime_bonferroni_thresholds,
     bytes_for_mask,
     empirical_coverage,
     mean_set_size,
