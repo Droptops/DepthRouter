@@ -178,8 +178,9 @@ def train_recurrent_model(
             _module: nn.Module,
             _args: tuple[Tensor, ...],
             output: Tensor,
+            _sink: list[Tensor] = spin_logits,
         ) -> None:
-            spin_logits.append(classify_hidden(model, output[:, -1]))
+            _sink.append(classify_hidden(model, output[:, -1]))
 
         handle = model.shared_block.register_forward_hook(capture)
         try:
