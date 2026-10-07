@@ -11,14 +11,18 @@ from torch import Tensor, nn
 from depth_router import DepthRouterConfig, DepthRouterModel
 from depth_router.conformal_memory import (
     aps_prediction_mask,
-    required_set_calibration_threshold,
+    distortion_coverage,
+    distortion_prefix_calibration_threshold,
     required_set_coverage,
 )
 from depth_router.operator_pages import (
     OperatorPage,
     activation_address_scores,
     contiguous_mlp_pages,
+    input_sketch_address_scores,
+    input_sketch_metadata_bytes,
     linear2_page_contributions,
+    make_input_page_sketches,
     page_output_weight_norms,
 )
 from depth_router.toy import PointerChaseSpec, pointer_chase_batch
@@ -27,6 +31,7 @@ from depth_router.toy import PointerChaseSpec, pointer_chase_batch
 @dataclass
 class TraceBatch:
     features_by_spin: list[Tensor]
+    mlp_inputs_by_spin: list[Tensor]
     activations_by_spin: list[Tensor]
     required_pages: Tensor
     base_without_linear2: Tensor
@@ -38,9 +43,10 @@ class TraceBatch:
 def capture_forward(
     model: DepthRouterModel,
     input_ids: Tensor,
-) -> tuple[Tensor, list[Tensor], Tensor, list[Tensor]]:
+) -> tuple[Tensor, list[Tensor], list[Tensor], Tensor, list[Tensor]]:
     block_inputs: list[Tensor] = []
     block_outputs: list[Tensor] = []
+    mlp_inputs: list[Tensor] = []
     ff_activations: list[Tensor] = []
     linear2_outputs: list[Tensor] = []
 
@@ -53,6 +59,9 @@ def capture_forward(
         output: Tensor,
     ) -> None:
         block_outputs.append(output)
+
+    def linear1_pre(_module: nn.Module, args: tuple[Tensor, ...]) -> None:
+        mlp_inputs.append(args[0])
 
     def linear2_pre(_module: nn.Module, args: tuple[Tensor, ...]) -> None:
         ff_activations.append(args[0])
@@ -67,6 +76,7 @@ def capture_forward(
     handles = [
         model.shared_block.register_forward_pre_hook(block_pre),
         model.shared_block.register_forward_hook(block_post),
+        model.shared_block.linear1.register_forward_pre_hook(linear1_pre),
         model.shared_block.linear2.register_forward_pre_hook(linear2_pre),
         model.shared_block.linear2.register_forward_hook(linear2_post),
     ]
@@ -80,9 +90,10 @@ def capture_forward(
         raise RuntimeError("did not capture every recurrent spin")
 
     features = [hidden[:, -1] for hidden in block_inputs]
+    inputs = [hidden[:, -1] for hidden in mlp_inputs]
     activations = [activation[:, -1] for activation in ff_activations]
     base = block_outputs[-1][:, -1] - linear2_outputs[-1][:, -1]
-    return logits, features, base, activations
+    return logits, features, inputs, base, activations
 
 
 def classify_hidden(model: DepthRouterModel, hidden: Tensor) -> Tensor:
@@ -226,6 +237,9 @@ def collect_dataset(
     features: list[list[Tensor]] = [
         [] for _ in range(model.config.max_steps)
     ]
+    mlp_inputs: list[list[Tensor]] = [
+        [] for _ in range(model.config.max_steps)
+    ]
     activations: list[list[Tensor]] = [
         [] for _ in range(model.config.max_steps)
     ]
@@ -240,7 +254,7 @@ def collect_dataset(
     while remaining > 0:
         current = min(batch_size, remaining)
         input_ids, targets, _ = pointer_chase_batch(current, spec)
-        logits, spin_features, base, spin_activations = capture_forward(
+        logits, spin_features, spin_inputs, base, spin_activations = capture_forward(
             model,
             input_ids,
         )
@@ -260,6 +274,8 @@ def collect_dataset(
 
         for idx, values in enumerate(spin_features):
             features[idx].append(values.cpu())
+        for idx, values in enumerate(spin_inputs):
+            mlp_inputs[idx].append(values.cpu())
         for idx, values in enumerate(spin_activations):
             activations[idx].append(values.cpu())
         required.append(required_mask.cpu())
@@ -271,6 +287,7 @@ def collect_dataset(
 
     return TraceBatch(
         features_by_spin=[torch.cat(rows) for rows in features],
+        mlp_inputs_by_spin=[torch.cat(rows) for rows in mlp_inputs],
         activations_by_spin=[torch.cat(rows) for rows in activations],
         required_pages=torch.cat(required),
         base_without_linear2=torch.cat(bases),
@@ -316,6 +333,64 @@ def router_scores(router: nn.Linear, features: Tensor) -> Tensor:
 
 
 @torch.no_grad()
+def prefix_distortions_for_scores(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    scores: Tensor,
+) -> Tensor:
+    """KL distortion for zero pages and every top-score prefix."""
+
+    if scores.shape != trace.required_pages.shape:
+        raise ValueError("scores must have shape [examples, pages]")
+
+    order = torch.argsort(scores, dim=-1, descending=True)
+    gather_index = order[..., None].expand(
+        -1,
+        -1,
+        trace.page_contributions.shape[-1],
+    )
+    sorted_contributions = torch.gather(
+        trace.page_contributions,
+        1,
+        gather_index,
+    )
+    prefix = sorted_contributions.cumsum(dim=1)
+    zero = torch.zeros_like(prefix[:, :1])
+    prefix = torch.cat([zero, prefix], dim=1)
+
+    hidden = trace.base_without_linear2[:, None, :] + prefix
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        hidden = hidden + bias.detach().cpu()
+
+    logits = classify_hidden(
+        model.cpu(),
+        hidden.reshape(-1, hidden.shape[-1]),
+    ).reshape(hidden.shape[0], hidden.shape[1], -1)
+    return kl_from_full(trace.full_logits[:, None, :], logits)
+
+
+@torch.no_grad()
+def sparse_distortions(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    page_mask: Tensor,
+) -> Tensor:
+    selected = (
+        trace.page_contributions
+        * page_mask[..., None].to(trace.page_contributions.dtype)
+    ).sum(dim=1)
+
+    hidden = trace.base_without_linear2 + selected
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        hidden = hidden + bias.detach().cpu()
+
+    logits = classify_hidden(model.cpu(), hidden)
+    return kl_from_full(trace.full_logits, logits)
+
+
+@torch.no_grad()
 def sparse_quality(
     model: DepthRouterModel,
     trace: TraceBatch,
@@ -356,8 +431,10 @@ def evaluate(
     pages: list[OperatorPage],
     *,
     alpha: float,
+    distortion_tolerance: float,
     router_steps: int,
     router_lr: float,
+    sketch_dims: list[int],
     seed: int,
 ) -> dict:
     page_bytes = torch.tensor([page.weight_bytes for page in pages])
@@ -366,6 +443,9 @@ def evaluate(
         model.shared_block.linear2,
         pages,
     ).cpu()
+    output_norm_metadata_bytes = (
+        output_norms.numel() * output_norms.element_size()
+    )
     rows = []
 
     def evaluate_scores(
@@ -374,14 +454,30 @@ def evaluate(
         spin: int,
         calibration_scores: Tensor,
         test_scores: Tensor,
+        metadata_bytes: int,
+        deployable_without_cold_payload: bool,
     ) -> None:
-        threshold = required_set_calibration_threshold(
+        calibration_prefix = prefix_distortions_for_scores(
+            model,
+            calibration,
             calibration_scores,
-            calibration.required_pages,
+        )
+        threshold = distortion_prefix_calibration_threshold(
+            calibration_scores,
+            calibration_prefix,
+            tolerance=distortion_tolerance,
             alpha=alpha,
         )
         mask = aps_prediction_mask(test_scores, threshold)
-        coverage = required_set_coverage(mask, test.required_pages)
+        realized_distortion = sparse_distortions(model, test, mask)
+        distortion_ok = distortion_coverage(
+            realized_distortion,
+            tolerance=distortion_tolerance,
+        )
+        oracle_set_coverage = required_set_coverage(
+            mask,
+            test.required_pages,
+        )
         resident_bytes = (
             mask.to(torch.long) * page_bytes[None, :]
         ).sum(dim=-1)
@@ -390,8 +486,10 @@ def evaluate(
             {
                 "method": method,
                 "spin": spin + 1,
-                "conformal_threshold": threshold,
-                "required_set_coverage": coverage,
+                "calibrated_mass_threshold": threshold,
+                "distortion_tolerance_nats": distortion_tolerance,
+                "distortion_coverage": distortion_ok,
+                "oracle_set_coverage_diagnostic": oracle_set_coverage,
                 "mean_predicted_pages": float(
                     mask.sum(dim=-1).float().mean().item()
                 ),
@@ -402,9 +500,32 @@ def evaluate(
                 "resident_fraction": float(
                     resident_bytes.float().mean().item() / dense_bytes
                 ),
+                "metadata_bytes": int(metadata_bytes),
+                "metadata_fraction_of_cold": float(
+                    metadata_bytes / max(dense_bytes, 1)
+                ),
+                "deployable_without_cold_payload": deployable_without_cold_payload,
+                "realized_distortion_violation_rate": 1.0 - distortion_ok,
                 **quality,
             }
         )
+
+    min_page_width = min(page.width for page in pages)
+    for sketch_dim in sketch_dims:
+        if sketch_dim < 1 or sketch_dim > min_page_width:
+            raise ValueError(
+                "every sketch dimension must be between 1 and the minimum page width"
+            )
+
+    input_sketches = {
+        sketch_dim: make_input_page_sketches(
+            model.shared_block.linear1,
+            pages,
+            sketch_dim=sketch_dim,
+            seed=seed + 1000 + sketch_dim,
+        )
+        for sketch_dim in sketch_dims
+    }
 
     for spin in range(model.config.max_steps):
         router = train_page_router(
@@ -413,6 +534,10 @@ def evaluate(
             steps=router_steps,
             lr=router_lr,
             seed=seed + spin,
+        )
+        router_metadata_bytes = sum(
+            parameter.numel() * parameter.element_size()
+            for parameter in router.parameters()
         )
         evaluate_scores(
             method="learned_router",
@@ -425,10 +550,15 @@ def evaluate(
                 router,
                 test.features_by_spin[spin],
             ),
+            metadata_bytes=router_metadata_bytes,
+            deployable_without_cold_payload=True,
         )
 
+        # Diagnostic upper-ish baseline: useful for understanding whether the
+        # post-linear1 activation contains the address, but not deployable if W1
+        # is itself cold because producing this activation already read W1.
         evaluate_scores(
-            method="intrinsic_address",
+            method="post_linear1_energy_diagnostic",
             spin=spin,
             calibration_scores=activation_address_scores(
                 calibration.activations_by_spin[spin],
@@ -440,12 +570,39 @@ def evaluate(
                 pages,
                 output_norms,
             ),
+            metadata_bytes=output_norm_metadata_bytes,
+            deployable_without_cold_payload=False,
         )
+
+        for sketch_dim, sketches in input_sketches.items():
+            metadata_bytes = (
+                input_sketch_metadata_bytes(sketches)
+                + output_norm_metadata_bytes
+            )
+            evaluate_scores(
+                method=f"input_sketch_r{sketch_dim}",
+                spin=spin,
+                calibration_scores=input_sketch_address_scores(
+                    calibration.mlp_inputs_by_spin[spin],
+                    pages,
+                    sketches,
+                    output_norms,
+                ),
+                test_scores=input_sketch_address_scores(
+                    test.mlp_inputs_by_spin[spin],
+                    pages,
+                    sketches,
+                    output_norms,
+                ),
+                metadata_bytes=metadata_bytes,
+                deployable_without_cold_payload=True,
+            )
 
     oracle_pages = train.required_pages.sum(dim=-1).float()
     return {
         "num_operator_pages": len(pages),
         "dense_cold_bytes": dense_bytes,
+        "distortion_tolerance_nats": distortion_tolerance,
         "train_oracle_mean_required_pages": float(oracle_pages.mean().item()),
         "train_zero_fault_rate": float(
             (oracle_pages == 0).float().mean().item()
@@ -470,6 +627,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-lr", type=float, default=1e-3)
     parser.add_argument("--oracle-kl", type=float, default=0.001)
     parser.add_argument("--alpha", type=float, default=0.05)
+    parser.add_argument(
+        "--sketch-dims",
+        nargs="+",
+        type=int,
+        default=[1, 2, 4],
+    )
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--summary-only", action="store_true")
     return parser.parse_args()
@@ -535,8 +698,10 @@ def main() -> None:
         test,
         pages,
         alpha=args.alpha,
+        distortion_tolerance=args.oracle_kl,
         router_steps=args.router_steps,
         router_lr=args.router_lr,
+        sketch_dims=args.sketch_dims,
         seed=args.seed + 100,
     )
 
@@ -550,8 +715,8 @@ def main() -> None:
         "experiment": "dense_operator_pages_v0",
         "claim_boundary": (
             "Toy dense transformer. Operator pages are exact slices of the "
-            "shared FFN; the oracle set is a greedy set preserving final logits "
-            "within the configured KL tolerance."
+            "shared FFN. Residency is calibrated directly against KL distortion "
+            "from dense logits; exact oracle page identity is diagnostic only."
         ),
         "config": {
             key: value
