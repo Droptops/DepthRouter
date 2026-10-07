@@ -873,33 +873,208 @@ def collect_fault_policy_examples(
     return torch.cat(feature_rows), torch.cat(targets)
 
 
-def train_fault_policy(
+def make_fault_policy(
+    *,
+    input_dim: int,
+    num_pages: int,
+    hidden_dim: int,
+) -> nn.Module:
+    if hidden_dim < 0:
+        raise ValueError("hidden_dim must be non-negative")
+    if hidden_dim == 0:
+        return nn.Linear(input_dim, num_pages + 1)
+    return nn.Sequential(
+        nn.Linear(input_dim, hidden_dim),
+        nn.GELU(),
+        nn.Linear(hidden_dim, num_pages + 1),
+    )
+
+
+def fit_fault_policy(
+    policy: nn.Module,
     features: Tensor,
     targets: Tensor,
     *,
     num_pages: int,
     steps: int,
     lr: float,
-    seed: int,
-) -> nn.Linear:
-    torch.manual_seed(seed)
-    policy = nn.Linear(features.shape[-1], num_pages + 1)
+) -> nn.Module:
     optimizer = torch.optim.AdamW(policy.parameters(), lr=lr)
-
-    counts = torch.bincount(targets, minlength=num_pages + 1).float()
-    weights = counts.sum() / counts.clamp_min(1.0)
-    weights = weights / weights.mean()
 
     for _ in range(steps):
         optimizer.zero_grad(set_to_none=True)
         logits = policy(features)
-        loss = nn.functional.cross_entropy(
-            logits,
-            targets,
-            weight=weights,
-        )
+        loss = nn.functional.cross_entropy(logits, targets)
         loss.backward()
         optimizer.step()
+
+    return policy
+
+
+def train_fault_policy(
+    features: Tensor,
+    targets: Tensor,
+    *,
+    num_pages: int,
+    hidden_dim: int,
+    steps: int,
+    lr: float,
+    seed: int,
+) -> nn.Module:
+    torch.manual_seed(seed)
+    policy = make_fault_policy(
+        input_dim=features.shape[-1],
+        num_pages=num_pages,
+        hidden_dim=hidden_dim,
+    )
+    return fit_fault_policy(
+        policy,
+        features,
+        targets,
+        num_pages=num_pages,
+        steps=steps,
+        lr=lr,
+    )
+
+
+@torch.no_grad()
+def collect_dagger_examples(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    policy: nn.Module,
+    *,
+    tolerance_nats: float,
+) -> tuple[Tensor, Tensor]:
+    """Label states visited by the learned chooser with the greedy oracle."""
+
+    examples, num_pages, _ = trace.page_contributions.shape
+    selected = torch.zeros(examples, num_pages, dtype=torch.bool)
+    current = trace.base_without_linear2.clone()
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        current = current + bias.detach().cpu()
+
+    done = torch.zeros(examples, dtype=torch.bool)
+    rows = torch.arange(examples)
+    feature_rows: list[Tensor] = []
+    target_rows: list[Tensor] = []
+
+    for _ in range(num_pages + 1):
+        active = ~done
+        if not bool(active.any()):
+            break
+
+        active_rows = rows[active]
+        features = torch.cat(
+            [current[active], selected[active].float()],
+            dim=-1,
+        )
+        current_logits = classify_hidden(model.cpu(), current[active])
+        current_kl = kl_from_full(
+            trace.full_logits[active],
+            current_logits,
+        )
+        safe = current_kl <= tolerance_nats
+
+        targets = torch.full(
+            (features.shape[0],),
+            num_pages,
+            dtype=torch.long,
+        )
+
+        unsafe = ~safe
+        if bool(unsafe.any()):
+            unsafe_rows = active_rows[unsafe]
+            candidates = (
+                current[unsafe_rows, None, :]
+                + trace.page_contributions[unsafe_rows]
+            )
+            candidate_logits = classify_hidden(
+                model.cpu(),
+                candidates.reshape(-1, candidates.shape[-1]),
+            ).reshape(candidates.shape[0], num_pages, -1)
+            candidate_kl = kl_from_full(
+                trace.full_logits[unsafe_rows, None, :],
+                candidate_logits,
+            )
+            candidate_kl = candidate_kl.masked_fill(
+                selected[unsafe_rows],
+                float("inf"),
+            )
+            targets[unsafe] = candidate_kl.argmin(dim=-1)
+
+        feature_rows.append(features)
+        target_rows.append(targets)
+
+        if bool(safe.any()):
+            done[active_rows[safe]] = True
+
+        unsafe_rows = active_rows[unsafe]
+        if unsafe_rows.numel() == 0:
+            continue
+
+        policy_logits = policy(features[unsafe])
+        page_logits = policy_logits[:, :num_pages].masked_fill(
+            selected[unsafe_rows],
+            float("-inf"),
+        )
+        chosen = page_logits.argmax(dim=-1)
+        current[unsafe_rows] = (
+            current[unsafe_rows]
+            + trace.page_contributions[unsafe_rows, chosen]
+        )
+        selected[unsafe_rows, chosen] = True
+
+    return torch.cat(feature_rows), torch.cat(target_rows)
+
+
+def train_dagger_fault_policy(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    *,
+    tolerance_nats: float,
+    hidden_dim: int,
+    steps: int,
+    lr: float,
+    rounds: int,
+    seed: int,
+) -> nn.Module:
+    if rounds < 0:
+        raise ValueError("rounds must be non-negative")
+
+    base_features, base_targets = collect_fault_policy_examples(
+        model,
+        trace,
+        tolerance_nats=tolerance_nats,
+    )
+    torch.manual_seed(seed)
+    policy = make_fault_policy(
+        input_dim=base_features.shape[-1],
+        num_pages=trace.page_contributions.shape[1],
+        hidden_dim=hidden_dim,
+    )
+
+    features = base_features
+    targets = base_targets
+    for round_idx in range(rounds + 1):
+        policy = fit_fault_policy(
+            policy,
+            features,
+            targets,
+            num_pages=trace.page_contributions.shape[1],
+            steps=steps,
+            lr=lr,
+        )
+        if round_idx == rounds:
+            break
+        new_features, new_targets = collect_dagger_examples(
+            model,
+            trace,
+            policy,
+            tolerance_nats=tolerance_nats,
+        )
+        features = torch.cat([features, new_features])
+        targets = torch.cat([targets, new_targets])
 
     return policy
 
@@ -969,7 +1144,7 @@ def calibrate_fault_budget(
 def evaluate_forced_fault_budget(
     model: DepthRouterModel,
     trace: TraceBatch,
-    policy: nn.Linear,
+    policy: nn.Module,
     pages: list[OperatorPage],
     *,
     fault_budget: int,
@@ -1007,7 +1182,7 @@ def evaluate_forced_fault_budget(
 def rollout_fault_policy(
     model: DepthRouterModel,
     trace: TraceBatch,
-    policy: nn.Linear,
+    policy: nn.Module,
     pages: list[OperatorPage],
     *,
     tolerance_nats: float,
@@ -1106,6 +1281,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--router-steps", type=int, default=250)
     parser.add_argument("--router-lr", type=float, default=2e-2)
     parser.add_argument("--fault-policy-steps", type=int, default=500)
+    parser.add_argument("--fault-policy-hidden", type=int, default=16)
+    parser.add_argument("--dagger-rounds", type=int, default=2)
     parser.add_argument("--train-examples", type=int, default=2000)
     parser.add_argument("--calibration-examples", type=int, default=1000)
     parser.add_argument("--test-examples", type=int, default=1000)
@@ -1194,17 +1371,14 @@ def main() -> None:
         seed=args.seed + 100,
     )
 
-    fault_features, fault_targets = collect_fault_policy_examples(
+    fault_policy = train_dagger_fault_policy(
         model,
         train,
         tolerance_nats=args.oracle_kl,
-    )
-    fault_policy = train_fault_policy(
-        fault_features,
-        fault_targets,
-        num_pages=len(pages),
+        hidden_dim=args.fault_policy_hidden,
         steps=args.fault_policy_steps,
         lr=args.router_lr,
+        rounds=args.dagger_rounds,
         seed=args.seed + 500,
     )
     result["dynamic_fault_policy"] = rollout_fault_policy(
