@@ -117,17 +117,17 @@ def test_required_set_conformal_covers_all_required_pages() -> None:
     assert required_set_coverage(prediction, required) >= 0.75
 
 
-def test_required_set_calibration_rejects_empty_targets() -> None:
+def test_required_set_calibration_supports_zero_fault_targets() -> None:
     probabilities = torch.tensor([[0.6, 0.4]])
     required = torch.tensor([[False, False]])
 
-    try:
-        required_set_calibration_threshold(
-            probabilities,
-            required,
-            alpha=0.1,
-        )
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("empty required-page set must be rejected")
+    threshold = required_set_calibration_threshold(
+        probabilities,
+        required,
+        alpha=0.1,
+    )
+    prediction = aps_prediction_mask(probabilities, threshold)
+
+    assert threshold == 0.0
+    assert prediction.tolist() == [[False, False]]
+    assert required_set_coverage(prediction, required) == 1.0
