@@ -3,7 +3,6 @@ from torch import nn
 
 from depth_router.solver import (
     KLFaultPolicy,
-    Move,
     SolverState,
     SwitchableColdMLP,
     coalesce_faults,
