@@ -144,6 +144,74 @@ def aps_prediction_mask(
     return mask
 
 
+
+def distortion_prefix_calibration_threshold(
+    probabilities: Tensor,
+    prefix_distortions: Tensor,
+    *,
+    tolerance: float,
+    alpha: float,
+) -> float:
+    """Calibrate score mass needed to meet an output-distortion target.
+
+    prefix_distortions[n, k] is the distortion for example n after taking
+    the top-k pages under probabilities[n]. Column 0 is the zero-page
+    candidate; the final column must meet tolerance.
+
+    The nonconformity score is the cumulative predicted mass at the first prefix
+    that meets the distortion target. Split-conformal calibration then chooses
+    a global mass threshold whose selected prefix meets the target with marginal
+    probability at least 1 - alpha under exchangeability.
+    """
+
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+    if tolerance < 0:
+        raise ValueError("tolerance must be non-negative")
+
+    p = _normalize(probabilities)
+    if prefix_distortions.shape != (p.shape[0], p.shape[1] + 1):
+        raise ValueError(
+            "prefix_distortions must have shape [examples, pages + 1]"
+        )
+    if bool((prefix_distortions[:, -1] > tolerance).any()):
+        raise ValueError("the full-page prefix must meet the distortion tolerance")
+
+    meets = prefix_distortions <= tolerance
+    first_k = meets.to(torch.int64).argmax(dim=-1)
+
+    order = torch.argsort(p, dim=-1, descending=True)
+    sorted_p = torch.gather(p, 1, order)
+    cumulative = sorted_p.cumsum(dim=-1)
+
+    scores = torch.zeros(p.shape[0], dtype=p.dtype, device=p.device)
+    positive = first_k > 0
+    if bool(positive.any()):
+        rows = torch.arange(p.shape[0], device=p.device)[positive]
+        scores[positive] = cumulative[
+            rows,
+            first_k[positive] - 1,
+        ]
+
+    n = int(scores.numel())
+    rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
+    rank = max(rank, 1)
+    return float(torch.kthvalue(scores, rank).values.item())
+
+
+def distortion_coverage(
+    distortions: Tensor,
+    *,
+    tolerance: float,
+) -> float:
+    """Fraction of examples whose realized distortion is within tolerance."""
+
+    if distortions.ndim != 1:
+        raise ValueError("distortions must have shape [examples]")
+    if tolerance < 0:
+        raise ValueError("tolerance must be non-negative")
+    return float((distortions <= tolerance).float().mean().item())
+
 def empirical_coverage(mask: Tensor, true_pages: Tensor) -> float:
     if mask.ndim != 2:
         raise ValueError("mask must have shape [examples, pages]")
