@@ -3,6 +3,7 @@ from torch import nn
 
 from depth_router.swiglu_layout import (
     contiguous_swiglu_pages,
+    greedy_pages_for_relative_output_error,
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
     page_importance,
@@ -184,3 +185,21 @@ def test_paged_swiglu_partial_mask_groups_tokens_by_page() -> None:
     assert stats.requested_page_uses == 6
     assert stats.unique_pages_loaded == 2
     assert stats.selected_payload_bytes == sum(page.payload_bytes for page in pages)
+
+
+def test_greedy_behavioral_page_count_reaches_dense_output_target() -> None:
+    torch.manual_seed(7)
+    gate, up, down = make_layers()
+    hidden = torch.randn(10, 6)
+    intermediate = swiglu_intermediate(hidden, gate, up)
+    pages = contiguous_swiglu_pages(gate, up, down, units_per_page=4)
+
+    counts = greedy_pages_for_relative_output_error(
+        intermediate,
+        down,
+        pages,
+        relative_error=0.0,
+    )
+
+    assert counts.shape == (10,)
+    assert torch.all(counts <= len(pages))
