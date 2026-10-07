@@ -206,13 +206,13 @@ def summarize_error(reference: Tensor, candidate: Tensor) -> dict[str, float]:
     }
 
 
-def mlp_weight_bytes(mlp: nn.Module) -> int:
+def mlp_parameter_count(mlp: nn.Module) -> int:
     total = 0
     for name in ("gate_proj", "up_proj", "down_proj"):
         module = getattr(mlp, name)
-        total += module.weight.numel() * module.weight.element_size()
+        total += module.weight.numel()
         if module.bias is not None:
-            total += module.bias.numel() * module.bias.element_size()
+            total += module.bias.numel()
     return int(total)
 
 
@@ -317,14 +317,16 @@ def main() -> None:
         u, s, vh = torch.linalg.svd(weight, full_matrices=False)
 
         mlp = resolve_mlp(layer)
-        cold_bytes = mlp_weight_bytes(mlp)
+        cold_parameters = mlp_parameter_count(mlp)
+        cold_bytes_fp16 = cold_parameters * 2
         hidden = x_train.shape[-1]
         layer_result = {
             "layer": idx,
             "train_tokens": int(x_train.shape[0]),
             "test_tokens": int(x_test.shape[0]),
             "hidden_width": int(hidden),
-            "cold_mlp_bytes": cold_bytes,
+            "cold_mlp_parameters": cold_parameters,
+            "cold_mlp_bytes_fp16": cold_bytes_fp16,
             "ranks": {},
         }
 
@@ -343,7 +345,7 @@ def main() -> None:
             metadata_bytes_fp16 = metadata_parameters * 2
             layer_result["ranks"][str(rank)] = {
                 "metadata_bytes_fp16": metadata_bytes_fp16,
-                "metadata_fraction_of_cold": metadata_bytes_fp16 / cold_bytes,
+                "metadata_fraction_of_cold": metadata_bytes_fp16 / cold_bytes_fp16,
                 **summarize_error(y_test, prediction),
             }
 
