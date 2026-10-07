@@ -397,6 +397,27 @@ def main() -> None:
             finally:
                 handle.remove()
 
+            true_bytes = analytic_bytes(
+                mlp,
+                fraction,
+                address_bits=1,
+            )
+            if address_bits is None:
+                byte_stats = {
+                    **true_bytes,
+                    "address_metadata_bytes": 0,
+                    "address_metadata_fraction": 0.0,
+                    "address_plus_selected_fraction": true_bytes[
+                        "selected_payload_fraction"
+                    ],
+                }
+            else:
+                byte_stats = analytic_bytes(
+                    mlp,
+                    fraction,
+                    address_bits=address_bits,
+                )
+
             rows.append(
                 {
                     "layer": args.layer,
@@ -405,41 +426,7 @@ def main() -> None:
                     "mean_topk_overlap_with_true": (
                         sum(overlap) / len(overlap) if overlap else 1.0
                     ),
-                    **analytic_bytes(
-                        mlp,
-                        fraction,
-                        address_bits=address_bits or 0,
-                    ) if address_bits is not None else {
-                        "selected_neurons": max(
-                            1,
-                            min(
-                                mlp.down_proj.in_features,
-                                round(mlp.down_proj.in_features * fraction),
-                            ),
-                        ),
-                        "cold_mlp_bytes_fp16": analytic_bytes(
-                            mlp,
-                            fraction,
-                            address_bits=1,
-                        )["cold_mlp_bytes_fp16"],
-                        "address_metadata_bytes": 0,
-                        "address_metadata_fraction": 0.0,
-                        "selected_payload_bytes_fp16": analytic_bytes(
-                            mlp,
-                            fraction,
-                            address_bits=1,
-                        )["selected_payload_bytes_fp16"],
-                        "selected_payload_fraction": analytic_bytes(
-                            mlp,
-                            fraction,
-                            address_bits=1,
-                        )["selected_payload_fraction"],
-                        "address_plus_selected_fraction": analytic_bytes(
-                            mlp,
-                            fraction,
-                            address_bits=1,
-                        )["selected_payload_fraction"],
-                    },
+                    **byte_stats,
                     **metrics(baseline, candidate),
                 }
             )
