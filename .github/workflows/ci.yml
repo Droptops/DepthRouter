@@ -186,6 +186,19 @@ jobs:
           --clusters 16 32 64
           --router-steps 250
           --json-out 09_predictive_state_vq.json
+      - name: Search sparsity in final-logit tangent space
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_logit_tangent_oracle.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --top-logits 8 32 128
+          --fractions 0.005 0.01 0.02 0.05 0.10
+          --block-size 16
+          --json-out 10_logit_tangent_oracle.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -200,3 +213,4 @@ jobs:
             07_loop_delta.json
             08_active_page_compile.json
             09_predictive_state_vq.json
+            10_logit_tangent_oracle.json
