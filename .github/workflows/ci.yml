@@ -437,3 +437,35 @@ jobs:
         with:
           name: global-lowbit-decode
           path: global_lowbit_decode.json
+
+
+  loop-delta-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Probe recurrent hidden-state delta compressibility
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_loop_delta_scan.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-rows 192
+          --loops 4
+          --ranks 4 8 16 32 64
+          --feature-fractions 0.05 0.10 0.25 0.50
+          --json-out loop_delta_scan.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loop-delta-scan
+          path: loop_delta_scan.json
