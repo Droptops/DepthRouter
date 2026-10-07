@@ -79,7 +79,7 @@ jobs:
           --compiler simhash
           --simhash-bits 16
           --json-out real_model_gate_simhash.json
-      - name: Compile the same block with exact co-demand affinity
+      - name: Compile the same block with balanced co-demand clustering
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
@@ -91,8 +91,8 @@ jobs:
           --max-trace-tokens 512
           --units-per-page 128
           --mass-target 0.95
-          --compiler affinity
-          --json-out real_model_gate_affinity.json
+          --compiler balanced
+          --json-out real_model_gate_balanced.json
       - uses: actions/upload-artifact@v4
         with:
           name: real-model-gate
