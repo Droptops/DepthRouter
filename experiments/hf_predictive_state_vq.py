@@ -181,6 +181,10 @@ def train_router(
     lr: float,
     seed: int,
 ) -> nn.Linear:
+    # Traces originate inside torch.inference_mode(). Clone outside that
+    # context so autograd is allowed to save the router input for backward.
+    x = x.detach().clone()
+    labels = labels.detach().clone()
     torch.manual_seed(seed)
     router = nn.Linear(x.shape[-1], classes)
     optimizer = torch.optim.AdamW(router.parameters(), lr=lr)
