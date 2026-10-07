@@ -4,6 +4,7 @@ from torch import nn
 from depth_router.swiglu_layout import (
     contiguous_swiglu_pages,
     greedy_pages_for_relative_output_error,
+    learn_balanced_codemand_permutation,
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
     page_importance,
@@ -203,3 +204,20 @@ def test_greedy_behavioral_page_count_reaches_dense_output_target() -> None:
 
     assert counts.shape == (10,)
     assert torch.all(counts <= len(pages))
+
+
+def test_balanced_codemand_compiler_returns_capacity_bounded_permutation() -> None:
+    torch.manual_seed(8)
+    _, _, down = make_layers()
+    intermediate = torch.randn(256, 12)
+
+    permutation = learn_balanced_codemand_permutation(
+        intermediate,
+        down,
+        units_per_page=5,
+        iterations=3,
+        max_trace_tokens=128,
+        seed=9,
+    )
+
+    assert torch.equal(torch.sort(permutation).values, torch.arange(12))
