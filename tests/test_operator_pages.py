@@ -4,7 +4,10 @@ from torch import nn
 from depth_router.operator_pages import (
     activation_address_scores,
     contiguous_mlp_pages,
+    input_sketch_address_scores,
+    input_sketch_metadata_bytes,
     linear2_page_contributions,
+    make_input_page_sketches,
     make_output_page_sketches,
     page_bytes_tensor,
     page_output_weight_norms,
@@ -134,3 +137,30 @@ def test_sketch_address_scores_are_normalized() -> None:
 
     assert scores.shape == (5, 2)
     assert torch.allclose(scores.sum(dim=-1), torch.ones(5), atol=1e-6)
+
+
+def test_input_sketch_scores_need_only_mlp_input_and_resident_metadata() -> None:
+    torch.manual_seed(4)
+    linear1 = nn.Linear(6, 8)
+    linear2 = nn.Linear(8, 4)
+    pages = contiguous_mlp_pages(linear1, linear2, units_per_page=4)
+    mlp_input = torch.randn(7, 6)
+    norms = page_output_weight_norms(linear2, pages)
+    sketches = make_input_page_sketches(
+        linear1,
+        pages,
+        sketch_dim=2,
+        seed=5,
+    )
+    scores = input_sketch_address_scores(
+        mlp_input,
+        pages,
+        sketches,
+        norms,
+    )
+
+    assert scores.shape == (7, 2)
+    assert torch.allclose(scores.sum(dim=-1), torch.ones(7), atol=1e-6)
+    assert input_sketch_metadata_bytes(sketches) > 0
+    full_w1_bytes = linear1.weight.numel() * linear1.weight.element_size()
+    assert input_sketch_metadata_bytes(sketches) < full_w1_bytes
