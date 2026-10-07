@@ -6,6 +6,8 @@ from depth_router.conformal_memory import (
     aps_prediction_mask,
     bytes_for_mask,
     calibrate_required_set_tiers,
+    distortion_coverage,
+    distortion_prefix_calibration_threshold,
     empirical_coverage,
     exclusive_residency_masks,
     mean_set_size,
@@ -170,3 +172,34 @@ def test_risk_coded_memory_tiers_are_nested() -> None:
     assert torch.all(masks[0] <= masks[1])
     assert torch.all(masks[1] <= masks[2])
     assert torch.equal(exclusive[0] | exclusive[1] | exclusive[2], masks[2])
+
+
+def test_distortion_prefix_calibration_targets_quality_not_page_identity() -> None:
+    probabilities = torch.tensor(
+        [
+            [0.60, 0.30, 0.10],
+            [0.55, 0.25, 0.20],
+            [0.70, 0.20, 0.10],
+            [0.50, 0.30, 0.20],
+        ]
+    )
+    # Columns are k = 0, 1, 2, 3 selected pages.
+    distortions = torch.tensor(
+        [
+            [0.20, 0.04, 0.01, 0.00],
+            [0.20, 0.08, 0.03, 0.00],
+            [0.20, 0.02, 0.01, 0.00],
+            [0.20, 0.09, 0.02, 0.00],
+        ]
+    )
+
+    threshold = distortion_prefix_calibration_threshold(
+        probabilities,
+        distortions,
+        tolerance=0.05,
+        alpha=0.25,
+    )
+
+    assert 0.5 <= threshold <= 1.0
+    realized = torch.tensor([0.01, 0.02, 0.08, 0.03])
+    assert distortion_coverage(realized, tolerance=0.05) == 0.75
