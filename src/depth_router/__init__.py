@@ -27,6 +27,13 @@ from .conformal_memory import (
     required_set_coverage,
 )
 from .model import DepthRouterModel, ForwardStats, StackedTransformerBaseline
+from .operator_pages import (
+    OperatorPage,
+    contiguous_mlp_pages,
+    linear2_page_contributions,
+    page_bytes_tensor,
+    reconstruct_linear2,
+)
 from .solver import (
     KLFaultPolicy,
     Move,
@@ -44,6 +51,7 @@ __all__ = [
     "ForwardStats",
     "KLFaultPolicy",
     "Move",
+    "OperatorPage",
     "PageLayout",
     "SolverState",
     "StackedTransformerBaseline",
@@ -54,16 +62,20 @@ __all__ = [
     "bytes_for_mask",
     "coalesce_faults",
     "coalesced_transfer_bytes",
+    "contiguous_mlp_pages",
     "empirical_coverage",
     "greedy_affinity_layout",
     "kl_nats",
+    "linear2_page_contributions",
     "mean_set_size",
     "nested_anytime_masks",
+    "page_bytes_tensor",
     "page_masses",
     "posterior_affinity",
     "posterior_entropy",
     "predictive_working_set_bytes",
     "random_layout",
+    "reconstruct_linear2",
     "requested_pages",
     "required_set_calibration_threshold",
     "required_set_coverage",
