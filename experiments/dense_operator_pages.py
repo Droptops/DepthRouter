@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 from dataclasses import dataclass
 
@@ -904,6 +905,105 @@ def train_fault_policy(
 
 
 @torch.no_grad()
+def fault_policy_prefix_distortions(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    policy: nn.Linear,
+) -> Tensor:
+    """Distortion after k conditional faults when HALT is ignored."""
+
+    examples, num_pages, _ = trace.page_contributions.shape
+    selected = torch.zeros(examples, num_pages, dtype=torch.bool)
+    current = trace.base_without_linear2.clone()
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        current = current + bias.detach().cpu()
+
+    row_ids = torch.arange(examples)
+    distortions: list[Tensor] = []
+
+    for step in range(num_pages + 1):
+        current_logits = classify_hidden(model.cpu(), current)
+        distortions.append(
+            kl_from_full(trace.full_logits, current_logits)
+        )
+        if step == num_pages:
+            break
+
+        features = torch.cat([current, selected.float()], dim=-1)
+        logits = policy(features)[:, :num_pages]
+        logits = logits.masked_fill(selected, float("-inf"))
+        page = logits.argmax(dim=-1)
+
+        current = current + trace.page_contributions[row_ids, page]
+        selected[row_ids, page] = True
+
+    return torch.stack(distortions, dim=-1)
+
+
+def calibrate_fault_budget(
+    calibration_prefix_distortions: Tensor,
+    *,
+    tolerance_nats: float,
+    alpha: float,
+) -> int:
+    """Split-conformal global fault budget for a fixed conditional chooser."""
+
+    if calibration_prefix_distortions.ndim != 2:
+        raise ValueError("prefix distortions must have shape [examples, steps]")
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+
+    meets = calibration_prefix_distortions <= tolerance_nats
+    if bool((~meets[:, -1]).any()):
+        raise ValueError("full fault budget must meet the distortion target")
+    first = meets.to(torch.int64).argmax(dim=-1)
+
+    n = int(first.numel())
+    rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
+    rank = max(rank, 1)
+    return int(torch.kthvalue(first, rank).values.item())
+
+
+@torch.no_grad()
+def evaluate_forced_fault_budget(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    policy: nn.Linear,
+    pages: list[OperatorPage],
+    *,
+    fault_budget: int,
+    tolerance_nats: float,
+) -> dict[str, float]:
+    prefix = fault_policy_prefix_distortions(model, trace, policy)
+    if fault_budget < 0 or fault_budget >= prefix.shape[1]:
+        raise ValueError("fault budget is outside the available prefix")
+    distortion = prefix[:, fault_budget]
+    coverage = distortion_coverage(
+        distortion,
+        tolerance=tolerance_nats,
+    )
+    page_bytes = torch.tensor([page.weight_bytes for page in pages])
+    policy_bytes = sum(
+        parameter.numel() * parameter.element_size()
+        for parameter in policy.parameters()
+    )
+    return {
+        "calibrated_fault_budget": float(fault_budget),
+        "distortion_coverage": coverage,
+        "distortion_violation_rate": 1.0 - coverage,
+        "mean_kl_from_dense_nats": float(distortion.mean().item()),
+        "policy_metadata_bytes": float(policy_bytes),
+        "selected_payload_bytes": float(
+            fault_budget * page_bytes.float().mean().item()
+        ),
+        "selected_payload_fraction": float(
+            fault_budget / len(pages)
+        ),
+    }
+
+
+@torch.no_grad()
 def rollout_fault_policy(
     model: DepthRouterModel,
     trace: TraceBatch,
@@ -1112,6 +1212,25 @@ def main() -> None:
         test,
         fault_policy,
         pages,
+        tolerance_nats=args.oracle_kl,
+    )
+
+    calibration_prefix = fault_policy_prefix_distortions(
+        model,
+        calibration,
+        fault_policy,
+    )
+    fault_budget = calibrate_fault_budget(
+        calibration_prefix,
+        tolerance_nats=args.oracle_kl,
+        alpha=args.alpha,
+    )
+    result["calibrated_forced_fault_policy"] = evaluate_forced_fault_budget(
+        model,
+        test,
+        fault_policy,
+        pages,
+        fault_budget=fault_budget,
         tolerance_nats=args.oracle_kl,
     )
 
