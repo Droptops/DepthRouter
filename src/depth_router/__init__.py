@@ -37,9 +37,11 @@ from .economics import (
 from .model import DepthRouterModel, ForwardStats, StackedTransformerBaseline
 from .operator_pages import (
     OperatorPage,
+    activation_address_scores,
     contiguous_mlp_pages,
     linear2_page_contributions,
     page_bytes_tensor,
+    page_output_weight_norms,
     reconstruct_linear2,
 )
 from .solver import (
@@ -65,6 +67,7 @@ __all__ = [
     "StackedTransformerBaseline",
     "SwitchableColdMLP",
     "address_information_yield",
+    "activation_address_scores",
     "anytime_bonferroni_thresholds",
     "aps_calibration_threshold",
     "aps_prediction_mask",
@@ -83,6 +86,7 @@ __all__ = [
     "nested_anytime_masks",
     "page_bytes_tensor",
     "page_masses",
+    "page_output_weight_norms",
     "posterior_affinity",
     "posterior_entropy",
     "predictive_working_set_bytes",
