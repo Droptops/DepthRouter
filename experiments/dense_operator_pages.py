@@ -783,12 +783,238 @@ def evaluate(
     }
 
 
+@torch.no_grad()
+def collect_fault_policy_examples(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    *,
+    tolerance_nats: float,
+) -> tuple[Tensor, Tensor]:
+    """Imitation data for conditional fault(j) / halt actions."""
+
+    examples, num_pages, _ = trace.page_contributions.shape
+    selected = torch.zeros(examples, num_pages, dtype=torch.bool)
+    current = trace.base_without_linear2.clone()
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        current = current + bias.detach().cpu()
+
+    done = torch.zeros(examples, dtype=torch.bool)
+    feature_rows: list[Tensor] = []
+    targets: list[Tensor] = []
+    row_ids = torch.arange(examples)
+
+    for _ in range(num_pages + 1):
+        current_logits = classify_hidden(model.cpu(), current)
+        current_kl = kl_from_full(trace.full_logits, current_logits)
+        should_halt = (~done) & (current_kl <= tolerance_nats)
+
+        if bool(should_halt.any()):
+            halt_features = torch.cat(
+                [
+                    current[should_halt],
+                    selected[should_halt].float(),
+                ],
+                dim=-1,
+            )
+            feature_rows.append(halt_features)
+            targets.append(
+                torch.full(
+                    (int(should_halt.sum().item()),),
+                    num_pages,
+                    dtype=torch.long,
+                )
+            )
+            done = done | should_halt
+
+        active = ~done
+        if not bool(active.any()):
+            break
+
+        candidates = current[:, None, :] + trace.page_contributions
+        candidate_logits = classify_hidden(
+            model.cpu(),
+            candidates.reshape(-1, candidates.shape[-1]),
+        ).reshape(examples, num_pages, -1)
+        candidate_kl = kl_from_full(
+            trace.full_logits[:, None, :],
+            candidate_logits,
+        )
+        candidate_kl = candidate_kl.masked_fill(
+            selected,
+            float("inf"),
+        )
+        best = candidate_kl.argmin(dim=-1)
+
+        active_features = torch.cat(
+            [
+                current[active],
+                selected[active].float(),
+            ],
+            dim=-1,
+        )
+        feature_rows.append(active_features)
+        targets.append(best[active].cpu())
+
+        active_rows = row_ids[active]
+        active_best = best[active]
+        current[active] = (
+            current[active]
+            + trace.page_contributions[active_rows, active_best]
+        )
+        selected[active_rows, active_best] = True
+    else:
+        raise RuntimeError("fault oracle did not halt within all available pages")
+
+    if not bool(done.all()):
+        raise RuntimeError("fault oracle left unfinished examples")
+
+    return torch.cat(feature_rows), torch.cat(targets)
+
+
+def train_fault_policy(
+    features: Tensor,
+    targets: Tensor,
+    *,
+    num_pages: int,
+    steps: int,
+    lr: float,
+    seed: int,
+) -> nn.Linear:
+    torch.manual_seed(seed)
+    policy = nn.Linear(features.shape[-1], num_pages + 1)
+    optimizer = torch.optim.AdamW(policy.parameters(), lr=lr)
+
+    counts = torch.bincount(targets, minlength=num_pages + 1).float()
+    weights = counts.sum() / counts.clamp_min(1.0)
+    weights = weights / weights.mean()
+
+    for _ in range(steps):
+        optimizer.zero_grad(set_to_none=True)
+        logits = policy(features)
+        loss = nn.functional.cross_entropy(
+            logits,
+            targets,
+            weight=weights,
+        )
+        loss.backward()
+        optimizer.step()
+
+    return policy
+
+
+@torch.no_grad()
+def rollout_fault_policy(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    policy: nn.Linear,
+    *,
+    tolerance_nats: float,
+) -> dict[str, float]:
+    examples, num_pages, _ = trace.page_contributions.shape
+    selected = torch.zeros(examples, num_pages, dtype=torch.bool)
+    current = trace.base_without_linear2.clone()
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        current = current + bias.detach().cpu()
+
+    halted = torch.zeros(examples, dtype=torch.bool)
+    fault_counts = torch.zeros(examples, dtype=torch.long)
+    row_ids = torch.arange(examples)
+
+    for _ in range(num_pages + 1):
+        active = ~halted
+        if not bool(active.any()):
+            break
+
+        features = torch.cat(
+            [
+                current[active],
+                selected[active].float(),
+            ],
+            dim=-1,
+        )
+        logits = policy(features)
+        active_selected = selected[active]
+        logits[:, :num_pages] = logits[:, :num_pages].masked_fill(
+            active_selected,
+            float("-inf"),
+        )
+
+        action = logits.argmax(dim=-1)
+        active_rows = row_ids[active]
+        choose_halt = action == num_pages
+
+        if bool(choose_halt.any()):
+            halted[active_rows[choose_halt]] = True
+
+        fault = ~choose_halt
+        if bool(fault.any()):
+            fault_rows = active_rows[fault]
+            fault_pages = action[fault]
+            current[fault_rows] = (
+                current[fault_rows]
+                + trace.page_contributions[fault_rows, fault_pages]
+            )
+            selected[fault_rows, fault_pages] = True
+            fault_counts[fault_rows] += 1
+
+        all_selected = selected.all(dim=-1) & ~halted
+        halted[all_selected] = True
+
+    final_logits = classify_hidden(model.cpu(), current)
+    distortion = kl_from_full(trace.full_logits, final_logits)
+    coverage = distortion_coverage(
+        distortion,
+        tolerance=tolerance_nats,
+    )
+    ce = nn.functional.cross_entropy(final_logits, trace.targets)
+    dense_ce = nn.functional.cross_entropy(trace.full_logits, trace.targets)
+
+    policy_bytes = sum(
+        parameter.numel() * parameter.element_size()
+        for parameter in policy.parameters()
+    )
+    page_bytes = torch.tensor(
+        [
+            page.weight_bytes
+            for page in contiguous_mlp_pages(
+                model.shared_block.linear1,
+                model.shared_block.linear2,
+                units_per_page=trace.page_contributions.shape[1]
+                and model.shared_block.linear1.out_features
+                // trace.page_contributions.shape[1],
+            )
+        ]
+    )
+    # All pages are equal-size in the toy experiment. Use the observed page
+    # count rather than hiding this assumption in the policy itself.
+    mean_faults = float(fault_counts.float().mean().item())
+
+    return {
+        "distortion_coverage": coverage,
+        "distortion_violation_rate": 1.0 - coverage,
+        "mean_faults": mean_faults,
+        "p95_faults": float(
+            torch.quantile(fault_counts.float(), 0.95).item()
+        ),
+        "cross_entropy_nats": float(ce.item()),
+        "dense_cross_entropy_nats": float(dense_ce.item()),
+        "mean_kl_from_dense_nats": float(distortion.mean().item()),
+        "policy_metadata_bytes": int(policy_bytes),
+        "mean_selected_payload_bytes": float(
+            mean_faults * page_bytes.float().mean().item()
+        ),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--train-steps", type=int, default=700)
     parser.add_argument("--model-batch-size", type=int, default=128)
     parser.add_argument("--router-steps", type=int, default=250)
     parser.add_argument("--router-lr", type=float, default=2e-2)
+    parser.add_argument("--fault-policy-steps", type=int, default=500)
     parser.add_argument("--train-examples", type=int, default=2000)
     parser.add_argument("--calibration-examples", type=int, default=1000)
     parser.add_argument("--test-examples", type=int, default=1000)
@@ -875,6 +1101,26 @@ def main() -> None:
         router_lr=args.router_lr,
         sketch_dims=args.sketch_dims,
         seed=args.seed + 100,
+    )
+
+    fault_features, fault_targets = collect_fault_policy_examples(
+        model,
+        train,
+        tolerance_nats=args.oracle_kl,
+    )
+    fault_policy = train_fault_policy(
+        fault_features,
+        fault_targets,
+        num_pages=len(pages),
+        steps=args.fault_policy_steps,
+        lr=args.router_lr,
+        seed=args.seed + 500,
+    )
+    result["dynamic_fault_policy"] = rollout_fault_policy(
+        model,
+        test,
+        fault_policy,
+        tolerance_nats=args.oracle_kl,
     )
 
     if result["train_zero_fault_rate"] > 0.95:
