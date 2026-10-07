@@ -136,7 +136,7 @@ def layer_groups(num_layers: int) -> dict[str, list[int]]:
     quarter = max(num_layers // 4, 1)
     return {
         "all": list(range(num_layers)),
-        "early_half": list(range(0, midpoint)),
+        "early_half": list(range(midpoint)),
         "late_half": list(range(midpoint, num_layers)),
         "middle_half": list(range(quarter, num_layers - quarter)),
         "alternating": list(range(0, num_layers, 2)),
