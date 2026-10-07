@@ -114,8 +114,8 @@ def quantized_row_sketch(
 ) -> tuple[Tensor, Tensor]:
     """Return dequantized integer codes plus one fp16 scale per row."""
 
-    if bits not in (1, 2, 4):
-        raise ValueError("bits must be one of {1, 2, 4}")
+    if bits not in (1, 2, 3, 4):
+        raise ValueError("bits must be one of {1, 2, 3, 4}")
 
     w = weight.detach().float()
     if bits == 1:
@@ -349,7 +349,7 @@ def main() -> None:
         "--address-bits",
         nargs="+",
         type=int,
-        default=[1, 2, 4],
+        default=[1, 2, 3, 4],
     )
     parser.add_argument("--json-out")
     args = parser.parse_args()
