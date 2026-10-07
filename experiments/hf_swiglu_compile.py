@@ -1,4 +1,4 @@
-from __future__ import annotations
+# ruff: noqa: I001\nfrom __future__ import annotations
 
 import argparse
 import json
