@@ -2,9 +2,11 @@ import torch
 from torch import nn
 
 from depth_router.operator_pages import (
+    activation_address_scores,
     contiguous_mlp_pages,
     linear2_page_contributions,
     page_bytes_tensor,
+    page_output_weight_norms,
     reconstruct_linear2,
 )
 
@@ -88,3 +90,27 @@ def test_page_bytes_cover_first_and_second_projection_slices() -> None:
     element_size = linear1.weight.element_size()
     expected_per_page = (4 * 5 + 4 + 3 * 4) * element_size
     assert sizes.tolist() == [expected_per_page, expected_per_page]
+
+
+def test_activation_address_scores_are_normalized_without_reading_payload_pages() -> None:
+    torch.manual_seed(2)
+    linear1 = nn.Linear(4, 8)
+    linear2 = nn.Linear(8, 3)
+    pages = contiguous_mlp_pages(
+        linear1,
+        linear2,
+        units_per_page=4,
+    )
+    activation = torch.tensor(
+        [
+            [3.0, 3.0, 3.0, 3.0, 0.1, 0.1, 0.1, 0.1],
+            [0.1, 0.1, 0.1, 0.1, 3.0, 3.0, 3.0, 3.0],
+        ]
+    )
+    norms = page_output_weight_norms(linear2, pages)
+    scores = activation_address_scores(activation, pages, norms)
+
+    assert scores.shape == (2, 2)
+    assert torch.allclose(scores.sum(dim=-1), torch.ones(2))
+    assert scores[0, 0] > scores[0, 1]
+    assert scores[1, 1] > scores[1, 0]
