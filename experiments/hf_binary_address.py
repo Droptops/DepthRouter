@@ -392,7 +392,7 @@ def main() -> None:
 
     baseline = last_logits(model, encoded)
     rows = []
-    if any(bits not in (1, 2, 4) for bits in args.address_bits):
+    if any(bits not in (1, 2, 3, 4) for bits in args.address_bits):
         raise ValueError("--address-bits values must be in {1, 2, 4}")
 
     for fraction in args.fractions:
