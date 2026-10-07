@@ -1107,7 +1107,7 @@ def train_dagger_fault_policy(
 def fault_policy_prefix_distortions(
     model: DepthRouterModel,
     trace: TraceBatch,
-    policy: nn.Linear,
+    policy: nn.Module,
 ) -> Tensor:
     """Distortion after k conditional faults when HALT is ignored."""
 
@@ -1231,6 +1231,7 @@ def rollout_fault_policy(
         if not bool(active.any()):
             break
 
+        active_rows = row_ids[active]
         features = fault_policy_features(
             trace,
             current,
@@ -1245,7 +1246,6 @@ def rollout_fault_policy(
         )
 
         action = logits.argmax(dim=-1)
-        active_rows = row_ids[active]
         choose_halt = action == num_pages
 
         if bool(choose_halt.any()):
