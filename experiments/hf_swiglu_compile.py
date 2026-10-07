@@ -12,6 +12,7 @@ from torch import Tensor, nn
 from depth_router import (
     contiguous_swiglu_pages,
     greedy_pages_for_relative_output_error,
+    learn_balanced_codemand_permutation,
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
     page_importance,
@@ -196,8 +197,8 @@ def main() -> None:
     parser.add_argument("--units-per-page", type=int, default=256)
     parser.add_argument(
         "--compiler",
-        choices=["affinity", "simhash"],
-        default="simhash",
+        choices=["affinity", "balanced", "simhash"],
+        default="balanced",
     )
     parser.add_argument("--simhash-bits", type=int, default=16)
     parser.add_argument("--mass-target", type=float, default=0.95)
@@ -306,6 +307,14 @@ def main() -> None:
             intermediate,
             down,
             units_per_page=args.units_per_page,
+        )
+    elif args.compiler == "balanced":
+        permutation = learn_balanced_codemand_permutation(
+            intermediate,
+            down,
+            units_per_page=args.units_per_page,
+            max_trace_tokens=args.max_trace_tokens,
+            seed=args.seed,
         )
     else:
         permutation = learn_simhash_codemand_permutation(
