@@ -186,29 +186,43 @@ def top_feature_projection_errors(
 
 
 def projection_modules(layer: nn.Module) -> dict[str, nn.Linear]:
+    """Linear maps whose inputs recur with the shared layer."""
+
     result: dict[str, nn.Linear] = {}
     attention = getattr(layer, "self_attn", None)
     mlp = getattr(layer, "mlp", None)
 
-    for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
+    for name in ("q_proj", "k_proj", "v_proj"):
         module = getattr(attention, name, None) if attention is not None else None
         if isinstance(module, nn.Linear):
             result[f"attn_{name}"] = module
 
-    for name in ("gate_proj", "up_proj", "down_proj"):
+    for name in ("gate_proj", "up_proj"):
         module = getattr(mlp, name, None) if mlp is not None else None
-        if isinstance(module, nn.Linear) and module.in_features == result.get(
-            "attn_q_proj", module
-        ).in_features:
-            # gate/up consume the block hidden state. down_proj consumes the
-            # widened SwiGLU activation, so skip it unless widths happen to match.
+        if isinstance(module, nn.Linear):
             result[f"mlp_{name}"] = module
 
-    return {
-        name: module
-        for name, module in result.items()
-        if module.in_features == layer.self_attn.q_proj.in_features
-    }
+    return result
+
+
+def capture_projection_inputs(
+    modules: dict[str, nn.Linear],
+) -> tuple[dict[str, list[Tensor]], list[torch.utils.hooks.RemovableHandle]]:
+    traces: dict[str, list[Tensor]] = {name: [] for name in modules}
+    handles: list[torch.utils.hooks.RemovableHandle] = []
+
+    for name, module in modules.items():
+        def prehook(
+            _module: nn.Module,
+            hook_args: tuple[Tensor, ...],
+            *,
+            trace_name: str = name,
+        ) -> None:
+            traces[trace_name].append(hook_args[0].detach().cpu())
+
+        handles.append(module.register_forward_pre_hook(prehook))
+
+    return traces, handles
 
 
 def main() -> None:
@@ -277,14 +291,26 @@ def main() -> None:
         raise ValueError("layer index out of range")
 
     original = layers[layer_index]
+    modules = projection_modules(original)
+    projection_traces, trace_handles = capture_projection_inputs(modules)
+
     repeated = RepeatedLayer(original, args.loops)
     layers[layer_index] = repeated
 
-    with torch.inference_mode():
-        output = model(**encoded, use_cache=False)
-        final_logits = output.logits[:, -1, :].detach().float().cpu()
+    try:
+        with torch.inference_mode():
+            output = model(**encoded, use_cache=False)
+            final_logits = output.logits[:, -1, :].detach().float().cpu()
+    finally:
+        for handle in trace_handles:
+            handle.remove()
 
-    modules = projection_modules(original)
+    for name, traces in projection_traces.items():
+        if len(traces) != args.loops:
+            raise RuntimeError(
+                f"{name} expected {args.loops} recurrent calls, got {len(traces)}"
+            )
+
     rows = []
     previous = repeated.inputs[0].reshape(-1, repeated.inputs[0].shape[-1]).float()
     previous = previous[: args.max_rows]
@@ -308,14 +334,40 @@ def main() -> None:
 
         projection_rows = {}
         for name, module in modules.items():
+            previous_input = projection_traces[name][loop_idx - 1].reshape(
+                -1,
+                projection_traces[name][loop_idx - 1].shape[-1],
+            ).float()[: args.max_rows]
+            current_input = projection_traces[name][loop_idx].reshape(
+                -1,
+                projection_traces[name][loop_idx].shape[-1],
+            ).float()[: args.max_rows]
+            projection_delta = current_input - previous_input
+            input_relative = (
+                projection_delta.norm(dim=-1)
+                / previous_input.norm(dim=-1).clamp_min(1e-20)
+            )
+            singular_input = torch.linalg.svdvals(projection_delta)
+
             projection_rows[name] = {
+                "mean_relative_input_delta_norm": float(input_relative.mean().item()),
+                "stable_rank_of_input_delta": float(
+                    (
+                        projection_delta.square().sum()
+                        / singular_input[0].square().clamp_min(1e-20)
+                    ).item()
+                ),
+                "rank_for_95pct_input_delta_energy": energy_rank(
+                    singular_input,
+                    0.95,
+                ),
                 "low_rank": low_rank_projection_errors(
-                    delta,
+                    projection_delta,
                     module.cpu(),
                     args.ranks,
                 ),
                 "top_features": top_feature_projection_errors(
-                    delta,
+                    projection_delta,
                     module.cpu(),
                     args.feature_fractions,
                 ),
