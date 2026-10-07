@@ -203,3 +203,20 @@ def test_distortion_prefix_calibration_targets_quality_not_page_identity() -> No
     assert 0.5 <= threshold <= 1.0
     realized = torch.tensor([0.01, 0.02, 0.08, 0.03])
     assert distortion_coverage(realized, tolerance=0.05) == 0.75
+
+
+def test_distortion_calibration_uses_last_violation_not_first_pass() -> None:
+    probabilities = torch.tensor([[0.50, 0.30, 0.20]])
+    # k=1 passes, k=2 becomes unsafe again, k=3 (dense) is safe.
+    distortions = torch.tensor([[0.20, 0.04, 0.08, 0.00]])
+
+    threshold = distortion_prefix_calibration_threshold(
+        probabilities,
+        distortions,
+        tolerance=0.05,
+        alpha=0.5,
+    )
+
+    # The valid monotone requirement is the full 3-page prefix, not the first
+    # passing 1-page prefix.
+    assert threshold == 1.0
