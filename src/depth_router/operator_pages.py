@@ -58,6 +58,51 @@ def contiguous_mlp_pages(
     return pages
 
 
+
+def page_output_weight_norms(
+    linear2: nn.Linear,
+    pages: list[OperatorPage],
+) -> Tensor:
+    """Precompute one resident scalar norm per cold output-weight page."""
+
+    if not pages:
+        raise ValueError("at least one page is required")
+    norms = []
+    for page in pages:
+        if page.start < 0 or page.end > linear2.in_features or page.start >= page.end:
+            raise ValueError("invalid page range")
+        weight = linear2.weight[:, page.start : page.end]
+        norms.append(weight.detach().float().norm())
+    return torch.stack(norms)
+
+
+def activation_address_scores(
+    activation: Tensor,
+    pages: list[OperatorPage],
+    output_weight_norms: Tensor,
+) -> Tensor:
+    """Turn MLP activation energy into a zero-parameter page-address distribution.
+
+    The score for page j is ||a_j||_2 * ||W2_j||_F, an upper-bound-style proxy
+    for the magnitude of that page's output contribution. W2 norms are tiny
+    resident metadata precomputed once; the cold matrix itself is not read here.
+    """
+
+    if not pages:
+        raise ValueError("at least one page is required")
+    if output_weight_norms.ndim != 1 or output_weight_norms.numel() != len(pages):
+        raise ValueError("one output weight norm is required per page")
+
+    scores = []
+    for idx, page in enumerate(pages):
+        if page.start < 0 or page.end > activation.shape[-1] or page.start >= page.end:
+            raise ValueError("invalid page range")
+        act_norm = activation[..., page.start : page.end].float().norm(dim=-1)
+        scores.append(act_norm * output_weight_norms[idx].to(act_norm.device))
+
+    stacked = torch.stack(scores, dim=-1)
+    return stacked / stacked.sum(dim=-1, keepdim=True).clamp_min(1e-12)
+
 def linear2_page_contributions(
     activation: Tensor,
     linear2: nn.Linear,
