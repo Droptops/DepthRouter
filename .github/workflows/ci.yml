@@ -283,3 +283,35 @@ jobs:
         with:
           name: temporal-locality-scan
           path: temporal_locality.json
+
+
+  semantic-batching-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Test semantic batching of Qwen sparse working sets
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_semantic_batching.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 48
+          --layer 23
+          --fraction 0.25
+          --units-per-page 16
+          --scheduler-batch-size 16
+          --json-out semantic_batching.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: semantic-batching-scan
+          path: semantic_batching.json
