@@ -139,6 +139,59 @@ def learn_codemand_permutation(
     return torch.argsort(layout.state_to_page)
 
 
+def learn_simhash_codemand_permutation(
+    intermediate: Tensor,
+    down_proj: nn.Linear,
+    *,
+    bits: int = 16,
+    max_trace_tokens: int = 2048,
+    seed: int = 0,
+) -> Tensor:
+    """Scalable locality-sensitive ordering of neuron demand signatures.
+
+    The exact affinity compiler materializes an N x N neuron affinity matrix.
+    This alternative gives each neuron a SimHash code over its demand trajectory
+    and sorts by that code. Memory is O(TN + Nb) instead of O(N^2).
+    """
+
+    if not 1 <= bits <= 62:
+        raise ValueError("bits must be between 1 and 62")
+    if max_trace_tokens < 1:
+        raise ValueError("max_trace_tokens must be >= 1")
+    if intermediate.ndim < 2:
+        raise ValueError("intermediate must contain examples and neurons")
+    if intermediate.shape[-1] != down_proj.in_features:
+        raise ValueError("intermediate width does not match down_proj")
+
+    flat = intermediate.reshape(-1, intermediate.shape[-1]).float().cpu()
+    if flat.shape[0] > max_trace_tokens:
+        generator = torch.Generator().manual_seed(seed)
+        selection = torch.randperm(flat.shape[0], generator=generator)[:max_trace_tokens]
+        flat = flat.index_select(0, selection)
+
+    column_norm = down_proj.weight.detach().float().norm(dim=0).cpu()
+    demand = flat.abs() * column_norm[None, :]
+    signatures = demand.T
+    signatures = signatures / signatures.norm(dim=1, keepdim=True).clamp_min(1e-12)
+
+    generator = torch.Generator().manual_seed(seed + 1)
+    hyperplanes = torch.randn(
+        signatures.shape[1],
+        bits,
+        generator=generator,
+        dtype=signatures.dtype,
+    )
+    binary = (signatures @ hyperplanes) >= 0
+
+    powers = (1 << torch.arange(bits, dtype=torch.int64))[None, :]
+    codes = (binary.to(torch.int64) * powers).sum(dim=-1)
+
+    # Stable secondary key keeps equal hashes deterministic.
+    indices = torch.arange(codes.numel(), dtype=torch.int64)
+    composite = codes * (codes.numel() + 1) + indices
+    return torch.argsort(composite)
+
+
 @torch.no_grad()
 def permute_swiglu_neurons_(
     gate_proj: nn.Linear,
