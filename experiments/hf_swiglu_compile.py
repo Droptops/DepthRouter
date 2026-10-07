@@ -8,7 +8,7 @@ from typing import Any
 import torch
 from torch import Tensor, nn
 
-from depth_router.swiglu_layout import (
+from depth_router import (
     contiguous_swiglu_pages,
     learn_codemand_permutation,
     learn_simhash_codemand_permutation,
@@ -153,7 +153,7 @@ def logit_kl(reference: Tensor, candidate: Tensor) -> Tensor:
 
 
 def encode_texts(
-    tokenizer: Any,
+    tokenizer,
     texts: list[str],
     *,
     device: torch.device,
