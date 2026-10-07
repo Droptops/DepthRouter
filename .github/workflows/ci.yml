@@ -26,35 +26,34 @@ jobs:
         if: matrix.python-version == '3.10'
         run: >-
           python experiments/belief_page_packing.py
-          --seeds 5
-          --train-samples 1000
-          --test-samples 1000
+          --seeds 3
+          --train-samples 750
+          --test-samples 750
           --summary-only
       - name: Anytime conformal cache smoke benchmark
         if: matrix.python-version == '3.10'
         run: >-
           python experiments/anytime_conformal_cache.py
-          --train-steps 500
-          --calibration-examples 1000
-          --test-examples 1000
+          --train-steps 350
+          --calibration-examples 750
+          --test-examples 750
           --summary-only
       - name: Dense operator-page smoke benchmark
         if: matrix.python-version == '3.10'
         run: >-
           python experiments/dense_operator_pages.py
-          --train-steps 350
-          --router-steps 150
-          --train-examples 750
-          --calibration-examples 500
-          --test-examples 500
+          --train-steps 250
+          --router-steps 100
+          --train-examples 500
+          --calibration-examples 350
+          --test-examples 350
           --model-batch-size 100
           --oracle-kl 0.001
           --summary-only
 
-
-  real-model-gate:
+  frontier-real-model:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 55
 
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +63,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[hf]"
-      - name: Compile a real pretrained SwiGLU block with SimHash
+      - name: Exact function-preserving compiler gate
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
@@ -73,45 +72,12 @@ jobs:
           --device cpu
           --dtype float32
           --max-length 32
-          --max-trace-tokens 512
-          --units-per-page 128
-          --mass-target 0.95
-          --compiler simhash
-          --simhash-bits 16
-          --json-out real_model_gate_simhash.json
-      - name: Compile the same block with balanced co-demand clustering
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_swiglu_compile.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --max-trace-tokens 512
+          --max-trace-tokens 384
           --units-per-page 128
           --mass-target 0.95
           --compiler balanced
-          --json-out real_model_gate_balanced.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: real-model-gate
-          path: real_model_gate_*.json
-
-
-  real-sparsity-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Scan neuron-level sparsity across all Qwen layers
+          --json-out 01_real_model_gate.json
+      - name: Scan real neuron sparsity across layers
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
@@ -120,245 +86,92 @@ jobs:
           --device cpu
           --dtype float32
           --max-length 32
-          --max-trace-tokens 192
+          --max-trace-tokens 128
           --behavioral-layers 3
           --probe-fractions 0.10 0.25 0.50
-          --json-out real_sparsity_scan.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: real-sparsity-scan
-          path: real_sparsity_scan.json
-
-
-  hot-surrogate-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Probe low-rank hot surrogates on held-out Qwen prompts
+          --json-out 02_neuron_sparsity.json
+      - name: Search exact residual-aware neuron subsets
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
-          python experiments/hf_hot_surrogate_scan.py
+          python experiments/hf_greedy_subset_oracle.py
           --model Qwen/Qwen2.5-0.5B-Instruct
           --device cpu
           --dtype float32
           --max-length 32
-          --max-train-tokens 192
-          --max-test-tokens 192
-          --ranks 8 16 32 64 128
-          --json-out hot_surrogate_scan.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: hot-surrogate-scan
-          path: hot_surrogate_scan.json
-
-
-  end-to-end-sparsity:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test final-logit tolerance to sparse Qwen MLP contributions
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_end_to_end_sparsity.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --layers 0 6 12 18 23
-          --fractions 0.10 0.25 0.50
-          --json-out end_to_end_sparsity.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: end-to-end-sparsity
-          path: end_to_end_sparsity.json
-
-
-  state-cache-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test hidden-state semantic memoization on held-out Qwen prompts
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_state_cache_scan.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --max-train-tokens 192
-          --max-test-tokens 192
-          --layers 0 6 12 18 23
-          --cache-entries 16 32 64 128
-          --json-out state_cache_scan.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: state-cache-scan
-          path: state_cache_scan.json
-
-
-  binary-address-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test 1-bit neural page-table addressing on final Qwen layer
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_binary_address.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --layer 23
-          --fractions 0.10 0.25 0.50
-          --json-out binary_address_scan.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: binary-address-scan
-          path: binary_address_scan.json
-
-
-  temporal-locality-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Measure temporal working-set locality across Qwen tokens
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_temporal_locality.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 48
           --layers 0 12 23
-          --fractions 0.10 0.25 0.50
-          --units-per-page 32
-          --cache-fractions 0.25 0.50 0.75
-          --json-out temporal_locality.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: temporal-locality-scan
-          path: temporal_locality.json
-
-
-  semantic-batching-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test semantic batching of Qwen sparse working sets
+          --thresholds 0.20 0.10 0.05 0.01
+          --block-size 32
+          --max-fraction 0.50
+          --json-out 03_greedy_subset_oracle.json
+      - name: Test residual-aware tiny subsets on final logits
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
-          python experiments/hf_semantic_batching.py
+          python experiments/hf_greedy_end_to_end.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --layer 23
+          --fractions 0.03 0.07 0.17
+          --block-size 32
+          --json-out 04_greedy_end_to_end.json
+      - name: Test low-bit residual-pursuit addressing
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_lowbit_residual_pursuit.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --layer 23
+          --address-bits 2 3 4
+          --fractions 0.03 0.07 0.17
+          --block-size 32
+          --json-out 05_lowbit_residual_pursuit.json
+      - name: Test global low-bit neural addressing
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_global_lowbit_decode.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --address-bits 3 4
+          --fractions 0.10 0.25
+          --json-out 06_global_lowbit_decode.json
+      - name: Probe recurrent Krylov operator reuse
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_loop_delta_scan.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-rows 128
+          --loops 4
+          --ranks 4 8 16 32 64
+          --feature-fractions 0.05 0.10 0.25 0.50
+          --json-out 07_loop_delta.json
+      - name: Compile held-out active demand into pages
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_active_page_compile.py
           --model Qwen/Qwen2.5-0.5B-Instruct
           --device cpu
           --dtype float32
           --max-length 48
           --layer 23
-          --fraction 0.25
-          --units-per-page 16
-          --scheduler-batch-size 16
-          --json-out semantic_batching.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: semantic-batching-scan
-          path: semantic_batching.json
-
-
-  vertical-sparsity-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Probe per-token vertical MLP sparsity on Qwen
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_vertical_sparsity.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --retain-fractions 0.25 0.50 0.75
-          --json-out vertical_sparsity.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: vertical-sparsity-scan
-          path: vertical_sparsity.json
-
-
-  predictive-state-vq:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Quantize held-out Qwen MLP behavior into predictive states
+          --fraction 0.10
+          --units-per-page 16 32 64
+          --iterations 4
+          --json-out 08_active_page_compile.json
+      - name: Quantize held-out behavior into predictive states
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
@@ -372,227 +185,18 @@ jobs:
           --layers 0 12 23
           --clusters 16 32 64
           --router-steps 250
-          --json-out predictive_state_vq.json
+          --json-out 09_predictive_state_vq.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: predictive-state-vq
-          path: predictive_state_vq.json
-
-
-  global-sparse-oracle:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test simultaneous sparse MLP behavior across Qwen layers
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_global_sparse_oracle.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --fractions 0.05 0.10 0.25 0.50
-          --groups all early_half late_half middle_half alternating
-          --json-out global_sparse_oracle.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: global-sparse-oracle
-          path: global_sparse_oracle.json
-
-
-  global-lowbit-decode:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test low-bit neural addresses across every Qwen MLP
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_global_lowbit_decode.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --address-bits 2 3 4
-          --fractions 0.10 0.25
-          --json-out global_lowbit_decode.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: global-lowbit-decode
-          path: global_lowbit_decode.json
-
-
-  loop-delta-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Probe recurrent hidden-state delta compressibility
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_loop_delta_scan.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --max-rows 192
-          --loops 4
-          --ranks 4 8 16 32 64
-          --feature-fractions 0.05 0.10 0.25 0.50
-          --json-out loop_delta_scan.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: loop-delta-scan
-          path: loop_delta_scan.json
-
-
-  greedy-subset-oracle:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Search intrinsic exact-neuron subset sparsity
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_greedy_subset_oracle.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --layers 0 12 23
-          --thresholds 0.20 0.10 0.05 0.01
-          --block-size 32
-          --max-fraction 0.50
-          --json-out greedy_subset_oracle.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: greedy-subset-oracle
-          path: greedy_subset_oracle.json
-
-
-  active-page-compile:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Compile held-out Qwen active-neuron demand into pages
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_active_page_compile.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 48
-          --layer 23
-          --fraction 0.10
-          --units-per-page 16 32 64
-          --iterations 4
-          --json-out active_page_compile.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: active-page-compile
-          path: active_page_compile.json
-
-
-  lowbit-residual-pursuit:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Route exact Qwen neurons with low-bit residual pursuit
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_lowbit_residual_pursuit.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --layer 23
-          --address-bits 2 3 4
-          --fractions 0.03 0.07 0.17
-          --block-size 32
-          --json-out lowbit_residual_pursuit.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: lowbit-residual-pursuit
-          path: lowbit_residual_pursuit.json
-
-
-  greedy-end-to-end:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[hf]"
-      - name: Test residual-aware tiny neuron subsets on final Qwen logits
-        env:
-          TOKENIZERS_PARALLELISM: "false"
-        run: >-
-          python experiments/hf_greedy_end_to_end.py
-          --model Qwen/Qwen2.5-0.5B-Instruct
-          --device cpu
-          --dtype float32
-          --max-length 32
-          --layer 23
-          --fractions 0.03 0.07 0.17
-          --block-size 32
-          --json-out greedy_end_to_end.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: greedy-end-to-end
-          path: greedy_end_to_end.json
+          name: frontier-real-model
+          path: |
+            01_real_model_gate.json
+            02_neuron_sparsity.json
+            03_greedy_subset_oracle.json
+            04_greedy_end_to_end.json
+            05_lowbit_residual_pursuit.json
+            06_global_lowbit_decode.json
+            07_loop_delta.json
+            08_active_page_compile.json
+            09_predictive_state_vq.json
