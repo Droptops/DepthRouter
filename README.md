@@ -1,56 +1,87 @@
 # DepthRouter
 
-**Hardware-aware adaptive recurrent inference.**
+**A bandwidth-constrained recurrent solver with explicit memory state.**
 
-DepthRouter is an experimental research project for routing computation through transformer depth rather than treating model depth as fixed.
+DepthRouter is an experimental research project for treating recurrent inference
+as a control problem over both model state and memory placement.
 
-The core hypothesis is that a model can reuse a transformer block recurrently, allocate different numbers of passes to different inputs, and optimize quality against compute, memory traffic, and latency.
+The primary state is:
 
-A simplified objective is:
+```text
+s_k = (h_k, c_k, p_k)
+```
 
-    min task_loss + lambda * FLOPs + mu * bytes_moved + gamma * latency
+where `h_k` is solver state, `c_k` is cache / residency state, and `p_k` is
+the current next-token distribution.
 
-subject to a minimum quality target.
+The solver chooses among a finite set of moves:
 
-## First milestone
+```text
+spin | fault(j) | write | halt
+```
 
-The initial harness compares:
+Depth is the number of `spin` moves purchased before `halt`. A `fault(j)`
+loads a cold operator slice. `write` is the one-shot KV update. The goal is not
+"fewer layers"; the goal is more predictive gain per byte moved.
 
-- fixed unshared transformer depth
-- fixed shared recurrence
-- adaptive shared recurrence
-- shared recurrence with pass-specific low-rank residual adapters
+## Primary falsification target
 
-The first task is random pointer chasing, chosen because the target naturally requires serial state updates.
+The first systems experiment uses one pinned mid-stack block on one small model
+and measures four schedules on the same token stream:
 
-## Quick start
+1. stock forward
+2. naive recurrence at K=4
+3. K=4 with KV written once
+4. schedule 3 with a cold MLP slice faulted only when logit movement justifies it
 
-    python -m pip install -e ".[dev]"
-    pytest
-    python experiments/toy_pointer_chase.py --device auto
+The primary metric is incremental cross-entropy improvement per incremental byte
+after the first useful pass:
 
-The experiment prints JSON containing accuracy, parameter count, parameter storage, and mean logical passes.
+```text
+eta = (CE_after_pass1 - CE_schedule)
+      / (bytes_schedule - bytes_after_pass1)
+```
 
-## Important claim boundary
+If schedule 4 does not beat schedule 3 after including the gate's own traffic,
+the cache-aware residency thesis is considered falsified on that
+hardware/model pair.
 
-The v0 adaptive router masks halted samples semantically but does not yet compact the active batch. Fewer logical sample-passes therefore do not imply proportional wall-clock or energy savings.
+## Why memory placement is part of the state
 
-Likewise, the analytic weight-traffic model is only a bound. HBM traffic, cache residency, arithmetic intensity, and throughput must be measured with hardware profilers before making systems claims.
+A post-hoc byte penalty is not enough. If identical hidden states incur different
+cost depending on what is resident, they are different solver states.
 
-See docs/EXPERIMENT_PLAN.md for the falsifiable evaluation plan.
+The local cost model is checked against profiler bytes using an accounting
+residual:
 
-## Research questions
+```text
+A(gamma) = B_hw(gamma) - sum_k b(s_k, a_k)
+```
 
-1. Can shared recurrent depth match or beat an unshared stack at a fixed parameter budget?
-2. Can adaptive halting reduce average passes without materially reducing task quality?
-3. Do pass-specific low-rank adapters recover useful depth-specific capacity?
-4. Can fixed-point or residual-based acceleration reduce physical block evaluations?
-5. When does weight reuse improve arithmetic intensity or memory traffic on real hardware?
+A persistent non-zero residual means the state is missing some hardware variable
+such as residency, eviction, coalescing, or graph-capture behavior. The response
+is to fix the state description, not add another mechanism.
+
+See `docs/MEMORY_STATE_SOLVER.md` for the formulation and
+`docs/EXPERIMENT_PLAN.md` for the measurement protocol.
+
+## Existing prototype
+
+The initial Python harness still contains the earlier recurrent / stacked toy
+baselines. They are useful sanity checks, but they are no longer the primary
+systems claim.
+
+```text
+python -m pip install -e ".[dev]"
+pytest
+python experiments/toy_pointer_chase.py --device auto
+```
 
 ## Principle
 
-> Route computation, not just tokens.
+> Placement is part of the dynamics.
 
 ## Status
 
-Bootstrap research harness. No performance claims are established yet.
+Research prototype. No hardware-residency performance claim is established until
+the profiler experiment passes.
