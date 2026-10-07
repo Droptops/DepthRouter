@@ -51,6 +51,46 @@ pages. Packing high-affinity states together makes uncertainty itself cheaper.
 The repository implements a first deterministic greedy partitioner using this
 matrix.
 
+### Smooth address entropy
+
+For equal-size physical pages, define
+
+```text
+N_epsilon(q) =
+    minimum number of pages covering at least (1 - epsilon) posterior mass
+
+H0_epsilon(q) = log N_epsilon(q)
+```
+
+`H0_epsilon` is the smooth Renyi-0 entropy of the page-demand support.
+
+The physical working set is therefore exactly
+
+```text
+W_epsilon(q) = page_bytes * exp(H0_epsilon(q))
+```
+
+when natural logarithms are used.
+
+This exposes a useful compute-memory duality: reducing address uncertainty by
+one nat divides the required fixed-page working set by approximately `e`; one
+bit divides it by two.
+
+The target of a resident solver spin is therefore not generic hidden-state
+convergence. It is useful **address information**: information that collapses the
+set of cold computations that could still be required.
+
+This suggests a hardware-facing yield metric for the eventual profiler run:
+
+```text
+address_information_yield =
+    reduction in smooth address entropy
+    / measured bytes spent on the spin
+```
+
+The project should only promote this metric if a lower address entropy actually
+predicts fewer measured cold transfers on held-out real traces.
+
 ## 3. Why this is different from ordinary caching
 
 Ordinary cache policy asks which already-defined pages should remain resident.
