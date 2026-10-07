@@ -122,6 +122,77 @@ def row_feature_fraction_for_energy(delta: Tensor, target: float) -> dict[str, f
     }
 
 
+def temporal_span_fit(
+    current: Tensor,
+    history: list[Tensor],
+    *,
+    reg: float = 1e-6,
+) -> tuple[Tensor, Tensor]:
+    """Project each row's current recurrent delta onto its own prior-delta span."""
+
+    if not history:
+        raise ValueError("history must contain at least one prior delta")
+    if any(item.shape != current.shape for item in history):
+        raise ValueError("all history deltas must match current shape")
+
+    # [rows, m, hidden]
+    basis = torch.stack([item.float() for item in history], dim=1)
+    target = current.float()
+    gram = basis @ basis.transpose(-1, -2)
+    scale = gram.diagonal(dim1=-2, dim2=-1).mean(dim=-1, keepdim=True)
+    scale = scale.clamp_min(1e-12)
+    eye = torch.eye(
+        gram.shape[-1],
+        dtype=gram.dtype,
+        device=gram.device,
+    )[None]
+    gram = gram + reg * scale[:, :, None] * eye
+    rhs = (basis @ target[:, :, None])
+    coeff = torch.linalg.solve(gram, rhs).squeeze(-1)
+    reconstruction = (coeff[:, :, None] * basis).sum(dim=1)
+    return coeff, reconstruction
+
+
+def temporal_operator_reuse(
+    current: Tensor,
+    history: list[Tensor],
+    linear: nn.Linear,
+) -> dict[str, float]:
+    """Approximate W*delta using cached W actions on prior recurrent deltas."""
+
+    coeff, reconstruction = temporal_span_fit(current, history)
+    target_norm = current.float().norm(dim=-1).clamp_min(1e-20)
+    state_error = (current.float() - reconstruction).norm(dim=-1) / target_norm
+
+    weight = linear.weight.detach().float().cpu()
+    exact = current.float() @ weight.T
+    historical_actions = torch.stack(
+        [item.float() @ weight.T for item in history],
+        dim=1,
+    )
+    reused = (coeff[:, :, None] * historical_actions).sum(dim=1)
+    projection_norm = exact.norm(dim=-1).clamp_min(1e-20)
+    projection_error = (exact - reused).norm(dim=-1) / projection_norm
+
+    rows, hidden = current.shape
+    out = weight.shape[0]
+    m = len(history)
+    dense_flops = float(rows * hidden * out)
+    # Fit m coefficients from hidden state + mix m cached projected vectors.
+    reuse_flops = float(rows * m * hidden + rows * m * out + rows * (m**3))
+
+    return {
+        "basis_size": float(m),
+        "mean_state_delta_residual": float(state_error.mean().item()),
+        "p95_state_delta_residual": float(torch.quantile(state_error, 0.95).item()),
+        "mean_projected_delta_error": float(projection_error.mean().item()),
+        "p95_projected_delta_error": float(
+            torch.quantile(projection_error, 0.95).item()
+        ),
+        "ideal_cached_operator_flop_ratio": reuse_flops / dense_flops,
+    }
+
+
 def low_rank_projection_errors(
     delta: Tensor,
     linear: nn.Linear,
@@ -312,6 +383,10 @@ def main() -> None:
             )
 
     rows = []
+    hidden_delta_history: list[Tensor] = []
+    projection_delta_history: dict[str, list[Tensor]] = {
+        name: [] for name in modules
+    }
     previous = repeated.inputs[0].reshape(-1, repeated.inputs[0].shape[-1]).float()
     previous = previous[: args.max_rows]
 
@@ -371,8 +446,38 @@ def main() -> None:
                     module.cpu(),
                     args.feature_fractions,
                 ),
+                "trajectory_operator_cache": (
+                    temporal_operator_reuse(
+                        projection_delta,
+                        projection_delta_history[name],
+                        module.cpu(),
+                    )
+                    if projection_delta_history[name]
+                    else None
+                ),
             }
+            projection_delta_history[name].append(projection_delta)
             module.to(device)
+
+        hidden_trajectory = (
+            temporal_span_fit(delta, hidden_delta_history)
+            if hidden_delta_history
+            else None
+        )
+        hidden_trajectory_metrics = None
+        if hidden_trajectory is not None:
+            _, hidden_reconstruction = hidden_trajectory
+            hidden_residual = (
+                (delta - hidden_reconstruction).norm(dim=-1)
+                / delta.norm(dim=-1).clamp_min(1e-20)
+            )
+            hidden_trajectory_metrics = {
+                "basis_size": len(hidden_delta_history),
+                "mean_delta_residual": float(hidden_residual.mean().item()),
+                "p95_delta_residual": float(
+                    torch.quantile(hidden_residual, 0.95).item()
+                ),
+            }
 
         rows.append(
             {
@@ -400,9 +505,11 @@ def main() -> None:
                     delta,
                     0.99,
                 ),
+                "trajectory_delta_cache": hidden_trajectory_metrics,
                 "projections": projection_rows,
             }
         )
+        hidden_delta_history.append(delta)
         previous = current
 
     payload = {
@@ -415,9 +522,10 @@ def main() -> None:
         "claim_boundary": (
             "This repeats one frozen pretrained decoder layer without loop-specific "
             "training. Low-rank factorized FLOP ratios exclude the cost of discovering "
-            "the factorization. A useful result here is evidence that recurrent state "
-            "updates are intrinsically more compressible than the dense state; it is "
-            "not yet an inference speedup."
+            "the factorization. The trajectory_operator_cache metric is different: it "
+            "asks whether a new recurrent delta lies in the span of prior deltas, "
+            "so a shared W can reuse cached W*delta actions without rereading W. "
+            "It is still a diagnostic, not yet an inference speedup."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)
