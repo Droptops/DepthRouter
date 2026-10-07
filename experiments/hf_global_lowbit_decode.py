@@ -115,8 +115,8 @@ def distribution_metrics(reference: Tensor, candidate: Tensor) -> dict[str, floa
 
 
 def quantized_weight(weight: Tensor, *, bits: int) -> tuple[Tensor, Tensor]:
-    if bits not in (1, 2, 4):
-        raise ValueError("bits must be one of {1, 2, 4}")
+    if bits not in (1, 2, 3, 4):
+        raise ValueError("bits must be one of {1, 2, 3, 4}")
     w = weight.detach().float().cpu()
 
     if bits == 1:
@@ -280,7 +280,7 @@ def main() -> None:
         choices=["float32", "float16", "bfloat16"],
         default="bfloat16",
     )
-    parser.add_argument("--address-bits", nargs="+", type=int, default=[2, 4])
+    parser.add_argument("--address-bits", nargs="+", type=int, default=[2, 3, 4])
     parser.add_argument("--fractions", nargs="+", type=float, default=[0.10, 0.25])
     parser.add_argument("--json-out")
     args = parser.parse_args()
@@ -291,7 +291,7 @@ def main() -> None:
         raise SystemExit('Install with: pip install -e ".[hf]"') from exc
 
     if any(bits not in (1, 2, 4) for bits in args.address_bits):
-        raise ValueError("address bits must be in {1, 2, 4}")
+        raise ValueError("address bits must be in {1, 2, 3, 4}")
 
     device = resolve_device(args.device)
     dtype = parse_dtype(args.dtype)
