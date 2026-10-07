@@ -13,6 +13,15 @@ from .causal_memory import (
     sequential_layout,
     working_set_pages,
 )
+from .conformal_memory import (
+    aps_calibration_threshold,
+    aps_prediction_mask,
+    anytime_bonferroni_thresholds,
+    bytes_for_mask,
+    empirical_coverage,
+    mean_set_size,
+    nested_anytime_masks,
+)
 from .config import DepthRouterConfig
 from .model import DepthRouterModel, ForwardStats, StackedTransformerBaseline
 from .solver import (
@@ -36,10 +45,17 @@ __all__ = [
     "SolverState",
     "StackedTransformerBaseline",
     "SwitchableColdMLP",
+    "anytime_bonferroni_thresholds",
+    "aps_calibration_threshold",
+    "aps_prediction_mask",
+    "bytes_for_mask",
     "coalesce_faults",
     "coalesced_transfer_bytes",
+    "empirical_coverage",
     "greedy_affinity_layout",
     "kl_nats",
+    "mean_set_size",
+    "nested_anytime_masks",
     "page_masses",
     "posterior_affinity",
     "posterior_entropy",
