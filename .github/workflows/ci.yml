@@ -48,4 +48,5 @@ jobs:
           --calibration-examples 500
           --test-examples 500
           --model-batch-size 100
+          --oracle-kl 0.001
           --summary-only
