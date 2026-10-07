@@ -8,6 +8,7 @@ from depth_router.causal_memory import (
     posterior_affinity,
     posterior_entropy,
     predictive_working_set_bytes,
+    smooth_address_entropy_nats,
     working_set_pages,
 )
 
@@ -94,3 +95,16 @@ def test_coalescing_counts_unique_physical_pages() -> None:
     assert requested == 3
     assert unique == 2
     assert nbytes == 8192
+
+
+def test_smooth_address_entropy_exponentiates_to_page_count() -> None:
+    posterior = torch.tensor([[0.46, 0.44, 0.05, 0.05]])
+    layout = PageLayout(torch.tensor([0, 0, 1, 1]), 2, 1024)
+
+    pages = working_set_pages(posterior, layout, mass_target=0.90).float()
+    entropy = smooth_address_entropy_nats(
+        posterior,
+        layout,
+        mass_target=0.90,
+    )
+    assert torch.allclose(entropy.exp(), pages)
