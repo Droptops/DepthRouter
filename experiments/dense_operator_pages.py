@@ -391,6 +391,68 @@ def router_scores(router: nn.Linear, features: Tensor) -> Tensor:
     return scores / scores.sum(dim=-1, keepdim=True).clamp_min(1e-12)
 
 
+def train_value_router(
+    features: Tensor,
+    target_scores: Tensor,
+    *,
+    steps: int,
+    lr: float,
+    seed: int,
+) -> nn.Linear:
+    """Train a runtime router to rank pages by dense leave-one-out value."""
+
+    torch.manual_seed(seed)
+    router = nn.Linear(features.shape[-1], target_scores.shape[-1])
+    optimizer = torch.optim.AdamW(router.parameters(), lr=lr)
+
+    target = target_scores.clamp_min(0)
+    target = target + 1e-8
+    target = target / target.sum(dim=-1, keepdim=True)
+
+    for _ in range(steps):
+        optimizer.zero_grad(set_to_none=True)
+        logp = torch.log_softmax(router(features), dim=-1)
+        loss = -(target * logp).sum(dim=-1).mean()
+        loss.backward()
+        optimizer.step()
+
+    return router
+
+
+def value_router_scores(router: nn.Linear, features: Tensor) -> Tensor:
+    return torch.softmax(router(features), dim=-1)
+
+
+@torch.no_grad()
+def leave_one_out_page_scores(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+) -> Tensor:
+    """Dense diagnostic value: distortion caused by removing each page.
+
+    This reads every cold page and is therefore an offline supervision / oracle
+    signal, not a deployable runtime address.
+    """
+
+    full_contribution = trace.page_contributions.sum(dim=1)
+    hidden = (
+        trace.base_without_linear2[:, None, :]
+        + full_contribution[:, None, :]
+        - trace.page_contributions
+    )
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        hidden = hidden + bias.detach().cpu()
+
+    logits = classify_hidden(
+        model.cpu(),
+        hidden.reshape(-1, hidden.shape[-1]),
+    ).reshape(hidden.shape[0], hidden.shape[1], -1)
+    impact = kl_from_full(trace.full_logits[:, None, :], logits).clamp_min(0)
+    impact = impact + 1e-12
+    return impact / impact.sum(dim=-1, keepdim=True)
+
+
 @torch.no_grad()
 def prefix_distortions_for_scores(
     model: DepthRouterModel,
@@ -576,6 +638,10 @@ def evaluate(
                 "every sketch dimension must be between 1 and the minimum page width"
             )
 
+    train_loo_scores = leave_one_out_page_scores(model, train)
+    calibration_loo_scores = leave_one_out_page_scores(model, calibration)
+    test_loo_scores = leave_one_out_page_scores(model, test)
+
     input_sketches = {
         sketch_dim: make_input_page_sketches(
             model.shared_block.linear1,
@@ -599,7 +665,7 @@ def evaluate(
             for parameter in router.parameters()
         )
         evaluate_scores(
-            method="learned_router",
+            method="learned_set_router",
             spin=spin,
             calibration_scores=router_scores(
                 router,
@@ -611,6 +677,41 @@ def evaluate(
             ),
             metadata_bytes=router_metadata_bytes,
             deployable_without_cold_payload=True,
+        )
+
+        value_router = train_value_router(
+            train.features_by_spin[spin],
+            train_loo_scores,
+            steps=router_steps,
+            lr=router_lr,
+            seed=seed + 100 + spin,
+        )
+        value_router_metadata_bytes = sum(
+            parameter.numel() * parameter.element_size()
+            for parameter in value_router.parameters()
+        )
+        evaluate_scores(
+            method="learned_value_router",
+            spin=spin,
+            calibration_scores=value_router_scores(
+                value_router,
+                calibration.features_by_spin[spin],
+            ),
+            test_scores=value_router_scores(
+                value_router,
+                test.features_by_spin[spin],
+            ),
+            metadata_bytes=value_router_metadata_bytes,
+            deployable_without_cold_payload=True,
+        )
+
+        evaluate_scores(
+            method="leave_one_out_oracle_diagnostic",
+            spin=spin,
+            calibration_scores=calibration_loo_scores,
+            test_scores=test_loo_scores,
+            metadata_bytes=dense_bytes,
+            deployable_without_cold_payload=False,
         )
 
         # Diagnostic upper-ish baseline: useful for understanding whether the
