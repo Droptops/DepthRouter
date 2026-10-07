@@ -15,6 +15,7 @@ from depth_router.causal_memory import (
     posterior_entropy,
     predictive_working_set_bytes,
     random_layout,
+    requested_pages,
     sequential_layout,
     working_set_pages,
 )
@@ -105,6 +106,60 @@ def oracle_family_layout(
     return PageLayout(assignment, states_per_page, page_bytes)
 
 
+def lru_faults(page_requests: list[int], capacity: int) -> int:
+    if capacity < 1:
+        raise ValueError("cache capacity must be >= 1")
+
+    cache: list[int] = []
+    faults = 0
+    for page in page_requests:
+        if page in cache:
+            cache.remove(page)
+            cache.append(page)
+            continue
+
+        faults += 1
+        if len(cache) >= capacity:
+            cache.pop(0)
+        cache.append(page)
+
+    return faults
+
+
+def scheduling_faults(
+    posterior: torch.Tensor,
+    layout: PageLayout,
+    *,
+    mass_target: float,
+    batch_size: int,
+    cache_pages: int,
+) -> tuple[int, int]:
+    """Compare token-major demand with fault-grouped execution.
+
+    The cache is reset at each scheduling window so the comparison measures
+    within-window locality rather than relying on cross-window warm state.
+    """
+
+    requests = requested_pages(
+        posterior,
+        layout,
+        mass_target=mass_target,
+    )
+    token_major_faults = 0
+    grouped_faults = 0
+
+    for start in range(0, len(requests), batch_size):
+        window = requests[start : start + batch_size]
+        token_major = [page for token_pages in window for page in token_pages]
+        token_major_faults += lru_faults(token_major, cache_pages)
+
+        # A fault-grouped scheduler runs every token needing a page while that
+        # page is resident, so each unique page is loaded at most once here.
+        grouped_faults += len(set(token_major))
+
+    return token_major_faults, grouped_faults
+
+
 def summarize(
     posterior: torch.Tensor,
     layout: PageLayout,
@@ -131,6 +186,14 @@ def summarize(
         ratios.append(unique / max(requested, 1))
         transfer_bytes.append(moved)
 
+    token_major_faults, grouped_faults = scheduling_faults(
+        posterior,
+        layout,
+        mass_target=mass_target,
+        batch_size=batch_size,
+        cache_pages=4,
+    )
+
     return {
         "entropy_nats": float(posterior_entropy(posterior).mean()),
         "mean_pages": float(pages.mean()),
@@ -138,6 +201,9 @@ def summarize(
         "mean_working_set_bytes": float(nbytes.mean()),
         "coalesced_unique_over_requested": statistics.mean(ratios),
         "mean_batch_transfer_bytes": statistics.mean(transfer_bytes),
+        "token_major_page_faults": float(token_major_faults),
+        "fault_grouped_page_faults": float(grouped_faults),
+        "fault_grouping_ratio": grouped_faults / max(token_major_faults, 1),
     }
 
 
@@ -236,11 +302,6 @@ def main() -> None:
         raise ValueError("states-per-page must be >= 2")
     if args.seeds < 1:
         raise ValueError("seeds must be >= 1")
-    if not math.isclose(
-        args.families * args.states_per_page,
-        args.families * args.states_per_page,
-    ):
-        raise AssertionError("unreachable")
 
     results = [run_seed(args, seed) for seed in range(args.seeds)]
     payload = {
