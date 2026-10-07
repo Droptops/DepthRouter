@@ -222,3 +222,84 @@ This experiment does not establish a hardware speedup. Its purpose is narrower:
 
 Only after that passes should page identities be replaced with real cold operator
 slices and measured on the target GPU.
+
+
+## 9. Addressing a fully cold MLP
+
+A subtle failure mode matters for the physical design.
+
+Using the post-linear1 activation to decide which MLP page to fetch is circular
+when linear1 is itself cold: computing that activation has already read the cold
+input-projection weights.
+
+The deployable address path therefore has to operate on the **MLP input** plus
+resident metadata.
+
+For page j, precompute a tiny Johnson-Lindenstrauss-style sketch of the cold
+input projection:
+
+```text
+S_j = R_j W1_j
+d_j = R_j b1_j
+```
+
+and keep only `S_j`, `d_j`, and a scalar norm of the matching output page
+resident. At runtime:
+
+```text
+z_hat_j = S_j h + d_j
+score_j  = ||z_hat_j|| * ||W2_j||_F
+```
+
+This estimates whether page j can matter without touching either cold W1_j or
+W2_j.
+
+The sketch is not free. Its bytes must be counted as permanent resident
+metadata. The experiment therefore reports:
+
+```text
+metadata_fraction = sketch_bytes / cold_operator_bytes
+```
+
+alongside the cold pages selected.
+
+The comparison that matters is total traffic:
+
+```text
+resident metadata bytes amortized over reuse
+    + selected cold payload bytes
+    + solver bytes
+```
+
+versus dense cold payload traffic.
+
+## 10. Calibrate distortion, not arbitrary page identity
+
+Several different page subsets can produce essentially the same logits. Treating
+one greedy oracle subset as the ground-truth page label is unnecessarily strict.
+
+The primary calibration target is now the behavior of the dense computation:
+
+```text
+P(
+  KL(p_dense || p_sparse) <= delta
+) >= 1 - alpha
+```
+
+For any page-scoring rule, sort pages by score and evaluate every prefix. On the
+calibration split, record the cumulative score mass at the first prefix whose KL
+distortion is at most delta. Split-conformal calibration chooses a mass threshold.
+
+On a new example, fetch only the smallest top-score prefix reaching that
+threshold.
+
+This changes the question from:
+
+> Did the router guess the same pages as one oracle search?
+
+to:
+
+> Did the cheapest predicted page prefix reproduce dense behavior within the
+> declared distortion budget?
+
+That is the correct systems target.
