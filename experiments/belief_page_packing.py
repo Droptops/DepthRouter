@@ -293,6 +293,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mass-target", type=float, default=0.90)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--seeds", type=int, default=10)
+    parser.add_argument("--summary-only", action="store_true")
     return parser.parse_args()
 
 
@@ -310,10 +311,15 @@ def main() -> None:
             "Packing states that are jointly plausible into one physical page "
             "reduces the bytes required to cover a fixed posterior mass."
         ),
-        "config": vars(args),
+        "config": {
+            key: value
+            for key, value in vars(args).items()
+            if key != "summary_only"
+        },
         "aggregate": aggregate(results),
-        "runs": results,
     }
+    if not args.summary_only:
+        payload["runs"] = results
     print(json.dumps(payload, indent=2, sort_keys=True))
 
 
