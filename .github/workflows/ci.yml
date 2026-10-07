@@ -22,3 +22,11 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: pytest
+      - name: Belief-page-packing smoke benchmark
+        if: matrix.python-version == '3.12'
+        run: >-
+          python experiments/belief_page_packing.py
+          --seeds 5
+          --train-samples 1000
+          --test-samples 1000
+          --summary-only
