@@ -1104,6 +1104,170 @@ def train_dagger_fault_policy(
 
 
 @torch.no_grad()
+def collect_page_value_examples(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    *,
+    tolerance_nats: float,
+) -> tuple[Tensor, Tensor, Tensor]:
+    """Dense supervision: candidate distortion for every legal next fault."""
+
+    examples, num_pages, _ = trace.page_contributions.shape
+    selected = torch.zeros(examples, num_pages, dtype=torch.bool)
+    current = trace.base_without_linear2.clone()
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        current = current + bias.detach().cpu()
+
+    done = torch.zeros(examples, dtype=torch.bool)
+    rows = torch.arange(examples)
+    feature_rows: list[Tensor] = []
+    value_rows: list[Tensor] = []
+    legal_rows: list[Tensor] = []
+
+    for _ in range(num_pages):
+        active = ~done
+        if not bool(active.any()):
+            break
+        active_rows = rows[active]
+
+        current_logits = classify_hidden(model.cpu(), current[active])
+        current_kl = kl_from_full(
+            trace.full_logits[active],
+            current_logits,
+        )
+        safe = current_kl <= tolerance_nats
+        if bool(safe.any()):
+            done[active_rows[safe]] = True
+
+        unsafe = ~safe
+        unsafe_rows = active_rows[unsafe]
+        if unsafe_rows.numel() == 0:
+            continue
+
+        features = fault_policy_features(
+            trace,
+            current,
+            selected,
+            unsafe_rows,
+        )
+        candidates = (
+            current[unsafe_rows, None, :]
+            + trace.page_contributions[unsafe_rows]
+        )
+        candidate_logits = classify_hidden(
+            model.cpu(),
+            candidates.reshape(-1, candidates.shape[-1]),
+        ).reshape(candidates.shape[0], num_pages, -1)
+        candidate_kl = kl_from_full(
+            trace.full_logits[unsafe_rows, None, :],
+            candidate_logits,
+        )
+        legal = ~selected[unsafe_rows]
+        masked = candidate_kl.masked_fill(~legal, float("inf"))
+
+        feature_rows.append(features)
+        value_rows.append(candidate_kl)
+        legal_rows.append(legal)
+
+        best = masked.argmin(dim=-1)
+        current[unsafe_rows] = (
+            current[unsafe_rows]
+            + trace.page_contributions[unsafe_rows, best]
+        )
+        selected[unsafe_rows, best] = True
+
+    return (
+        torch.cat(feature_rows),
+        torch.cat(value_rows),
+        torch.cat(legal_rows),
+    )
+
+
+def train_page_value_policy(
+    features: Tensor,
+    candidate_kl: Tensor,
+    legal_mask: Tensor,
+    *,
+    hidden_dim: int,
+    steps: int,
+    lr: float,
+    temperature_nats: float,
+    seed: int,
+) -> nn.Module:
+    """Learn conditional page ordering from all candidate distortions."""
+
+    if temperature_nats <= 0:
+        raise ValueError("temperature_nats must be positive")
+    torch.manual_seed(seed)
+    num_pages = candidate_kl.shape[1]
+    if hidden_dim == 0:
+        policy: nn.Module = nn.Linear(features.shape[-1], num_pages)
+    else:
+        policy = nn.Sequential(
+            nn.Linear(features.shape[-1], hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, num_pages),
+        )
+
+    optimizer = torch.optim.AdamW(policy.parameters(), lr=lr)
+    target_logits = (-candidate_kl / temperature_nats).masked_fill(
+        ~legal_mask,
+        float("-inf"),
+    )
+    target_prob = torch.softmax(target_logits, dim=-1)
+
+    for _ in range(steps):
+        optimizer.zero_grad(set_to_none=True)
+        pred = policy(features).masked_fill(~legal_mask, float("-inf"))
+        logp = torch.log_softmax(pred, dim=-1)
+        loss = -(target_prob * logp).sum(dim=-1).mean()
+        loss.backward()
+        optimizer.step()
+
+    return policy
+
+
+@torch.no_grad()
+def page_value_policy_prefix_distortions(
+    model: DepthRouterModel,
+    trace: TraceBatch,
+    policy: nn.Module,
+) -> Tensor:
+    """Distortion after each sequential page chosen by a value policy."""
+
+    examples, num_pages, _ = trace.page_contributions.shape
+    selected = torch.zeros(examples, num_pages, dtype=torch.bool)
+    current = trace.base_without_linear2.clone()
+    bias = model.shared_block.linear2.bias
+    if bias is not None:
+        current = current + bias.detach().cpu()
+
+    rows = torch.arange(examples)
+    distortions: list[Tensor] = []
+
+    for step in range(num_pages + 1):
+        current_logits = classify_hidden(model.cpu(), current)
+        distortions.append(
+            kl_from_full(trace.full_logits, current_logits)
+        )
+        if step == num_pages:
+            break
+
+        features = fault_policy_features(
+            trace,
+            current,
+            selected,
+        )
+        scores = policy(features).masked_fill(selected, float("-inf"))
+        page = scores.argmax(dim=-1)
+        current = current + trace.page_contributions[rows, page]
+        selected[rows, page] = True
+
+    return torch.stack(distortions, dim=-1)
+
+
+@torch.no_grad()
 def fault_policy_prefix_distortions(
     model: DepthRouterModel,
     trace: TraceBatch,
@@ -1443,6 +1607,58 @@ def main() -> None:
         fault_budget=fault_budget,
         tolerance_nats=args.oracle_kl,
     )
+
+    value_features, value_targets, value_legal = collect_page_value_examples(
+        model,
+        train,
+        tolerance_nats=args.oracle_kl,
+    )
+    page_value_policy = train_page_value_policy(
+        value_features,
+        value_targets,
+        value_legal,
+        hidden_dim=args.fault_policy_hidden,
+        steps=args.fault_policy_steps,
+        lr=args.router_lr,
+        temperature_nats=args.oracle_kl,
+        seed=args.seed + 800,
+    )
+    value_calibration_prefix = page_value_policy_prefix_distortions(
+        model,
+        calibration,
+        page_value_policy,
+    )
+    value_fault_budget = calibrate_fault_budget(
+        value_calibration_prefix,
+        tolerance_nats=args.oracle_kl,
+        alpha=args.alpha,
+    )
+    value_test_prefix = page_value_policy_prefix_distortions(
+        model,
+        test,
+        page_value_policy,
+    )
+    value_distortion = value_test_prefix[:, value_fault_budget]
+    value_coverage = distortion_coverage(
+        value_distortion,
+        tolerance=args.oracle_kl,
+    )
+    value_policy_bytes = sum(
+        parameter.numel() * parameter.element_size()
+        for parameter in page_value_policy.parameters()
+    )
+    page_bytes_mean = float(
+        torch.tensor([page.weight_bytes for page in pages]).float().mean().item()
+    )
+    result["dense_value_fault_policy"] = {
+        "calibrated_fault_budget": value_fault_budget,
+        "distortion_coverage": value_coverage,
+        "distortion_violation_rate": 1.0 - value_coverage,
+        "mean_kl_from_dense_nats": float(value_distortion.mean().item()),
+        "policy_metadata_bytes": int(value_policy_bytes),
+        "selected_payload_bytes": value_fault_budget * page_bytes_mean,
+        "selected_payload_fraction": value_fault_budget / len(pages),
+    }
 
     if result["train_zero_fault_rate"] > 0.95:
         raise RuntimeError(
