@@ -323,6 +323,7 @@ def main() -> None:
     for fraction in args.fractions:
         all_kl: list[Tensor] = []
         all_agreement: list[Tensor] = []
+        all_dense_top1_margin: list[Tensor] = []
         one_step_overlap: list[float] = []
         exact_rollouts = 0
         total_states = 0
@@ -382,8 +383,11 @@ def main() -> None:
                 )
                 candidate = exact_logits_from_hidden(candidate_hidden, norm, lm_head)
                 kl, agreement = distribution_metrics(reference, candidate)
+                dense_top2 = torch.topk(reference, k=2, dim=-1).values
+                dense_margin = dense_top2[:, 0] - dense_top2[:, 1]
                 all_kl.append(kl)
                 all_agreement.append(agreement)
+                all_dense_top1_margin.append(dense_margin)
                 prompt_exact = prompt_exact and bool(agreement.item())
                 total_states += 1
 
@@ -413,10 +417,28 @@ def main() -> None:
 
         kl = torch.cat(all_kl)
         agreement = torch.cat(all_agreement).float()
+        dense_margin = torch.cat(all_dense_top1_margin).float()
+        mismatch = agreement < 0.5
         selected_fraction = fraction
         quality = {
             "states_evaluated": int(agreement.numel()),
-            "top1_mismatches": int((1.0 - agreement).sum().item()),
+            "top1_mismatches": int(mismatch.sum().item()),
+            "mean_dense_top1_margin": float(dense_margin.mean().item()),
+            "mismatch_mean_dense_top1_margin": (
+                float(dense_margin[mismatch].mean().item())
+                if bool(mismatch.any())
+                else None
+            ),
+            "mismatch_max_dense_top1_margin": (
+                float(dense_margin[mismatch].max().item())
+                if bool(mismatch.any())
+                else None
+            ),
+            "mismatch_mean_kl_nats": (
+                float(kl[mismatch].mean().item())
+                if bool(mismatch.any())
+                else None
+            ),
             "mean_kl_nats": float(kl.mean().item()),
             "p95_kl_nats": float(torch.quantile(kl, 0.95).item()),
             "max_kl_nats": float(kl.max().item()),
