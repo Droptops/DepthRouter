@@ -837,7 +837,41 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[hf]"
-      - name: Extend probability-optimal working-set frontier
+      - name: Validate the 128-logit oracle gate on longer held-out trajectories
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_logit_tangent_cache.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 10
+          --max-prompts 20
+          --top-logits 128
+          --fractions 0.15 0.20 0.25
+          --block-size 16
+          --cache-multipliers 1.0 1.5 2.0
+          --json-out temporal_logit_tangent_cache_128_validation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-logit-tangent-cache-128-validation
+          path: temporal_logit_tangent_cache_128_validation.json
+
+
+  temporal-logit-tangent-cache-256:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Probe whether a wider predictive tangent lowers the exact working set
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
@@ -848,12 +882,12 @@ jobs:
           --max-length 32
           --decode-steps 6
           --max-prompts 8
-          --top-logits 128
-          --fractions 0.10 0.15 0.20 0.25 0.30
+          --top-logits 256
+          --fractions 0.10 0.15 0.20
           --block-size 16
-          --cache-multipliers 1.0 1.5 2.0 3.0
-          --json-out temporal_logit_tangent_cache_128_extended.json
+          --cache-multipliers 1.0 1.5 2.0
+          --json-out temporal_logit_tangent_cache_256_probe.json
       - uses: actions/upload-artifact@v4
         with:
-          name: temporal-logit-tangent-cache-128-extended
-          path: temporal_logit_tangent_cache_128_extended.json
+          name: temporal-logit-tangent-cache-256-probe
+          path: temporal_logit_tangent_cache_256_probe.json
