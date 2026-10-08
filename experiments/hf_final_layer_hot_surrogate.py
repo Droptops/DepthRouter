@@ -73,6 +73,10 @@ DEFAULT_TEXTS = [
 def load_texts(path: str | None) -> list[str]:
     if path is None:
         return list(DEFAULT_TEXTS)
+    test_x = test_x.detach().clone()
+    test_base = test_base.detach().clone()
+    test_h = test_h.detach().clone()
+
     rows = []
     for raw in Path(path).read_text(encoding="utf-8").splitlines():
         line = raw.strip()
@@ -337,6 +341,9 @@ def main() -> None:
         train_encoded,
         max_tokens=args.max_tokens,
     )
+    train_x = train_x.detach().clone()
+    train_base = train_base.detach().clone()
+    train_h = train_h.detach().clone()
     test_x, test_base, test_h = capture_last_layer(
         model,
         layer,
