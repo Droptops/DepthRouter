@@ -329,3 +329,29 @@ jobs:
             distilled_tuned_teacher15.json
             distilled_tuned_teacher20.json
             distilled_tuned_teacher25.json
+
+
+  hybrid-address-frontier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Combine tiny distilled and low-bit addresses on Qwen layer 18
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_hybrid_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 4             --teacher-fraction 0.20             --bits 1 2             --fractions 0.15 0.18 0.20 0.22 0.25             --steps 220             --batch-size 64             --json-out hybrid_address_rank4.json
+          python experiments/hf_hybrid_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --teacher-fraction 0.20             --bits 1 2             --fractions 0.15 0.18 0.20 0.22 0.25             --steps 220             --batch-size 64             --json-out hybrid_address_rank8.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hybrid-address-frontier
+          path: |
+            hybrid_address_rank4.json
+            hybrid_address_rank8.json
