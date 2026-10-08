@@ -1,4 +1,4 @@
-# ruff: noqa: I001
+# ruff: noqa: I001, B023
 from __future__ import annotations
 
 import argparse
@@ -487,17 +487,7 @@ def main() -> None:
             prompt_exact = True
 
             for _ in range(1, args.test_decode_steps):
-                dense_hidden_sink: list[Tensor] = []
-
-                def hidden_pre(_module: nn.Module, args: tuple[Tensor, ...]) -> None:
-                    dense_hidden_sink.append(args[0][:, -1, :].detach().cpu())
-
-                capture_handle = mlp.register_forward_pre_hook(hidden_pre)
-                try:
-                    dense = dense_logits(model, prefix)
-                finally:
-                    capture_handle.remove()
-                current_hidden = dense_hidden_sink[0].float()
+                dense = dense_logits(model, prefix)
 
                 k = max(
                     1,
