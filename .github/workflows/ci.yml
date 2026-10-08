@@ -502,6 +502,7 @@ jobs:
 
 
   decode-state-trained:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -555,6 +556,7 @@ jobs:
 
 
   risk-controlled-fallback:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -583,6 +585,7 @@ jobs:
 
 
   cascaded-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -609,6 +612,7 @@ jobs:
 
 
   predictive-correction-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -637,6 +641,7 @@ jobs:
 
 
   final-layer-hot-surrogate:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -667,6 +672,7 @@ jobs:
 
 
   piecewise-hot-surrogate:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -699,6 +705,7 @@ jobs:
 
 
   temporal-demand-prefetch:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -731,6 +738,7 @@ jobs:
 
 
   causal-state-codebook:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -757,6 +765,7 @@ jobs:
 
 
   temporal-address-cache:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -783,6 +792,7 @@ jobs:
 
 
   oracle-physical-cache-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -827,7 +837,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[hf]"
-      - name: Test probability-optimal exact working sets for temporal locality
+      - name: Extend probability-optimal working-set frontier
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
@@ -839,11 +849,11 @@ jobs:
           --decode-steps 6
           --max-prompts 8
           --top-logits 128
-          --fractions 0.05 0.10 0.15
+          --fractions 0.10 0.15 0.20 0.25 0.30
           --block-size 16
           --cache-multipliers 1.0 1.5 2.0 3.0
-          --json-out temporal_logit_tangent_cache.json
+          --json-out temporal_logit_tangent_cache_128_extended.json
       - uses: actions/upload-artifact@v4
         with:
-          name: temporal-logit-tangent-cache
-          path: temporal_logit_tangent_cache.json
+          name: temporal-logit-tangent-cache-128-extended
+          path: temporal_logit_tangent_cache_128_extended.json
