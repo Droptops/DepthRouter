@@ -471,12 +471,21 @@ def main() -> None:
         train_encoded,
         max_tokens=args.max_tokens,
     )
+    train_x = train_x.detach().clone()
+    train_u = train_u.detach().clone()
+    train_m = train_m.detach().clone()
+    train_h = train_h.detach().clone()
     test_x, test_u, test_m, test_h = capture_trace(
         model,
         layer,
         test_encoded,
         max_tokens=args.max_tokens,
     )
+
+    test_x = test_x.detach().clone()
+    test_u = test_u.detach().clone()
+    test_m = test_m.detach().clone()
+    test_h = test_h.detach().clone()
 
     teacher = teacher_score(train_u, mlp)
     address = train_address(
