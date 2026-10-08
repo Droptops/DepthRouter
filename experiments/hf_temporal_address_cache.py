@@ -486,7 +486,7 @@ def main() -> None:
         prompt_exact = True
 
         for _ in range(args.test_decode_steps):
-            dense_hidden, dense_activation, dense_logits = capture_state(
+            _dense_hidden, dense_activation, dense_logits = capture_state(
                 model,
                 mlp,
                 prefix,
@@ -495,17 +495,25 @@ def main() -> None:
 
             state: dict[str, Tensor] = {}
 
-            def hook(_module: nn.Module, hook_args: tuple[Tensor, ...], output: Tensor) -> Tensor:
+            def hook(
+                _module: nn.Module,
+                hook_args: tuple[Tensor, ...],
+                output: Tensor,
+                *,
+                _previous_hidden: Tensor | None = previous_hidden,
+                _previous_selected: Tensor | None = previous_selected,
+                _state: dict[str, Tensor] = state,
+            ) -> Tensor:
                 hidden_device = hook_args[0][:, -1, :]
                 hidden_cpu = hidden_device.detach().float().cpu()
-                if previous_hidden is None or previous_selected is None:
+                if _previous_hidden is None or _previous_selected is None:
                     score = full_head(hidden_cpu)
                 else:
-                    score = delta_head(hidden_cpu - previous_hidden)
+                    score = delta_head(hidden_cpu - _previous_hidden)
                     bonus = torch.zeros_like(score)
                     bonus.scatter_(
                         1,
-                        previous_selected[None, :],
+                        _previous_selected[None, :],
                         float(persistence_bias),
                     )
                     score = score + bonus
@@ -513,8 +521,8 @@ def main() -> None:
                 sparse = sparse_exact_output(hidden_device, mlp, selected)
                 replaced = output.clone()
                 replaced[:, -1, :] = sparse.to(replaced.dtype)
-                state["hidden"] = hidden_cpu[0]
-                state["selected"] = selected[0].detach().cpu()
+                _state["hidden"] = hidden_cpu[0]
+                _state["selected"] = selected[0].detach().cpu()
                 return replaced
 
             handle = mlp.register_forward_hook(hook)
