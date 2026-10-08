@@ -1,0 +1,387 @@
+from __future__ import annotations
+
+import math
+from itertools import pairwise
+
+import torch
+from torch import Tensor
+
+
+def _normalize(probabilities: Tensor) -> Tensor:
+    if probabilities.ndim != 2:
+        raise ValueError("probabilities must have shape [examples, pages]")
+    if probabilities.shape[1] < 1:
+        raise ValueError("probabilities must contain at least one page")
+    if not torch.is_floating_point(probabilities):
+        probabilities = probabilities.float()
+    if bool((probabilities < 0).any()):
+        raise ValueError("probabilities must be non-negative")
+    total = probabilities.sum(dim=-1, keepdim=True)
+    if bool((total <= 0).any()):
+        raise ValueError("each row must have positive mass")
+    return probabilities / total
+
+
+def aps_calibration_threshold(
+    probabilities: Tensor,
+    true_pages: Tensor,
+    *,
+    alpha: float,
+) -> float:
+    """Calibrate an Adaptive Prediction Set threshold.
+
+    The nonconformity score is the cumulative probability mass through the true
+    page after sorting pages by descending predicted probability.
+
+    Under the usual split-conformal exchangeability assumption, using the
+    finite-sample quantile gives marginal coverage at least 1 - alpha.
+    """
+
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+
+    p = _normalize(probabilities)
+    if true_pages.ndim != 1 or true_pages.shape[0] != p.shape[0]:
+        raise ValueError("true_pages must have shape [examples]")
+    if bool((true_pages < 0).any()) or bool((true_pages >= p.shape[1]).any()):
+        raise ValueError("true page ids are out of range")
+
+    order = torch.argsort(p, dim=-1, descending=True)
+    sorted_p = torch.gather(p, 1, order)
+    cumulative = sorted_p.cumsum(dim=-1)
+    is_true = order.eq(true_pages[:, None])
+    scores = cumulative[is_true]
+
+    n = int(scores.numel())
+    rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
+    rank = max(rank, 1)
+    return float(torch.kthvalue(scores, rank).values.item())
+
+
+def required_set_calibration_threshold(
+    probabilities: Tensor,
+    required_mask: Tensor,
+    *,
+    alpha: float,
+) -> float:
+    """Calibrate coverage for a *set* of required operator pages.
+
+    The score is the cumulative predicted mass through the worst-ranked
+    required page. A prediction set that reaches the calibrated threshold then
+    contains every required page with split-conformal marginal coverage under
+    exchangeability.
+    """
+
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+
+    p = _normalize(probabilities)
+    if required_mask.shape != p.shape:
+        raise ValueError("required_mask must match probabilities")
+    required = required_mask.to(dtype=torch.bool, device=p.device)
+    order = torch.argsort(p, dim=-1, descending=True)
+    sorted_p = torch.gather(p, 1, order)
+    sorted_required = torch.gather(required, 1, order)
+    cumulative = sorted_p.cumsum(dim=-1)
+
+    # The candidate set must reach at least the least-favored required page.
+    scores = torch.where(
+        sorted_required,
+        cumulative,
+        torch.zeros_like(cumulative),
+    ).max(dim=-1).values
+
+    n = int(scores.numel())
+    rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
+    rank = max(rank, 1)
+    return float(torch.kthvalue(scores, rank).values.item())
+
+
+def required_set_coverage(
+    prediction_mask: Tensor,
+    required_mask: Tensor,
+) -> float:
+    """Fraction of examples for which every required page is resident."""
+
+    if prediction_mask.ndim != 2:
+        raise ValueError("prediction_mask must have shape [examples, pages]")
+    if required_mask.shape != prediction_mask.shape:
+        raise ValueError("required_mask must match prediction_mask")
+
+    required = required_mask.to(
+        dtype=torch.bool,
+        device=prediction_mask.device,
+    )
+    covered = (prediction_mask | ~required).all(dim=-1)
+    return float(covered.float().mean().item())
+
+
+def aps_prediction_mask(
+    probabilities: Tensor,
+    threshold: float,
+) -> Tensor:
+    """Return the smallest top-probability set reaching the APS threshold."""
+
+    if threshold < 0:
+        raise ValueError("threshold must be non-negative")
+
+    p = _normalize(probabilities)
+    threshold = min(float(threshold), 1.0)
+    if threshold == 0:
+        return torch.zeros_like(p, dtype=torch.bool)
+
+    order = torch.argsort(p, dim=-1, descending=True)
+    sorted_p = torch.gather(p, 1, order)
+    cumulative = sorted_p.cumsum(dim=-1)
+
+    counts = (cumulative < threshold).sum(dim=-1) + 1
+    counts = counts.clamp_max(p.shape[1])
+
+    mask = torch.zeros_like(p, dtype=torch.bool)
+    ranks = torch.arange(p.shape[1], device=p.device)[None, :]
+    selected_sorted = ranks < counts[:, None]
+    mask.scatter_(1, order, selected_sorted)
+    return mask
+
+
+
+def distortion_prefix_calibration_threshold(
+    probabilities: Tensor,
+    prefix_distortions: Tensor,
+    *,
+    tolerance: float,
+    alpha: float,
+) -> float:
+    """Calibrate score mass needed to meet an output-distortion target.
+
+    prefix_distortions[n, k] is the distortion for example n after taking
+    the top-k pages under probabilities[n]. Column 0 is the zero-page
+    candidate; the final column must meet tolerance.
+
+    Because distortion can be non-monotone as pages are added, the
+    nonconformity score uses one plus the last violating prefix, expressed as
+    cumulative predicted mass. Split-conformal calibration then chooses
+    a global mass threshold whose selected prefix meets the target with marginal
+    probability at least 1 - alpha under exchangeability.
+    """
+
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+    if tolerance < 0:
+        raise ValueError("tolerance must be non-negative")
+
+    p = _normalize(probabilities)
+    if prefix_distortions.shape != (p.shape[0], p.shape[1] + 1):
+        raise ValueError(
+            "prefix_distortions must have shape [examples, pages + 1]"
+        )
+    if bool((prefix_distortions[:, -1] > tolerance).any()):
+        raise ValueError("the full-page prefix must meet the distortion tolerance")
+
+    # Distortion need not be monotone as pages are added: two pages can
+    # cancel, and adding one of them alone can move logits away from dense.
+    # Therefore "first prefix that passes" is not a valid monotone conformal
+    # score. Use one plus the *last violating prefix*. Any longer prefix is then
+    # safe by construction on the calibration example.
+    violating = prefix_distortions > tolerance
+    indices = torch.arange(
+        prefix_distortions.shape[1],
+        device=p.device,
+    )[None, :]
+    last_bad = torch.where(
+        violating,
+        indices,
+        torch.full_like(indices, -1),
+    ).max(dim=-1).values
+    required_k = last_bad + 1
+
+    order = torch.argsort(p, dim=-1, descending=True)
+    sorted_p = torch.gather(p, 1, order)
+    cumulative = sorted_p.cumsum(dim=-1)
+
+    scores = torch.zeros(p.shape[0], dtype=p.dtype, device=p.device)
+    positive = required_k > 0
+    if bool(positive.any()):
+        rows = torch.arange(p.shape[0], device=p.device)[positive]
+        scores[positive] = cumulative[
+            rows,
+            required_k[positive] - 1,
+        ]
+
+    n = int(scores.numel())
+    rank = min(math.ceil((n + 1) * (1.0 - alpha)), n)
+    rank = max(rank, 1)
+    return float(torch.kthvalue(scores, rank).values.item())
+
+
+def distortion_coverage(
+    distortions: Tensor,
+    *,
+    tolerance: float,
+) -> float:
+    """Fraction of examples whose realized distortion is within tolerance."""
+
+    if distortions.ndim != 1:
+        raise ValueError("distortions must have shape [examples]")
+    if tolerance < 0:
+        raise ValueError("tolerance must be non-negative")
+    return float((distortions <= tolerance).float().mean().item())
+
+def empirical_coverage(mask: Tensor, true_pages: Tensor) -> float:
+    if mask.ndim != 2:
+        raise ValueError("mask must have shape [examples, pages]")
+    if true_pages.ndim != 1 or true_pages.shape[0] != mask.shape[0]:
+        raise ValueError("true_pages must have shape [examples]")
+    covered = mask[
+        torch.arange(mask.shape[0], device=mask.device),
+        true_pages.to(mask.device),
+    ]
+    return float(covered.float().mean().item())
+
+
+def mean_set_size(mask: Tensor) -> float:
+    if mask.ndim != 2:
+        raise ValueError("mask must have shape [examples, pages]")
+    return float(mask.sum(dim=-1).float().mean().item())
+
+
+def anytime_bonferroni_thresholds(
+    calibration_probabilities: list[Tensor],
+    true_pages: Tensor,
+    *,
+    alpha: float,
+) -> list[float]:
+    """Calibrate a finite-horizon family of per-spin conformal sets.
+
+    Alpha is split across K solver spins. By a union bound, if the split
+    conformal assumptions hold at each spin, the probability that the true page
+    is excluded at *any* of the K calibrated spins is at most alpha.
+
+    This is conservative. It is intentionally the first implementation because
+    it makes the optional-stopping claim explicit instead of silently assuming
+    that marginal per-spin coverage remains valid under adaptive halting.
+    """
+
+    if not calibration_probabilities:
+        raise ValueError("at least one spin is required")
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be in (0, 1)")
+
+    per_spin_alpha = alpha / len(calibration_probabilities)
+    return [
+        aps_calibration_threshold(p, true_pages, alpha=per_spin_alpha)
+        for p in calibration_probabilities
+    ]
+
+
+def nested_anytime_masks(
+    probabilities_by_spin: list[Tensor],
+    thresholds: list[float],
+) -> list[Tensor]:
+    """Intersect calibrated page sets so the resident candidate set only shrinks."""
+
+    if len(probabilities_by_spin) != len(thresholds):
+        raise ValueError("one threshold is required per spin")
+    if not probabilities_by_spin:
+        raise ValueError("at least one spin is required")
+
+    running: Tensor | None = None
+    nested: list[Tensor] = []
+    for probabilities, threshold in zip(
+        probabilities_by_spin,
+        thresholds,
+        strict=True,
+    ):
+        current = aps_prediction_mask(probabilities, threshold)
+        running = current if running is None else (running & current)
+        nested.append(running.clone())
+
+    return nested
+
+
+def calibrate_required_set_tiers(
+    calibration_probabilities: Tensor,
+    required_mask: Tensor,
+    *,
+    alphas: list[float],
+) -> list[tuple[float, float]]:
+    """Calibrate nested risk levels for a physical memory hierarchy.
+
+    Alphas must be ordered from least conservative / fastest tier to most
+    conservative / slower tier, for example [0.20, 0.05, 0.01]. The returned
+    thresholds are cumulative residency sets: the HBM set contains the L2 set,
+    and a still lower-risk host set contains HBM.
+    """
+
+    if not alphas:
+        raise ValueError("at least one alpha is required")
+    if any(not 0 < alpha < 1 for alpha in alphas):
+        raise ValueError("alphas must be in (0, 1)")
+    if any(left <= right for left, right in pairwise(alphas)):
+        raise ValueError("alphas must strictly decrease across slower tiers")
+
+    calibrated = [
+        (
+            alpha,
+            required_set_calibration_threshold(
+                calibration_probabilities,
+                required_mask,
+                alpha=alpha,
+            ),
+        )
+        for alpha in alphas
+    ]
+
+    # Finite precision should not violate nesting. Project thresholds onto a
+    # monotone sequence toward the slower / safer tiers.
+    running = 0.0
+    monotone: list[tuple[float, float]] = []
+    for alpha, threshold in calibrated:
+        running = max(running, threshold)
+        monotone.append((alpha, running))
+    return monotone
+
+
+def residency_tier_masks(
+    probabilities: Tensor,
+    calibrations: list[tuple[float, float]],
+) -> list[Tensor]:
+    """Return cumulative page masks for each calibrated memory tier."""
+
+    if not calibrations:
+        raise ValueError("at least one calibration is required")
+
+    masks = [
+        aps_prediction_mask(probabilities, threshold)
+        for _alpha, threshold in calibrations
+    ]
+    for fast, slow in pairwise(masks):
+        if bool((fast & ~slow).any()):
+            raise RuntimeError("residency tiers are not nested")
+    return masks
+
+
+def exclusive_residency_masks(cumulative_masks: list[Tensor]) -> list[Tensor]:
+    """Convert cumulative nested sets into bytes owned by each tier."""
+
+    if not cumulative_masks:
+        raise ValueError("at least one mask is required")
+
+    exclusive: list[Tensor] = []
+    previous = torch.zeros_like(cumulative_masks[0], dtype=torch.bool)
+    for current in cumulative_masks:
+        if current.shape != previous.shape:
+            raise ValueError("all tier masks must have the same shape")
+        if bool((previous & ~current).any()):
+            raise ValueError("cumulative masks must be nested")
+        exclusive.append(current & ~previous)
+        previous = current
+    return exclusive
+
+
+def bytes_for_mask(mask: Tensor, *, page_bytes: int) -> Tensor:
+    if page_bytes < 1:
+        raise ValueError("page_bytes must be >= 1")
+    if mask.ndim != 2:
+        raise ValueError("mask must have shape [examples, pages]")
+    return mask.sum(dim=-1) * int(page_bytes)

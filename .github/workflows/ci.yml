@@ -22,3 +22,195 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: pytest
+      - name: Belief-page-packing smoke benchmark
+        if: matrix.python-version == '3.10'
+        run: >-
+          python experiments/belief_page_packing.py
+          --seeds 3
+          --train-samples 750
+          --test-samples 750
+          --summary-only
+      - name: Anytime conformal cache smoke benchmark
+        if: matrix.python-version == '3.10'
+        run: >-
+          python experiments/anytime_conformal_cache.py
+          --train-steps 350
+          --calibration-examples 750
+          --test-examples 750
+          --summary-only
+      - name: Dense operator-page smoke benchmark
+        if: matrix.python-version == '3.10'
+        run: >-
+          python experiments/dense_operator_pages.py
+          --train-steps 250
+          --router-steps 100
+          --train-examples 500
+          --calibration-examples 350
+          --test-examples 350
+          --model-batch-size 100
+          --oracle-kl 0.001
+          --summary-only
+
+  frontier-real-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Exact function-preserving compiler gate
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_swiglu_compile.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-trace-tokens 384
+          --units-per-page 128
+          --mass-target 0.95
+          --compiler balanced
+          --json-out 01_real_model_gate.json
+      - name: Scan real neuron sparsity across layers
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_neuron_sparsity_scan.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-trace-tokens 128
+          --behavioral-layers 3
+          --probe-fractions 0.10 0.25 0.50
+          --json-out 02_neuron_sparsity.json
+      - name: Search exact residual-aware neuron subsets
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_greedy_subset_oracle.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --layers 0 12 23
+          --thresholds 0.20 0.10 0.05 0.01
+          --block-size 32
+          --max-fraction 0.50
+          --json-out 03_greedy_subset_oracle.json
+      - name: Test residual-aware tiny subsets on final logits
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_greedy_end_to_end.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --layer 23
+          --fractions 0.03 0.07 0.17
+          --block-size 32
+          --json-out 04_greedy_end_to_end.json
+      - name: Test low-bit residual-pursuit addressing
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_lowbit_residual_pursuit.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --layer 23
+          --address-bits 2 3 4
+          --fractions 0.03 0.07 0.17
+          --block-size 32
+          --json-out 05_lowbit_residual_pursuit.json
+      - name: Test global low-bit neural addressing
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_global_lowbit_decode.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --address-bits 3 4
+          --fractions 0.10 0.25
+          --json-out 06_global_lowbit_decode.json
+      - name: Probe recurrent Krylov operator reuse
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_loop_delta_scan.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-rows 128
+          --loops 4
+          --ranks 4 8 16 32 64
+          --feature-fractions 0.05 0.10 0.25 0.50
+          --json-out 07_loop_delta.json
+      - name: Compile held-out active demand into pages
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_active_page_compile.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 48
+          --layer 23
+          --fraction 0.10
+          --units-per-page 16 32 64
+          --iterations 4
+          --json-out 08_active_page_compile.json
+      - name: Quantize held-out behavior into predictive states
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_predictive_state_vq.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-train-tokens 192
+          --max-test-tokens 192
+          --layers 0 12 23
+          --clusters 16 32 64
+          --router-steps 250
+          --json-out 09_predictive_state_vq.json
+      - name: Search sparsity in final-logit tangent space
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_logit_tangent_oracle.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --top-logits 8 32 128
+          --fractions 0.005 0.01 0.02 0.05 0.10
+          --block-size 16
+          --json-out 10_logit_tangent_oracle.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontier-real-model
+          path: |
+            01_real_model_gate.json
+            02_neuron_sparsity.json
+            03_greedy_subset_oracle.json
+            04_greedy_end_to_end.json
+            05_lowbit_residual_pursuit.json
+            06_global_lowbit_decode.json
+            07_loop_delta.json
+            08_active_page_compile.json
+            09_predictive_state_vq.json
+            10_logit_tangent_oracle.json
