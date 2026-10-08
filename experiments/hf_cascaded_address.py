@@ -331,14 +331,18 @@ def main() -> None:
                     _module: nn.Module,
                     hook_args: tuple[Tensor, ...],
                     output: Tensor,
+                    *,
+                    _bits: int = bits,
+                    _candidate_fraction: float = candidate_fraction,
+                    _final_fraction: float = final_fraction,
                 ) -> Tensor:
                     hidden = hook_args[0][:, -1, :]
                     sparse = cascaded_sparse_output(
                         hidden,
                         mlp,
-                        bits=bits,
-                        candidate_fraction=candidate_fraction,
-                        final_fraction=final_fraction,
+                        bits=_bits,
+                        candidate_fraction=_candidate_fraction,
+                        final_fraction=_final_fraction,
                     )
                     replaced = output.clone()
                     replaced[:, -1, :] = sparse.to(replaced.dtype)
