@@ -780,3 +780,36 @@ jobs:
           path: |
             temporal_address_cache_l23_f10.json
             temporal_address_cache_l18_f15.json
+
+
+  oracle-physical-cache-frontier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Isolate quality versus physical fault lower bound
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_oracle_physical_cache_frontier.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 6
+          --max-prompts 16
+          --layers 23
+          --fractions 0.10 0.20 0.30 0.40
+          --cache-multipliers 1.0 1.5 2.0 3.0
+          --json-out oracle_physical_cache_l23.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oracle-physical-cache-frontier
+          path: oracle_physical_cache_l23.json
