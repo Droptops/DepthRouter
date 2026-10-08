@@ -319,8 +319,22 @@ def sparse_contribution(
 
 
 @torch.inference_mode()
-def last_logits(model: nn.Module, encoded: dict[str, Tensor]) -> Tensor:
-    return model(**encoded).logits[:, -1, :].detach().float().cpu()
+def reference_logits(
+    model: nn.Module,
+    encoded: dict[str, Tensor],
+    *,
+    all_tokens: bool,
+) -> Tensor:
+    logits = model(**encoded).logits.detach().float().cpu()
+    if not all_tokens:
+        return logits[:, -1, :]
+
+    flat = logits.reshape(-1, logits.shape[-1])
+    mask = encoded.get("attention_mask")
+    if mask is None:
+        return flat
+    valid = mask.detach().cpu().reshape(-1).to(torch.bool)
+    return flat[valid]
 
 
 def distribution_metrics(reference: Tensor, candidate: Tensor) -> dict[str, float]:
@@ -372,11 +386,34 @@ def evaluate(
     baseline: Tensor,
     *,
     fraction: float,
+    all_tokens: bool,
 ) -> dict[str, float]:
     width = mlp.down_proj.in_features
     k = max(1, min(width, round(width * fraction)))
 
     def hook(_module: nn.Module, args: tuple[Tensor, ...], output: Tensor) -> Tensor:
+        if all_tokens:
+            shape = args[0].shape
+            hidden_device = args[0].reshape(-1, shape[-1])
+            hidden = hidden_device.detach().float().cpu()
+            selected = torch.topk(
+                address(hidden),
+                k=k,
+                dim=-1,
+                sorted=False,
+            ).indices
+            exact = sparse_contribution(
+                hidden_device,
+                mlp,
+                selected.to(hidden_device.device),
+            )
+            hot = residual(hidden).to(hidden_device.device)
+            replacement = (exact + hot).reshape(
+                *shape[:-1],
+                output.shape[-1],
+            )
+            return replacement.to(output.dtype)
+
         hidden_device = args[0][:, -1, :]
         hidden = hidden_device.detach().float().cpu()
         selected = torch.topk(
@@ -398,7 +435,11 @@ def evaluate(
 
     handle = mlp.register_forward_hook(hook)
     try:
-        candidate = last_logits(model, encoded)
+        candidate = reference_logits(
+            model,
+            encoded,
+            all_tokens=all_tokens,
+        )
     finally:
         handle.remove()
 
@@ -439,6 +480,7 @@ def main() -> None:
         choices=["float32", "float16", "bfloat16"],
         default="bfloat16",
     )
+    parser.add_argument("--all-tokens", action="store_true")
     parser.add_argument("--json-out")
     args = parser.parse_args()
 
@@ -530,7 +572,11 @@ def main() -> None:
         predicted_selected,
     )
     residual_target = dense_output - exact_predicted
-    baseline = last_logits(model, test_encoded)
+    baseline = reference_logits(
+        model,
+        test_encoded,
+        all_tokens=args.all_tokens,
+    )
 
     rows = []
     for residual_rank in args.residual_ranks:
@@ -558,6 +604,7 @@ def main() -> None:
                         test_encoded,
                         baseline,
                         fraction=fraction,
+                        all_tokens=args.all_tokens,
                     ),
                 }
             )
@@ -568,6 +615,7 @@ def main() -> None:
         "layer": args.layer,
         "train_tokens": int(hidden.shape[0]),
         "test_prompts": len(test_texts),
+        "all_tokens": args.all_tokens,
         "rows": rows,
         "claim_boundary": (
             "A tiny resident address head selects exact cold neurons while a tiny "
