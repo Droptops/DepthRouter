@@ -216,6 +216,7 @@ def main() -> None:
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--decode-steps", type=int, default=10)
+    parser.add_argument("--max-prompts", type=int, default=16)
     parser.add_argument("--layers", nargs="+", type=int, default=[18, 23])
     parser.add_argument(
         "--fractions",
@@ -261,7 +262,7 @@ def main() -> None:
     if any(index < 0 or index >= len(layers) for index in args.layers):
         raise ValueError("layer index out of range")
 
-    texts = load_texts(args.text_file)
+    texts = load_texts(args.text_file)[: args.max_prompts]
     rows = []
 
     for layer_index in args.layers:
