@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -52,6 +56,7 @@ jobs:
           --summary-only
 
   frontier-real-model:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
@@ -214,3 +219,702 @@ jobs:
             08_active_page_compile.json
             09_predictive_state_vq.json
             10_logit_tangent_oracle.json
+
+
+  predictive-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Sweep low-bit predictive addresses on late Qwen layers
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_binary_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --fractions 0.05 0.10 0.15 0.20 0.25             --address-bits 1 2 3 4             --json-out predictive_address_layer23.json
+          python experiments/hf_binary_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --fractions 0.05 0.10 0.15 0.20 0.25             --address-bits 1 2 3 4             --json-out predictive_address_layer18.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: predictive-address-frontier
+          path: |
+            predictive_address_layer23.json
+            predictive_address_layer18.json
+
+
+  distilled-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Distill tiny hidden-state address heads on Qwen
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_distilled_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --max-train-tokens 512             --teacher-fraction 0.10             --ranks 8 16 32 64             --fractions 0.05 0.10 0.15 0.20             --steps 120             --batch-size 64             --json-out distilled_address_layer23.json
+          python experiments/hf_distilled_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --max-train-tokens 512             --teacher-fraction 0.10             --ranks 8 16 32 64             --fractions 0.05 0.10 0.15 0.20             --steps 120             --batch-size 64             --json-out distilled_address_layer18.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distilled-address-frontier
+          path: |
+            distilled_address_layer23.json
+            distilled_address_layer18.json
+
+
+  tangent-distilled-address:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Distill final-logit tangent importance into a tiny Qwen address head
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_tangent_distilled_address.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-train-tokens 256
+          --top-logits 32
+          --teacher-fraction 0.10
+          --ranks 8 16 32 64
+          --fractions 0.05 0.10 0.15 0.20
+          --steps 120
+          --batch-size 64
+          --json-out tangent_distilled_address.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tangent-distilled-address
+          path: tangent_distilled_address.json
+
+
+  distilled-address-tuned:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Tune the tiny address head at the layer-18 sparsity frontier
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_distilled_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --max-train-tokens 512             --teacher-fraction 0.15             --ranks 4 8 16             --fractions 0.15 0.18 0.20 0.22 0.25             --steps 220             --batch-size 64             --json-out distilled_tuned_teacher15.json
+          python experiments/hf_distilled_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --max-train-tokens 512             --teacher-fraction 0.20             --ranks 4 8 16             --fractions 0.15 0.18 0.20 0.22 0.25             --steps 220             --batch-size 64             --json-out distilled_tuned_teacher20.json
+          python experiments/hf_distilled_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --max-train-tokens 512             --teacher-fraction 0.25             --ranks 4 8 16             --fractions 0.18 0.20 0.22 0.25 0.28             --steps 220             --batch-size 64             --json-out distilled_tuned_teacher25.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distilled-address-tuned
+          path: |
+            distilled_tuned_teacher15.json
+            distilled_tuned_teacher20.json
+            distilled_tuned_teacher25.json
+
+
+  hybrid-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Combine tiny distilled and low-bit addresses on Qwen layer 18
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_hybrid_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 4             --teacher-fraction 0.20             --bits 1 2             --fractions 0.15 0.18 0.20 0.22 0.25             --steps 220             --batch-size 64             --json-out hybrid_address_rank4.json
+          python experiments/hf_hybrid_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --teacher-fraction 0.20             --bits 1 2             --fractions 0.15 0.18 0.20 0.22 0.25             --steps 220             --batch-size 64             --json-out hybrid_address_rank8.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hybrid-address-frontier
+          path: |
+            hybrid_address_rank4.json
+            hybrid_address_rank8.json
+
+
+  hot-residual-sparse:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Test hot residual prediction plus exact sparse cold corrections
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.15             --address-rank 8             --residual-ranks 4 8 16 32             --fractions 0.10 0.15 0.20             --steps 220             --batch-size 64             --json-out hot_residual_sparse_l18_t15.json
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.20             --address-rank 8             --residual-ranks 4 8 16 32             --fractions 0.10 0.15 0.20             --steps 220             --batch-size 64             --json-out hot_residual_sparse_l18_t20.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hot-residual-sparse
+          path: |
+            hot_residual_sparse_l18_t15.json
+            hot_residual_sparse_l18_t20.json
+
+
+  selective-fallback-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Calibrate uncertainty-triggered dense fallback on Qwen layer 18
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_selective_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --fraction 0.10             --steps 220             --batch-size 64             --kl-tolerance 0.02             --max-calibration-failure 0.02             --json-out selective_fallback_f10.json
+          python experiments/hf_selective_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --fraction 0.15             --steps 220             --batch-size 64             --kl-tolerance 0.02             --max-calibration-failure 0.02             --json-out selective_fallback_f15.json
+          python experiments/hf_selective_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --fraction 0.20             --steps 220             --batch-size 64             --kl-tolerance 0.01             --max-calibration-failure 0.02             --json-out selective_fallback_f20.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: selective-fallback-frontier
+          path: |
+            selective_fallback_f10.json
+            selective_fallback_f15.json
+            selective_fallback_f20.json
+
+
+  hot-residual-holyshit:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Push the hot-residual frontier below 15 percent cold payload
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.10             --address-rank 8             --residual-ranks 32 64 128             --fractions 0.05 0.075 0.10 0.125 0.15             --steps 300             --batch-size 64             --json-out holyshit_hot_residual_t10.json
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.15             --address-rank 8             --residual-ranks 32 64 128             --fractions 0.05 0.075 0.10 0.125 0.15             --steps 300             --batch-size 64             --json-out holyshit_hot_residual_t15.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hot-residual-holyshit
+          path: |
+            holyshit_hot_residual_t10.json
+            holyshit_hot_residual_t15.json
+
+
+  hot-residual-all-token-validation:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Validate hot-residual sparse execution on every held-out prompt token
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.15             --address-rank 8             --residual-ranks 32             --fractions 0.15             --steps 300             --batch-size 64             --all-tokens             --json-out hot_residual_all_tokens_t15.json
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.20             --address-rank 8             --residual-ranks 32             --fractions 0.20             --steps 300             --batch-size 64             --all-tokens             --json-out hot_residual_all_tokens_t20.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hot-residual-all-token-validation
+          path: |
+            hot_residual_all_tokens_t15.json
+            hot_residual_all_tokens_t20.json
+
+
+  decode-rollout-hot-residual:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Validate hot-residual sparse execution across held-out decode trajectories
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_decode_rollout_hot_residual.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --decode-steps 8             --teacher-fraction 0.15             --address-rank 8             --residual-rank 32             --fractions 0.10 0.125 0.15             --steps 300             --batch-size 64             --json-out decode_rollout_hot_residual.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: decode-rollout-hot-residual
+          path: decode_rollout_hot_residual.json
+
+
+  decode-state-trained:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Train predictive coding on dense decode-state trajectories
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_decode_state_trained.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --train-decode-steps 8             --test-decode-steps 8             --teacher-fraction 0.15             --address-rank 8             --residual-rank 32             --fractions 0.10 0.125 0.15 0.20             --steps 400             --json-out decode_state_trained_t15.json
+          python experiments/hf_decode_state_trained.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --train-decode-steps 8             --test-decode-steps 8             --teacher-fraction 0.20             --address-rank 8             --residual-rank 32             --fractions 0.10 0.15 0.20 0.25             --steps 400             --json-out decode_state_trained_t20.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: decode-state-trained
+          path: |
+            decode_state_trained_t15.json
+            decode_state_trained_t20.json
+
+
+  temporal-predictive-coding:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Predict temporal MLP deltas and fault only sparse innovations
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_temporal_predictive_coding.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --train-decode-steps 8             --test-decode-steps 8             --teacher-fraction 0.10             --address-rank 8             --delta-rank 32             --fractions 0.05 0.075 0.10 0.125             --steps 400             --json-out temporal_predictive_coding_t10.json
+          python experiments/hf_temporal_predictive_coding.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --train-decode-steps 8             --test-decode-steps 8             --teacher-fraction 0.15             --address-rank 8             --delta-rank 32             --fractions 0.05 0.075 0.10 0.125 0.15             --steps 400             --json-out temporal_predictive_coding_t15.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-predictive-coding
+          path: |
+            temporal_predictive_coding_t10.json
+            temporal_predictive_coding_t15.json
+
+
+  risk-controlled-fallback:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Learn a calibrated risk-triggered dense fallback
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_risk_controlled_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --address-rank 8             --risk-rank 4             --fraction 0.10             --steps 300             --kl-tolerance 0.01             --max-calibration-failure 0.01             --json-out risk_controlled_f10.json
+          python experiments/hf_risk_controlled_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --address-rank 8             --risk-rank 8             --fraction 0.15             --steps 300             --kl-tolerance 0.01             --max-calibration-failure 0.01             --json-out risk_controlled_f15.json
+          python experiments/hf_risk_controlled_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --address-rank 8             --risk-rank 8             --fraction 0.10             --steps 300             --kl-tolerance 0.01             --max-calibration-failure 0.01             --json-out risk_controlled_l23_f10.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: risk-controlled-fallback
+          path: |
+            risk_controlled_f10.json
+            risk_controlled_f15.json
+            risk_controlled_l23_f10.json
+
+
+  cascaded-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Refine low-bit address shortlists with exact gate/up candidates
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_cascaded_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --bits 1 2             --candidate-fractions 0.15 0.20 0.25 0.30             --final-fractions 0.05 0.075 0.10 0.125             --json-out cascaded_address_l18.json
+          python experiments/hf_cascaded_address.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --bits 1 2             --candidate-fractions 0.15 0.20 0.25 0.30             --final-fractions 0.05 0.075 0.10 0.125             --json-out cascaded_address_l23.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cascaded-address-frontier
+          path: |
+            cascaded_address_l18.json
+            cascaded_address_l23.json
+
+
+  predictive-correction-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Train final-layer predictive corrections against normalized hidden state
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_predictive_correction.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --fraction 0.05             --address-rank 8             --correction-ranks 4 8 16 32             --steps 400             --json-out predictive_correction_f05.json
+          python experiments/hf_predictive_correction.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --fraction 0.10             --address-rank 8             --correction-ranks 4 8 16 32             --steps 400             --json-out predictive_correction_f10.json
+          python experiments/hf_predictive_correction.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --fraction 0.15             --address-rank 8             --correction-ranks 4 8 16 32             --steps 400             --json-out predictive_correction_f15.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: predictive-correction-frontier
+          path: |
+            predictive_correction_f05.json
+            predictive_correction_f10.json
+            predictive_correction_f15.json
+
+
+  final-layer-hot-surrogate:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Replace the final Qwen MLP with a tiny prediction-targeted hot surrogate
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_final_layer_hot_surrogate.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --ranks 8 16 32 64 128
+          --steps 500
+          --json-out final_layer_hot_surrogate.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-layer-hot-surrogate
+          path: final_layer_hot_surrogate.json
+
+
+  piecewise-hot-surrogate:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Cache local final-layer operators by predictive state
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_piecewise_hot_surrogate.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-tokens 512
+          --clusters 4 8 16
+          --ranks 4 8 16
+          --steps 250
+          --json-out piecewise_hot_surrogate.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piecewise-hot-surrogate
+          path: piecewise_hot_surrogate.json
+
+
+  temporal-demand-prefetch:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Measure temporal active-set locality and cold-fault reduction
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_demand_prefetch.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 12
+          --layers 18 23
+          --fractions 0.05 0.10 0.15 0.20
+          --cache-multipliers 1.0 1.5 2.0 3.0
+          --json-out temporal_demand_prefetch.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-demand-prefetch
+          path: temporal_demand_prefetch.json
+
+
+  causal-state-codebook:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Compile recurring MLP demand into tiny discrete state codes
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_causal_state_codebook.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --max-train-tokens 768             --clusters 4 8 16 32             --fractions 0.10 0.15 0.20             --classifier-rank 8             --steps 350             --json-out causal_state_codebook_l23.json
+          python experiments/hf_causal_state_codebook.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --max-train-tokens 768             --clusters 4 8 16 32             --fractions 0.10 0.15 0.20             --classifier-rank 8             --steps 350             --json-out causal_state_codebook_l18.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: causal-state-codebook
+          path: |
+            causal_state_codebook_l23.json
+            causal_state_codebook_l18.json
+
+
+  temporal-address-cache:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Predict working-set transitions and account only physical cache faults
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_temporal_address_cache.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --train-decode-steps 10             --test-decode-steps 10             --fraction 0.10             --rank 8             --steps 350             --cache-multipliers 1.0 1.5 2.0             --json-out temporal_address_cache_l23_f10.json
+          python experiments/hf_temporal_address_cache.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --train-decode-steps 10             --test-decode-steps 10             --fraction 0.15             --rank 8             --steps 350             --cache-multipliers 1.0 1.5 2.0             --json-out temporal_address_cache_l18_f15.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-address-cache
+          path: |
+            temporal_address_cache_l23_f10.json
+            temporal_address_cache_l18_f15.json
+
+
+  oracle-physical-cache-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Isolate quality versus physical fault lower bound
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_oracle_physical_cache_frontier.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 6
+          --max-prompts 16
+          --layers 23
+          --fractions 0.10 0.20 0.30 0.40
+          --cache-multipliers 1.0 1.5 2.0 3.0
+          --json-out oracle_physical_cache_l23.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oracle-physical-cache-frontier
+          path: oracle_physical_cache_l23.json
+
+
+  temporal-logit-tangent-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Push the 128-logit oracle through the strict top1 gate
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_logit_tangent_cache.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 10
+          --max-prompts 20
+          --top-logits 128
+          --fractions 0.30 0.35 0.40
+          --block-size 16
+          --cache-multipliers 1.0 1.5 2.0
+          --json-out temporal_logit_tangent_cache_128_gate_push.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-logit-tangent-cache-128-gate-push
+          path: temporal_logit_tangent_cache_128_gate_push.json
+
+
+  temporal-logit-tangent-cache-256:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Probe whether a wider predictive tangent lowers the exact working set
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_logit_tangent_cache.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 6
+          --max-prompts 8
+          --top-logits 256
+          --fractions 0.10 0.15 0.20
+          --block-size 16
+          --cache-multipliers 1.0 1.5 2.0
+          --json-out temporal_logit_tangent_cache_256_probe.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-logit-tangent-cache-256-probe
+          path: temporal_logit_tangent_cache_256_probe.json
+
+
+  temporal-tangent-distilled:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Distill temporal logit-tangent working sets into a tiny branch predictor
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_temporal_tangent_distilled.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --train-decode-steps 8             --test-decode-steps 10             --max-train-prompts 20             --max-test-prompts 20             --fraction 0.30             --top-logits 128             --block-size 32             --rank 16             --steps 500             --cache-multipliers 1.0 1.5 2.0             --json-out temporal_tangent_distilled_f30.json
+          python experiments/hf_temporal_tangent_distilled.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --train-decode-steps 8             --test-decode-steps 10             --max-train-prompts 20             --max-test-prompts 20             --fraction 0.40             --top-logits 128             --block-size 32             --rank 16             --steps 500             --cache-multipliers 1.0 1.5 2.0             --json-out temporal_tangent_distilled_f40.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-tangent-distilled
+          path: |
+            temporal_tangent_distilled_f30.json
+            temporal_tangent_distilled_f40.json
