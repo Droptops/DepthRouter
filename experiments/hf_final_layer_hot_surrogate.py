@@ -73,10 +73,6 @@ DEFAULT_TEXTS = [
 def load_texts(path: str | None) -> list[str]:
     if path is None:
         return list(DEFAULT_TEXTS)
-    test_x = test_x.detach().clone()
-    test_base = test_base.detach().clone()
-    test_h = test_h.detach().clone()
-
     rows = []
     for raw in Path(path).read_text(encoding="utf-8").splitlines():
         line = raw.strip()
@@ -350,6 +346,10 @@ def main() -> None:
         test_encoded,
         max_tokens=args.max_tokens,
     )
+
+    test_x = test_x.detach().clone()
+    test_base = test_base.detach().clone()
+    test_h = test_h.detach().clone()
 
     rows = []
     for rank in args.ranks:
