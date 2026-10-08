@@ -696,3 +696,35 @@ jobs:
         with:
           name: piecewise-hot-surrogate
           path: piecewise_hot_surrogate.json
+
+
+  temporal-demand-prefetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Measure temporal active-set locality and cold-fault reduction
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_demand_prefetch.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 12
+          --layers 18 23
+          --fractions 0.05 0.10 0.15 0.20
+          --cache-multipliers 1.0 1.5 2.0 3.0
+          --json-out temporal_demand_prefetch.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-demand-prefetch
+          path: temporal_demand_prefetch.json
