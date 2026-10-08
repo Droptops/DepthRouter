@@ -266,3 +266,38 @@ jobs:
           path: |
             distilled_address_layer23.json
             distilled_address_layer18.json
+
+
+  tangent-distilled-address:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Distill final-logit tangent importance into a tiny Qwen address head
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_tangent_distilled_address.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-train-tokens 256
+          --top-logits 32
+          --teacher-fraction 0.10
+          --ranks 8 16 32 64
+          --fractions 0.05 0.10 0.15 0.20
+          --steps 120
+          --batch-size 64
+          --json-out tangent_distilled_address.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tangent-distilled-address
+          path: tangent_distilled_address.json
