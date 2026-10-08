@@ -728,3 +728,29 @@ jobs:
         with:
           name: temporal-demand-prefetch
           path: temporal_demand_prefetch.json
+
+
+  causal-state-codebook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Compile recurring MLP demand into tiny discrete state codes
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_causal_state_codebook.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 23             --max-train-tokens 768             --clusters 4 8 16 32             --fractions 0.10 0.15 0.20             --classifier-rank 8             --steps 350             --json-out causal_state_codebook_l23.json
+          python experiments/hf_causal_state_codebook.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --max-train-tokens 768             --clusters 4 8 16 32             --fractions 0.10 0.15 0.20             --classifier-rank 8             --steps 350             --json-out causal_state_codebook_l18.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: causal-state-codebook
+          path: |
+            causal_state_codebook_l23.json
+            causal_state_codebook_l18.json
