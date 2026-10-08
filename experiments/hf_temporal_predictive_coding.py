@@ -169,9 +169,10 @@ def collect_temporal_pairs(
     decode_steps: int,
     max_length: int,
     device: torch.device,
-) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     delta_hidden_rows: list[Tensor] = []
     hidden_rows: list[Tensor] = []
+    previous_activation_rows: list[Tensor] = []
     activation_rows: list[Tensor] = []
     delta_output_rows: list[Tensor] = []
 
@@ -184,17 +185,24 @@ def collect_temporal_pairs(
         )["input_ids"].to(device)
 
         previous_hidden: Tensor | None = None
+        previous_activation: Tensor | None = None
         previous_output: Tensor | None = None
 
         for _ in range(decode_steps):
             hidden, activation, output, logits = capture_state(model, mlp, prefix)
-            if previous_hidden is not None and previous_output is not None:
+            if (
+                previous_hidden is not None
+                and previous_activation is not None
+                and previous_output is not None
+            ):
                 delta_hidden_rows.append(hidden - previous_hidden)
                 hidden_rows.append(hidden)
+                previous_activation_rows.append(previous_activation)
                 activation_rows.append(activation)
                 delta_output_rows.append(output - previous_output)
 
             previous_hidden = hidden
+            previous_activation = activation
             previous_output = output
             token = logits.argmax(dim=-1).to(device)
             prefix = torch.cat([prefix, token[:, None]], dim=1)
@@ -202,6 +210,7 @@ def collect_temporal_pairs(
     return (
         torch.cat(delta_hidden_rows, dim=0),
         torch.cat(hidden_rows, dim=0),
+        torch.cat(previous_activation_rows, dim=0),
         torch.cat(activation_rows, dim=0),
         torch.cat(delta_output_rows, dim=0),
     )
@@ -370,7 +379,7 @@ def metadata_fraction(
         + mlp.down_proj.weight.numel()
     )
     metadata = hot_params / cold_params
-    cached_state = (2 * mlp.down_proj.out_features) / cold_params
+    cached_state = (3 * mlp.down_proj.out_features) / cold_params
     return metadata, cached_state
 
 
@@ -430,7 +439,13 @@ def main() -> None:
     layers = resolve_layers(model)
     mlp = resolve_mlp(layers[args.layer])
 
-    delta_hidden, hidden, activation, delta_output = collect_temporal_pairs(
+    (
+        delta_hidden,
+        hidden,
+        previous_activation,
+        activation,
+        delta_output,
+    ) = collect_temporal_pairs(
         model,
         mlp,
         tokenizer,
@@ -441,6 +456,7 @@ def main() -> None:
     )
     delta_hidden = delta_hidden.detach().clone()
     hidden = hidden.detach().clone()
+    previous_activation = previous_activation.detach().clone()
     activation = activation.detach().clone()
     delta_output = delta_output.detach().clone()
 
@@ -456,11 +472,22 @@ def main() -> None:
     )
     with torch.no_grad():
         selected = topk_indices(address(hidden), args.teacher_fraction)
+        previous_hidden = hidden - delta_hidden
+        previous_selected = topk_indices(
+            address(previous_hidden),
+            args.teacher_fraction,
+        )
     exact = selected_contribution(activation, mlp, selected)
-    # Current delta output = sparse innovation + residual temporal delta.
+    previous_exact = selected_contribution(
+        previous_activation,
+        mlp,
+        previous_selected,
+    )
+    # Predict only the portion of the temporal delta not already explained by
+    # the change in exact sparse innovations.
     delta = train_delta(
         delta_hidden,
-        delta_output - exact,
+        delta_output - (exact - previous_exact),
         rank=args.delta_rank,
         steps=args.steps,
         lr=args.lr,
@@ -482,10 +509,24 @@ def main() -> None:
             )["input_ids"].to(device)
 
             # Dense warm-up establishes the temporal cache.
-            previous_hidden, _, previous_sparse_output, warm_logits = capture_state(
+            (
+                previous_hidden,
+                previous_activation,
+                previous_sparse_output,
+                warm_logits,
+            ) = capture_state(
                 model,
                 mlp,
                 prefix,
+            )
+            warm_selected = topk_indices(
+                address(previous_hidden),
+                fraction,
+            )
+            previous_exact = selected_contribution(
+                previous_activation,
+                mlp,
+                warm_selected,
             )
             token = warm_logits.argmax(dim=-1).to(device)
             prefix = torch.cat([prefix, token[:, None]], dim=1)
@@ -526,11 +567,13 @@ def main() -> None:
                         previous_sparse_output.to(hidden_device.device)
                         + temporal
                         + exact_now
+                        - previous_exact.to(hidden_device.device)
                     )
                     replaced = output.clone()
                     replaced[:, -1, :] = prediction.to(replaced.dtype)
                     state["hidden"] = hidden_cpu
                     state["output"] = prediction.detach().float().cpu()
+                    state["exact"] = exact_now.detach().float().cpu()
                     return replaced
 
                 handle = mlp.register_forward_hook(sparse_hook)
@@ -546,6 +589,7 @@ def main() -> None:
 
                 previous_hidden = state["hidden"]
                 previous_sparse_output = state["output"]
+                previous_exact = state["exact"]
                 token = dense.argmax(dim=-1).to(device)
                 prefix = torch.cat([prefix, token[:, None]], dim=1)
 
@@ -592,9 +636,9 @@ def main() -> None:
         "rows": rows,
         "claim_boundary": (
             "A dense first decode state warms a per-sequence cache containing the "
-            "previous hidden and MLP output. Later states predict the temporal MLP "
-            "delta from the hidden-state delta and add exact sparse current-neuron "
-            "innovations. Evaluation uses held-out dense greedy prefixes. Only one "
+            "previous hidden, MLP output, and sparse innovation. Later states "
+            "predict only the unexplained temporal delta and add the exact change "
+            "in sparse innovations. Evaluation uses held-out dense greedy prefixes. Only one "
             "MLP layer is modified; traffic is analytic until a selective kernel "
             "and real cache residency are profiled."
         ),
