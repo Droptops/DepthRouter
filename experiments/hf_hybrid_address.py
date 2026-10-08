@@ -130,8 +130,15 @@ def capture_teacher(
         h1.remove()
         h2.remove()
 
-    hidden = torch.cat(inputs, dim=0)[:max_tokens].float()
-    activation = torch.cat(activations, dim=0)[:max_tokens].float()
+    hidden = torch.cat(inputs, dim=0)
+    activation = torch.cat(activations, dim=0)
+    mask = encoded.get("attention_mask")
+    if mask is not None:
+        valid = mask.reshape(-1).to(torch.bool).cpu()
+        hidden = hidden[valid]
+        activation = activation[valid]
+    hidden = hidden[:max_tokens].float()
+    activation = activation[:max_tokens].float()
     down_norm = mlp.down_proj.weight.detach().float().cpu().norm(dim=0)
     teacher = activation.abs() * down_norm[None, :]
     return hidden, teacher
