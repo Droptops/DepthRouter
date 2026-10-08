@@ -415,6 +415,8 @@ def main() -> None:
         agreement = torch.cat(all_agreement).float()
         selected_fraction = fraction
         quality = {
+            "states_evaluated": int(agreement.numel()),
+            "top1_mismatches": int((1.0 - agreement).sum().item()),
             "mean_kl_nats": float(kl.mean().item()),
             "p95_kl_nats": float(torch.quantile(kl, 0.95).item()),
             "max_kl_nats": float(kl.max().item()),
