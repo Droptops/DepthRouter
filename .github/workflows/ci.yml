@@ -813,3 +813,37 @@ jobs:
         with:
           name: oracle-physical-cache-frontier
           path: oracle_physical_cache_l23.json
+
+
+  temporal-logit-tangent-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Test probability-optimal exact working sets for temporal locality
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_logit_tangent_cache.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 6
+          --max-prompts 8
+          --top-logits 128
+          --fractions 0.05 0.10 0.15
+          --block-size 16
+          --cache-multipliers 1.0 1.5 2.0 3.0
+          --json-out temporal_logit_tangent_cache.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-logit-tangent-cache
+          path: temporal_logit_tangent_cache.json
