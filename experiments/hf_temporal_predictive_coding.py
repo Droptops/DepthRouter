@@ -493,6 +493,10 @@ def main() -> None:
         lr=args.lr,
         seed=args.seed + 1,
     )
+    # Evaluation feeds inference-mode tensors through the heads; freeze them
+    # so autograd does not try to record those calls.
+    address.requires_grad_(False)
+    delta.requires_grad_(False)
 
     rows = []
     for fraction in args.fractions:
