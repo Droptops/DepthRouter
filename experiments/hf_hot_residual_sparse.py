@@ -140,9 +140,18 @@ def capture_training_trace(
         for handle in handles:
             handle.remove()
 
-    hidden = torch.cat(inputs, dim=0)[:max_tokens].float()
-    activation = torch.cat(activations, dim=0)[:max_tokens].float()
-    dense_output = torch.cat(outputs, dim=0)[:max_tokens].float()
+    hidden = torch.cat(inputs, dim=0)
+    activation = torch.cat(activations, dim=0)
+    dense_output = torch.cat(outputs, dim=0)
+    mask = encoded.get("attention_mask")
+    if mask is not None:
+        valid = mask.reshape(-1).to(torch.bool).cpu()
+        hidden = hidden[valid]
+        activation = activation[valid]
+        dense_output = dense_output[valid]
+    hidden = hidden[:max_tokens].float()
+    activation = activation[:max_tokens].float()
+    dense_output = dense_output[:max_tokens].float()
     return hidden, activation, dense_output
 
 
