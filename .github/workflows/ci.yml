@@ -652,3 +652,35 @@ jobs:
         with:
           name: final-layer-hot-surrogate
           path: final_layer_hot_surrogate.json
+
+
+  piecewise-hot-surrogate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Cache local final-layer operators by predictive state
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_piecewise_hot_surrogate.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --max-tokens 512
+          --clusters 4 8 16
+          --ranks 4 8 16
+          --steps 250
+          --json-out piecewise_hot_surrogate.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piecewise-hot-surrogate
+          path: piecewise_hot_surrogate.json
