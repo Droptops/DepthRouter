@@ -435,3 +435,29 @@ jobs:
           path: |
             holyshit_hot_residual_t10.json
             holyshit_hot_residual_t15.json
+
+
+  hot-residual-all-token-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Validate hot-residual sparse execution on every held-out prompt token
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.15             --address-rank 8             --residual-ranks 32             --fractions 0.15             --steps 300             --batch-size 64             --all-tokens             --json-out hot_residual_all_tokens_t15.json
+          python experiments/hf_hot_residual_sparse.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --teacher-fraction 0.20             --address-rank 8             --residual-ranks 32             --fractions 0.20             --steps 300             --batch-size 64             --all-tokens             --json-out hot_residual_all_tokens_t20.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hot-residual-all-token-validation
+          path: |
+            hot_residual_all_tokens_t15.json
+            hot_residual_all_tokens_t20.json
