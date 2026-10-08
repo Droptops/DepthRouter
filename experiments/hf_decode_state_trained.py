@@ -463,6 +463,10 @@ def main() -> None:
         device=device,
     )
 
+    hidden = hidden.detach().clone()
+    activation = activation.detach().clone()
+    dense_output = dense_output.detach().clone()
+
     score = teacher_score(activation, mlp)
     address = train_address(
         hidden,
