@@ -463,6 +463,12 @@ def main() -> None:
         train_encoded,
         max_tokens=args.max_train_tokens,
     )
+    # capture_trace runs under inference_mode; rematerialize ordinary tensors
+    # before using them in teacher construction and optimization.
+    hidden = hidden.detach().clone()
+    activation = activation.detach().clone()
+    dense_hidden = dense_hidden.detach().clone()
+    token_logits = token_logits.detach().clone()
     top_ids = torch.topk(
         token_logits,
         k=min(args.top_logits, token_logits.shape[-1]),
