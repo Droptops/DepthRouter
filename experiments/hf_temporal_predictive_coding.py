@@ -439,6 +439,11 @@ def main() -> None:
         max_length=args.max_length,
         device=device,
     )
+    delta_hidden = delta_hidden.detach().clone()
+    hidden = hidden.detach().clone()
+    activation = activation.detach().clone()
+    delta_output = delta_output.detach().clone()
+
     score = teacher_score(activation, mlp)
     address = train_address(
         hidden,
