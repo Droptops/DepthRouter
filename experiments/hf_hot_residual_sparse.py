@@ -488,14 +488,6 @@ def main() -> None:
     dense_output = dense_output.detach().clone()
 
     score = teacher_score(activation, mlp)
-    teacher_selected = topk_indices(score, args.teacher_fraction)
-    exact_teacher = selected_contribution_from_activation(
-        activation,
-        mlp,
-        teacher_selected,
-    )
-    residual_target = dense_output - exact_teacher
-
     address = train_address(
         hidden,
         score,
@@ -506,6 +498,29 @@ def main() -> None:
         lr=args.lr,
         seed=args.seed,
     )
+
+    # Train the hot residual against the *actual address head's* selected set,
+    # not the teacher's ideal set. This makes the residual predictor absorb
+    # systematic routing mistakes instead of assuming they disappear.
+    with torch.no_grad():
+        predicted_selected = torch.topk(
+            address(hidden),
+            k=max(
+                1,
+                min(
+                    score.shape[-1],
+                    round(score.shape[-1] * args.teacher_fraction),
+                ),
+            ),
+            dim=-1,
+            sorted=False,
+        ).indices
+    exact_predicted = selected_contribution_from_activation(
+        activation,
+        mlp,
+        predicted_selected,
+    )
+    residual_target = dense_output - exact_predicted
     baseline = last_logits(model, test_encoded)
 
     rows = []
