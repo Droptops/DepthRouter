@@ -381,3 +381,31 @@ jobs:
           path: |
             hot_residual_sparse_l18_t15.json
             hot_residual_sparse_l18_t20.json
+
+
+  selective-fallback-frontier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Calibrate uncertainty-triggered dense fallback on Qwen layer 18
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python experiments/hf_selective_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --fraction 0.10             --steps 220             --batch-size 64             --kl-tolerance 0.02             --max-calibration-failure 0.02             --json-out selective_fallback_f10.json
+          python experiments/hf_selective_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --fraction 0.15             --steps 220             --batch-size 64             --kl-tolerance 0.02             --max-calibration-failure 0.02             --json-out selective_fallback_f15.json
+          python experiments/hf_selective_fallback.py             --model Qwen/Qwen2.5-0.5B-Instruct             --device cpu             --dtype float32             --max-length 32             --layer 18             --rank 8             --fraction 0.20             --steps 220             --batch-size 64             --kl-tolerance 0.01             --max-calibration-failure 0.02             --json-out selective_fallback_f20.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: selective-fallback-frontier
+          path: |
+            selective_fallback_f10.json
+            selective_fallback_f15.json
+            selective_fallback_f20.json
