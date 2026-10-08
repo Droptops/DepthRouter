@@ -56,7 +56,6 @@ jobs:
           --summary-only
 
   frontier-real-model:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
@@ -222,7 +221,6 @@ jobs:
 
 
   predictive-address-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -249,7 +247,6 @@ jobs:
 
 
   distilled-address-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -276,7 +273,6 @@ jobs:
 
 
   tangent-distilled-address:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -312,7 +308,6 @@ jobs:
 
 
   distilled-address-tuned:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -341,7 +336,6 @@ jobs:
 
 
   hybrid-address-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -368,7 +362,6 @@ jobs:
 
 
   hot-residual-sparse:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -395,7 +388,6 @@ jobs:
 
 
   selective-fallback-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -424,7 +416,6 @@ jobs:
 
 
   hot-residual-holyshit:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -451,7 +442,6 @@ jobs:
 
 
   hot-residual-all-token-validation:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -478,7 +468,6 @@ jobs:
 
 
   decode-rollout-hot-residual:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -502,7 +491,6 @@ jobs:
 
 
   decode-state-trained:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -529,7 +517,6 @@ jobs:
 
 
   temporal-predictive-coding:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -556,7 +543,6 @@ jobs:
 
 
   risk-controlled-fallback:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -585,7 +571,6 @@ jobs:
 
 
   cascaded-address-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -612,7 +597,6 @@ jobs:
 
 
   predictive-correction-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -641,7 +625,6 @@ jobs:
 
 
   final-layer-hot-surrogate:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -672,7 +655,6 @@ jobs:
 
 
   piecewise-hot-surrogate:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -705,7 +687,6 @@ jobs:
 
 
   temporal-demand-prefetch:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -738,7 +719,6 @@ jobs:
 
 
   causal-state-codebook:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -765,7 +745,6 @@ jobs:
 
 
   temporal-address-cache:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -792,7 +771,6 @@ jobs:
 
 
   oracle-physical-cache-frontier:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -860,7 +838,6 @@ jobs:
 
 
   temporal-logit-tangent-cache-256:
-    if: github.event_name != 'pull_request' || github.head_ref != 'research/predictive-address-frontier'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -918,3 +895,41 @@ jobs:
           path: |
             temporal_tangent_distilled_f30.json
             temporal_tangent_distilled_f40.json
+
+
+  temporal-tangent-exposure-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Separate address-head exposure bias from teacher-forced history
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_temporal_tangent_exposure_diagnostic.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --train-decode-steps 8
+          --test-decode-steps 10
+          --max-train-prompts 20
+          --max-test-prompts 20
+          --fraction 0.30
+          --top-logits 128
+          --block-size 32
+          --rank 16
+          --steps 500
+          --cache-multipliers 1.0 1.5 2.0
+          --json-out temporal_tangent_exposure_f30.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: temporal-tangent-exposure-diagnostic
+          path: temporal_tangent_exposure_f30.json
