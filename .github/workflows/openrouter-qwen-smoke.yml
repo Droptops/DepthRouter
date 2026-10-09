@@ -1,0 +1,29 @@
+name: OpenRouter Qwen smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - experiments/openrouter_qwen_smoke.py
+      - .github/workflows/openrouter-qwen-smoke.yml
+jobs:
+  qwen-output-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Query Qwen via OpenRouter
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: qwen/qwen3-8b
+        run: python experiments/openrouter_qwen_smoke.py
+      - name: Upload nonsecret outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openrouter-qwen-smoke
+          path: openrouter_qwen_smoke.json
+          if-no-files-found: warn
