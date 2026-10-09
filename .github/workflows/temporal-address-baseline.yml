@@ -1,0 +1,26 @@
+name: Temporal address baseline experiment
+on:
+  push:
+    branches: [experiment/temporal-tangent-exposure-diagnostic]
+    paths: [.github/workflows/temporal-address-baseline.yml]
+  workflow_dispatch:
+jobs:
+  measured-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install model dependencies
+        run: pip install -e '.[hf]'
+      - name: Run existing distilled temporal address baseline
+        run: |
+          mkdir -p results
+          python experiments/hf_temporal_tangent_distilled.py --max-train-prompts 4 --max-test-prompts 4 --train-decode-steps 2 --test-decode-steps 2 --steps 30 --json-out results/temporal-address-baseline.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: temporal-address-baseline
+          path: results/
