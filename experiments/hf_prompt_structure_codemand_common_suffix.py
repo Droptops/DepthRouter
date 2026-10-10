@@ -17,8 +17,8 @@ from pathlib import Path
 SOURCE = Path(__file__).with_name("hf_prompt_structure_codemand.py")
 namespace = runpy.run_path(str(SOURCE), run_name="depthrouter_codemand_control")
 suffix = (
-    "\n\nFinal instruction for all tasks: Select the better option, "
-    "then give exactly one concise reason."
+    "\n\nShared context marker: the decision criteria appear above. "
+    ""
 )
 namespace["STRUCTURES"].update(
     {name: template + suffix for name, template in namespace["STRUCTURES"].items()}
