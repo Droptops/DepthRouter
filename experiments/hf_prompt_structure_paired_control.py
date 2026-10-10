@@ -12,10 +12,7 @@ import runpy
 import sys
 from pathlib import Path
 
-SUFFIX = (
-    "\n\nFinal instruction for all tasks: Select the better option, "
-    "then give exactly one concise reason."
-)
+SUFFIX = "\n\n[End of request.]"
 SOURCE = Path(__file__).with_name("hf_prompt_structure_codemand.py")
 
 
