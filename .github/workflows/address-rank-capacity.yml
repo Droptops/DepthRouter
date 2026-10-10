@@ -1,0 +1,31 @@
+name: Address rank capacity
+on:
+  pull_request:
+    paths:
+      - experiments/hf_address_rank_capacity.py
+      - .github/workflows/address-rank-capacity.yml
+  workflow_dispatch:
+jobs:
+  qwen-rank-capacity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+          cache: pip
+      - run: pip install -e '.[hf]'
+      - name: Evaluate fixed-data predictor rank sweep
+        env:
+          TOKENIZERS_PARALLELISM: 'false'
+        run: python experiments/hf_address_rank_capacity.py --ranks 8 16 64 --train-prompts 20 --test-prompts 20 --steps 300
+      - name: Upload measured artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: address-rank-capacity
+          path: |
+            address_rank_capacity.json
+            address_rank_*.json
+          if-no-files-found: warn
