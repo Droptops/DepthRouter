@@ -962,7 +962,7 @@ jobs:
 
 
   prompt-structure-codemand:
-    if: github.event_name == 'pull_request' && github.head_ref == 'research/prompt-structure-codemand'
+    if: github.event_name == 'pull_request' && (github.head_ref == 'research/prompt-structure-codemand' || github.head_ref == 'research/prompt-structure-common-suffix-control')
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
@@ -990,7 +990,27 @@ jobs:
           --prefetch-budgets 0.10 0.20 0.30
           --permutations 200
           --json-out prompt_structure_codemand.json
+      - name: Run common-suffix control on PR 12
+        if: github.head_ref == 'research/prompt-structure-common-suffix-control'
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_prompt_structure_codemand_common_suffix.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 96
+          --top-logits 128
+          --fraction 0.30
+          --block-size 32
+          --train-semantics 6
+          --prefetch-budgets 0.10 0.20 0.30
+          --permutations 200
+          --json-out prompt_structure_common_suffix.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: prompt-structure-codemand
-          path: prompt_structure_codemand.json
+          name: prompt-structure-paired
+          path: |
+            prompt_structure_codemand.json
+            prompt_structure_common_suffix.json
