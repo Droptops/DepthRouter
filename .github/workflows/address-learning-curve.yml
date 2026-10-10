@@ -1,0 +1,31 @@
+name: Address learning curve
+on:
+  pull_request:
+    paths:
+      - experiments/hf_address_learning_curve.py
+      - .github/workflows/address-learning-curve.yml
+  workflow_dispatch:
+jobs:
+  qwen-address-learning-curve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+      - run: pip install -e '.[hf]'
+      - name: Run controlled training-data scaling
+        env:
+          TOKENIZERS_PARALLELISM: 'false'
+        run: python experiments/hf_address_learning_curve.py --train-prompts 4 12 20 --test-prompts 20 --train-steps 300 --json-out address_learning_curve.json
+      - name: Upload measured JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: address-learning-curve
+          path: |
+            address_learning_curve.json
+            address_learning_curve_train_*.json
+          if-no-files-found: warn
