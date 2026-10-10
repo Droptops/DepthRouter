@@ -56,6 +56,7 @@ jobs:
           --summary-only
 
   frontier-real-model:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
@@ -221,6 +222,7 @@ jobs:
 
 
   predictive-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -247,6 +249,7 @@ jobs:
 
 
   distilled-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -273,6 +276,7 @@ jobs:
 
 
   tangent-distilled-address:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -308,6 +312,7 @@ jobs:
 
 
   distilled-address-tuned:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -336,6 +341,7 @@ jobs:
 
 
   hybrid-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -362,6 +368,7 @@ jobs:
 
 
   hot-residual-sparse:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -388,6 +395,7 @@ jobs:
 
 
   selective-fallback-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -416,6 +424,7 @@ jobs:
 
 
   hot-residual-holyshit:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -442,6 +451,7 @@ jobs:
 
 
   hot-residual-all-token-validation:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -468,6 +478,7 @@ jobs:
 
 
   decode-rollout-hot-residual:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -491,6 +502,7 @@ jobs:
 
 
   decode-state-trained:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -517,6 +529,7 @@ jobs:
 
 
   temporal-predictive-coding:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -543,6 +556,7 @@ jobs:
 
 
   risk-controlled-fallback:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -571,6 +585,7 @@ jobs:
 
 
   cascaded-address-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -597,6 +612,7 @@ jobs:
 
 
   predictive-correction-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -625,6 +641,7 @@ jobs:
 
 
   final-layer-hot-surrogate:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -655,6 +672,7 @@ jobs:
 
 
   piecewise-hot-surrogate:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -687,6 +705,7 @@ jobs:
 
 
   temporal-demand-prefetch:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -719,6 +738,7 @@ jobs:
 
 
   causal-state-codebook:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -745,6 +765,7 @@ jobs:
 
 
   temporal-address-cache:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -771,6 +792,7 @@ jobs:
 
 
   oracle-physical-cache-frontier:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -804,6 +826,7 @@ jobs:
 
 
   temporal-logit-tangent-cache:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -838,6 +861,7 @@ jobs:
 
 
   temporal-logit-tangent-cache-256:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -872,6 +896,7 @@ jobs:
 
 
   temporal-tangent-distilled:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -898,6 +923,7 @@ jobs:
 
 
   temporal-tangent-exposure-diagnostic:
+    if: github.event_name != 'pull_request' || github.head_ref != 'research/prompt-structure-codemand'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -933,3 +959,58 @@ jobs:
         with:
           name: temporal-tangent-exposure-diagnostic
           path: temporal_tangent_exposure_f30.json
+
+
+  prompt-structure-codemand:
+    if: github.event_name == 'pull_request' && (github.head_ref == 'research/prompt-structure-codemand' || github.head_ref == 'research/prompt-structure-common-suffix-control')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[hf]"
+      - name: Test prompt structure as a prior over predictive working sets
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_prompt_structure_codemand.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 96
+          --top-logits 128
+          --fraction 0.30
+          --block-size 32
+          --train-semantics 6
+          --prefetch-budgets 0.10 0.20 0.30
+          --permutations 200
+          --json-out prompt_structure_codemand.json
+      - name: Run common-suffix control on PR 12
+        if: github.head_ref == 'research/prompt-structure-common-suffix-control'
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_prompt_structure_codemand_common_suffix.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --device cpu
+          --dtype float32
+          --max-length 96
+          --top-logits 128
+          --fraction 0.30
+          --block-size 32
+          --train-semantics 6
+          --prefetch-budgets 0.10 0.20 0.30
+          --permutations 200
+          --json-out prompt_structure_common_suffix.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prompt-structure-paired
+          path: |
+            prompt_structure_codemand.json
+            prompt_structure_common_suffix.json
