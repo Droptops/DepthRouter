@@ -4,7 +4,7 @@
 
 **Inconclusive, with evidence against the current breakthrough hypothesis.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
 
-The controlled locality test also went the wrong way: sparse page sets at adjacent decode steps were less similar than page sets from different prompts of the same task at the same step. Expanded 300-prompt oracle smoke tests only passed the behavioral gate at 90% of layer 12 and 95% of layer 23. These are exact-current-activation oracle results on synthetic data, not causal routing or physical bandwidth improvements.
+The controlled locality test also went the wrong way: sparse page sets at adjacent decode steps were less similar than page sets from different prompts of the same task at the same step. A calibration-only learned layout reduced held-out page demand at unusably sparse fractions, but produced no reduction at the behaviorally viable settings. A finer granularity sweep found that every grouping of eight or more neurons still touched 100% of pages; only one-neuron pages exposed the trivial 10%/5% omission, at 4,378/4,621 requests per token. These are exact-current-activation oracle results on synthetic data, not causal routing or physical bandwidth improvements.
 
 ## Infrastructure
 
@@ -20,11 +20,13 @@ The controlled locality test also went the wrong way: sparse page sets at adjace
 - Every insertion now records transfers and evictions; cache capacity is asserted.
 - Demands larger than capacity produce `infeasible_capacity` instead of misleading results.
 - Sequence-reset scope, noncausal oracle labeling, and physical-metric nulls are explicit.
-- Added replay, locality, and oracle-schema invariant tests; Ruff passes and the full local suite passes (`67 passed`).
+- Added replay, locality, layout, and oracle-schema invariant tests; Ruff passes and the full local suite passes (`70 passed`).
 - GitHub Python 3.10 and 3.12 CI jobs passed after the repair. Long research jobs were still completing at this checkpoint.
 - Commit `e41abb9` adds pinned-revision CUDA trace metadata, atomic outputs, exact environment metadata, held-out-split validation, and correct cold-start/steady latency summaries.
 - Commit `6cb9837` adds a deterministic prompt-disjoint locality control.
 - Commit `9585cc1` removes false “physical fault” names from the oracle schema and records revision, seed, device, precision, and explicit physical-metric nulls.
+- Commit `8faee7d` learns neuron layouts on 210 calibration prompts and evaluates identity, random, and learned layouts on 90 prompt-disjoint test prompts.
+- Commit `499b577` adds multi-granularity held-out layout sweeps and a no-LRU mode for isolating demand amplification.
 
 ## Experiments executed
 
@@ -38,6 +40,8 @@ The controlled locality test also went the wrong way: sparse page sets at adjace
 | Full-width identity control | Layers 12 and 23, ordered neuron indices | 100% top-1 agreement; removed FP16 permutation artifact |
 | Expanded oracle smoke | 300 prompts, 3 decode steps | Layer 12: 70% and 85% failed; 90% passed. Layer 23: 95% passed |
 | Controlled temporal locality | Layer 23, 0.5%-5% active, held-out traces | Adjacent Jaccard was below the same-task/same-step between-sequence control at every fraction |
+| Calibration-only layout, 3 seeds | Layers 12/23, 128 neurons/page, 210 calibration + 90 test prompts | Learned layout reduced low-fraction page demand, but all layouts touched 38/38 pages at 90% and 95% |
+| Page-granularity frontier, 3 seeds | Quality points, 1/8/16/32/64/128 neurons/page | 1-neuron pages retained the 90%/95% fractions; every page size >=8 saturated to 100% |
 
 ## Best configuration
 
@@ -48,7 +52,8 @@ No winner is reported. The smallest observed expanded-smoke point that passed th
 - KL divergence: 0.0000463 on the expanded synthetic smoke set
 - Top-1 agreement: 0.99444 on dense greedy trajectories
 - Free-running correctness: exact three-token agreement 0.9833; task correctness not measured
-- Logical transfer costs: not yet matched to this quality point
+- Logical transfer costs: every tested page size >=8 neurons saturated; 1-neuron pages required 4,378 requests/token at layer 12
+- Ideal modeled upper bound: omitting 10% of one FP16 MLP layer saves at most 2,614,886 weight bytes/token, only `0.2646%` of the model's FP16 parameter bytes before selector and dispatch overhead
 - Physical transfer measurements: `null`
 - End-to-end latency: `null`
 
@@ -58,6 +63,8 @@ No winner is reported. The smallest observed expanded-smoke point that passed th
 2. Layer sensitivity differs, but less optimistically than the screen implied. The smallest observed expanded-smoke passes were 90% at layer 12 and 95% at layer 23.
 3. An unsorted full-width top-k control can create false FP16 quality loss solely from accumulation order. Sorting selected neuron indices restored the identity control.
 4. At 0.5% active neurons, adjacent-step Jaccard was `0.508`, below the same-task/same-step between-sequence control at `0.772`; the adjacent-minus-control lift remained negative through 5%.
+5. Calibration-only layout learning generalized at very sparse widths: over three seeds it reduced mean requested pages by `13.9%` versus identity at layer 12 and `13.7%` at layer 23 for 0.5% active neurons. The benefit collapsed to zero at behaviorally viable fractions.
+6. At the quality-passing fractions, granularity dominates layout: pages of 8-128 neurons all saturated, while per-neuron paging preserves only a 10%/5% payload reduction and creates thousands of requests per token.
 
 ## Falsified hypotheses
 
@@ -66,6 +73,8 @@ No winner is reported. The smallest observed expanded-smoke point that passed th
 - The 30-prompt layer-12 70% result did not replicate on the expanded synthetic set; 70% and 85% both missed the 99% top-1 gate.
 - Adjacent decode states did not share more contiguous-page demand than the prompt-disjoint task-matched control at any tested sparse fraction.
 - The one-step-lagged hidden-delta signal did not positively predict current new-page fraction consistently (`r=-0.085`, `-0.528`, `0.035`, and undefined as page sets saturated).
+- A calibration-learned neuron layout did not rescue the 128-neuron page abstraction at quality-passing fractions: layer 12 at 90% and layer 23 at 95% requested all 38 pages for every tested layout and seed.
+- Reducing page size to 8, 16, 32, or 64 neurons did not expose any quality-compatible page sparsity; each configuration requested 100% of pages across three seeds.
 
 ## Engineering status
 
@@ -75,6 +84,8 @@ No winner is reported. The smallest observed expanded-smoke point that passed th
 - Reproducible trace commit: `e41abb9`
 - Controlled locality commit: `6cb9837`
 - Logical cache labeling commit: `9585cc1`
+- Held-out layout commit: `8faee7d`
+- Page-granularity commit: `499b577`
 - Merge status: open and not merged
 
 ## Blockers
@@ -88,5 +99,5 @@ No winner is reported. The smallest observed expanded-smoke point that passed th
 ## Next three experiments
 
 1. Freeze candidate fractions before evaluating a provenance-tracked, prompt-disjoint corpus with longer rollouts, task parsing, FP16/FP32 controls, three seeds, and uncertainty.
-2. Test whether a calibration-only neuron permutation reduces held-out contiguous page demand; reject it if it cannot beat the unpermuted and random-permutation controls without changing dense behavior.
-3. Do not invest in a learned transition selector until a representation shows positive adjacent-over-control locality. If one does, compare it with previous-token reuse including detector, metadata, warmup, eviction, and fallback costs.
+2. Test a preregistered multi-layer oracle frontier to determine whether modest omissions spread across layers can exceed a 1% global MLP-payload reduction while preserving the quality gate.
+3. Implement a selective kernel and physical profiling only if that global frontier leaves a plausible benefit after request, selector, and dispatch overhead. Keep transition-selector work paused unless a new representation first shows positive adjacent-over-control locality.

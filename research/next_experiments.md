@@ -8,18 +8,18 @@
 
 The 300-prompt run was exploratory and included the original screen distribution, so it is not a final held-out result. Use longer rollouts, task-level parsers, FP32 and FP16, three seeds, and uncertainty intervals.
 
-## 2. Temporal locality and compiled layout
+## 2. Multi-layer behavioral frontier
 
-**Prediction:** Although adjacent-state locality was falsified for the original layout, a calibration-only neuron permutation may reduce held-out contiguous page demand relative to both the unpermuted layout and random permutations.
+**Prediction:** Modest exact-current-activation omissions spread across multiple layers may preserve the quality gate while exceeding a 1% global MLP-payload reduction.
 
-**Falsification:** The learned layout does not reduce held-out page fraction against both controls without changing dense behavior.
+**Falsification:** No tested multi-layer group exceeds 1% ideal global MLP-payload reduction while meeting mean KL < 0.01 and top-1 agreement >= 0.99.
 
-Measure layers 12 and 23 at quality-passing activation fractions. Learn the permutation only on calibration prompts and keep logical page results separate from physical traffic.
+The granularity experiment is complete: every layout and seed touched 100% of pages at page sizes from 8 through 128 neurons. One-neuron pages retained only the trivial 90%/95% payload fractions while requiring 4,378/4,621 requests per token. Freeze the multi-layer candidates before the expanded evaluation.
 
-## 3. Conditional causal selector with fallback
+## 3. Conditional selective kernel and profiling
 
-**Prediction:** Only if a new representation first shows positive adjacent-over-control locality, a selector using previous hidden state and recent page history can reduce charged transfers relative to previous-token reuse while a dense fallback preserves the quality gate.
+**Prediction:** Only if the multi-layer frontier survives overhead modeling, a real selective kernel can reduce measured bytes/token or latency at matched quality.
 
-**Falsification:** Matched-budget transfer cost does not improve after detector and metadata overhead, or any required quality threshold fails.
+**Falsification:** Supported profiler counters show no physical-traffic improvement, end-to-end latency regresses after selector/metadata overhead, or any required quality threshold fails.
 
-The current representation failed its locality prerequisite, so this is paused. Calibrate thresholds on a dedicated split and do not use current-token dense activations for pre-forward selection.
+Keep physical bytes `null` until this kernel exists. Transition-selector work remains paused because the current representation failed its adjacent-over-control locality prerequisite.
