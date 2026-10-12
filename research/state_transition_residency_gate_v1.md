@@ -24,6 +24,12 @@ A. **Causal trace replay**: record actual selected pages and only legal past/cur
 B. **Quality evaluation**: run actual sparse/fallback logits and free-running decode; report mean KL, top-1, rollout, detector false-negative rate, missed-demand fraction, resident fraction and cold bytes/token.
 C. **Physical validation**: implement a real selective/faulting kernel or offload boundary, measure physical transfer bytes using profiler/counters where available, and end-to-end latency. If all weights remain resident on GPU, label the experiment a logical cache simulation, not an HBM reduction.
 
+## Current checkpoint (2026-10-12)
+
+Stage B has a workload-specific pass for a new structured unit. A causal rank-256 head uses only the incoming final-layer MLP state and selects 136 of 152 contiguous 32-neuron blocks before conceptual gate/up/down execution. On a deduplicated, shuffled 160-train/45-test enterprise-synthetic split it reached `1.0` top-1, `0.00644` mean KL, and `1.0` exact five-token free-running agreement over 225 held-out states at `89.4737%` execution. Resident selector parameters add `2.0532%` of final-layer MLP payload, leaving an `8.4731%` layer-relative analytic margin. A second training seed and second shuffled split also passed; static and random controls did not.
+
+This does not satisfy Stage C. The varied default prompt corpus failed (`0.92` top-1, `0.01782` KL), the enterprise data come from one synthetic generator family, and the PyTorch evaluation hook still executes the dense MLP before replacing its output. Physical bytes and latency therefore remain `null`. Freeze this selector before independent-corpus evaluation; do not tune against the new test set.
+
 ## Falsification
 - No improvement over previous-token reuse on disjoint held-out prompts at matched budget.
 - Transition detector overhead eliminates traffic or latency gain.

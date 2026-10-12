@@ -14,7 +14,9 @@ The expanded 90-prompt enterprise-synthetic result reached 100% top-1 with mean 
 
 **Falsification:** Held-out top-1 agreement is below 99%, mean KL is at least 0.01, execution exceeds 90%, or selector/cache metadata removes the analytic payload margin.
 
-The current neuron-set family is closed at useful widths. Rank 128 at 30% reached only 81.5% top-1; a continuous marginal-utility objective reached 78.5%; a 30%-teacher safety sweep needed the 100% identity control to cross 99%; direct 90%-teacher training reached only 83.5%. Do not spend more runs scaling the same binary/rank head or tune against the test prompts.
+**Outcome (2026-10-12): passed on the synthetic enterprise workload, not yet generalized.** A rank-256 selector over contiguous 32-neuron blocks, trained directly against normalized-hidden reconstruction, top-logit KL, and top-1 margin, selected 136/152 blocks: `89.4737%` execution plus `2.0532%` resident selector metadata. On a deduplicated, shuffled 160-train/45-test split it reached `1.0` top-1, `0.00644` mean KL, and `1.0` exact five-token free-running prompt agreement over 225 held-out states. A second training seed reached `1.0`/`0.00641`; a different shuffled split reached `0.99556`/`0.00714`. Static-energy and random-fixed controls failed. The same family reached only `0.92` top-1 and `0.01782` KL on the more varied default 20/20 corpus, so this is a workload-specific causal gate pass, not a general deployment claim.
+
+Freeze the passing configuration before any new held-out corpus. Do not tune on the external test set. Keep the earlier neuron-set family closed: rank 128 at 30% reached only 81.5% top-1; continuous marginal-utility distillation reached 78.5%; a 30%-teacher safety sweep required 100% execution; direct 90%-teacher training reached only 83.5%.
 
 ## 3. Conditional physical implementation
 
@@ -22,4 +24,4 @@ The current neuron-set family is closed at useful widths. Rank 128 at 30% reache
 
 **Falsification:** The causal frontier cannot exceed a preregistered analytic margin large enough to cover overhead, or a fused kernel fails to reduce measured physical bytes and latency against dense execution.
 
-Do not implement a kernel for the current neuron-page formulation. Keep physical bytes `null`; require the oracle and causal-selector gates before writing or profiling selective execution.
+The synthetic enterprise causal gate now clears the analytic prerequisite, but the varied default corpus does not. Keep physical bytes and latency `null`. First test the frozen selector on an independently sourced corpus and quantify whole-model savings; only then implement a fused block-sparse kernel if the quality and metadata-inclusive margin survive.

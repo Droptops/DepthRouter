@@ -2,11 +2,11 @@
 
 ## Executive finding
 
-**The current paging hypothesis is rejected; one noncausal tangent-space oracle remains worth studying.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
+**The original paging hypothesis remains rejected, but a new causal block selector clears the strict gate on the synthetic enterprise workload.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
 
 The controlled locality test also went the wrong way: sparse page sets at adjacent decode steps were less similar than page sets from different prompts of the same task at the same step. A calibration-only learned layout reduced held-out page demand at unusably sparse fractions, but produced no reduction at the behaviorally viable settings. A finer granularity sweep found that every grouping of eight or more neurons still touched 100% of pages; only one-neuron pages exposed the trivial 10%/5% omission, at 4,378/4,621 requests per token. A corrected multi-layer oracle found no configuration above 1% ideal global MLP savings that met the top-1 gate.
 
-A different final-layer oracle based on the local logit Jacobian did survive an expanded 90-prompt enterprise-synthetic screen: selecting 30% of layer-23 neurons preserved dense top-1 on all 270 evaluated states with mean KL `0.00919`. With a logical cache sized to 60% of the layer width, steady misses were 14.33% of layer width per token. This is a useful mechanism result, not a deployable design: selection requires the current dense activation and local Jacobian, the trajectory is dense-generated, and row misses are logical rather than physical transfers. Follow-up causal tests closed the apparent implementation path: a 16-rank binary selector needed 100% execution width to reach the 99% top-1 gate, a 128-rank head at 30% reached only 81.5%, continuous marginal-utility distillation reached 78.5%, and an expanded selective fallback accepted 0% of held-out states.
+A different final-layer oracle based on the local logit Jacobian did survive an expanded 90-prompt enterprise-synthetic screen: selecting 30% of layer-23 neurons preserved dense top-1 on all 270 evaluated states with mean KL `0.00919`. The original neuron-set distillation path still failed, but changing both the unit and objective produced a causal result: a rank-256 selector trained directly on behavioral reconstruction selected 136 of 152 contiguous 32-neuron blocks before final-layer MLP execution. On a deduplicated and shuffled 160-train/45-test enterprise split it reached `1.0` top-1, `0.00644` mean KL, and `1.0` exact five-token free-running agreement at `89.4737%` execution. Selector metadata is `2.0532%` of final-layer MLP parameters, for a metadata-inclusive analytic fraction of `91.5269%`. A second training seed and a second shuffled split also passed. This remains a benchmark-specific logical result: the varied default corpus failed, PyTorch hooks still execute the dense MLP, and physical bytes and latency remain unmeasured.
 
 ## Infrastructure
 
@@ -34,6 +34,7 @@ A different final-layer oracle based on the local logit Jacobian did survive an 
 - Commit `8774db4` fixes a CUDA device-mutation bug in the tangent oracle, pins its revision/seed metadata, and relabels analytic row misses as logical rather than physical across temporal cache harnesses.
 - Commit `414269a` pins the remaining selector runs, separates teacher and execution widths, canonicalizes sparse accumulation order across 20 evaluators, and expands regression coverage.
 - Commit `b111378` adds a backward-compatible hybrid objective that distills continuous marginal logit-tangent utility alongside binary working-set membership.
+- Commit `f2edbb5` adds the direct behavioral block-selector harness, strict budget/gate accounting, free-running evaluation, static/random controls, regression tests, and a pinned CPU CI smoke.
 
 ## Experiments executed
 
@@ -60,18 +61,21 @@ A different final-layer oracle based on the local logit Jacobian did survive an 
 | Continuous tangent-utility distillation | Rank 16, 30% execution, hybrid ordinal weights 0.1 and 1.0 | Failed: best run reached 78.5% top-1, mean KL 0.12573, and 57.4% oracle-set recall |
 | Expanded calibrated fallback | Layer 18, 100/100/100 prompt-disjoint split | Failed to reproduce: 15% calibrated no threshold; 20% accepted 0% of test states and cost 104.67% of dense payload including metadata |
 | Sparse accumulation audit | 20 selective MLP evaluators | Canonicalized selected neuron indices before FP16 reductions and added a static regression guard |
+| Block-structured causal selector | Final layer, 32-neuron blocks, rank 256, 160/45 deduplicated shuffled enterprise prompts | Passed: 100% top-1, mean KL 0.00644, and 100% exact five-token free-running agreement at 89.47% execution plus 2.05% metadata; static and random controls failed |
+| Block-selector robustness | Second training seed and second shuffled 160/45 split | Passed: 100%/0.00641 and 99.56%/0.00714 top-1/KL; varied default 20/20 corpus failed at 92%/0.01782 |
 
 ## Best configuration
 
-No deployable winner is reported. The strongest mechanistic result is the final-layer logit-tangent oracle at 30% selected neurons: mean KL `0.00919`, top-1 agreement `1.0`, and dense-trajectory three-step agreement `1.0` over 90 independent enterprise-synthetic prompts. With a logical cache holding 60% of the layer, steady logical row misses were 14.33% of layer width per token. The oracle requires dense current-state information and its causal distillation failed, so this does not supersede the negative paging verdict or justify a kernel.
+No physically validated winner is reported. The best causal benchmark configuration is the final-layer block selector: rank 256, 32 neurons/block, and 136/152 selected blocks. It passed the strict token gate on two shuffled enterprise splits and two training seeds, and the fully evaluated run exactly matched all five generated tokens for all 45 held-out prompts. It did not pass on the varied default corpus, and no selective kernel has executed the advertised sparse path physically.
 
-- Working-set fraction: 30% of final-layer neurons for the noncausal logit-tangent oracle
-- Number of physical pages: not established for a compiled layout
-- KL divergence: 0.00919 mean, 0.03032 p95, 0.09749 maximum on the expanded tangent-oracle screen
-- Top-1 agreement: 1.0 on 270 dense-trajectory states
-- Free-running correctness: not measured; `1.0` exact three-step agreement is on dense-generated trajectories, not a sparse rollout
-- Logical transfer costs: 14.33% of layer width in steady row misses with a 60%-width cache; no coalescing or request metadata modeled
-- Ideal modeled upper bound: omitting 10% of one FP16 MLP layer saves at most 2,614,886 weight bytes/token, only `0.2646%` of the model's FP16 parameter bytes before selector and dispatch overhead
+- Working-set fraction: `89.4737%` of final-layer neurons in contiguous 32-neuron blocks
+- Selector metadata: `2.0532%` of final-layer MLP parameters; metadata plus execution is `91.5269%` of the layer-level dense payload
+- KL divergence: `0.00644` mean, `0.01778` p95, `0.05518` maximum on 225 held-out enterprise states
+- Top-1 agreement: `1.0` on the primary split; `1.0` for a second training seed; `0.99556` on a second shuffled split
+- Free-running correctness: `1.0` exact five-token agreement across all 45 primary held-out prompts
+- Controls: static train-energy selection reached `0.98667` top-1 and `0.02408` KL; random fixed selection reached `0.83556` and `0.13155`
+- Scope control: the varied default 20/20 corpus reached only `0.92` top-1 and `0.01782` KL
+- Ideal modeled upper bound: the selector leaves an `8.4731%` layer-relative metadata-inclusive margin before dispatch/coalescing overhead; whole-model savings are not yet established
 - Physical transfer measurements: `null`
 - End-to-end latency: `null`
 
@@ -89,6 +93,8 @@ No deployable winner is reported. The strongest mechanistic result is the final-
 10. The causal safety envelope is effectively dense. With a 30% tangent teacher, execution widths from 40% through 99% rose monotonically from `0.855` to `0.985` top-1; only the sorted 100% identity control passed the 99% gate. At 99%, rank-16 metadata alone makes the analytic payload exceed a dense layer.
 11. The small calibrated-fallback frontier did not reproduce at 100/100/100 prompts. The 15% path could not calibrate a threshold, and the 20% path accepted no held-out states while its resident metadata raised modeled payload to `1.0467x` dense.
 12. The Docker failure was environmental rather than a CUDA limitation: four stale AF_UNIX reparse points blocked listener cleanup. Recoverable in-place renames restored the daemon and a CUDA-container GPU smoke passed.
+13. Changing the execution unit and loss mattered. A direct behavioral selector over contiguous 32-neuron blocks passed the synthetic enterprise gate at 89.47% execution, while static-energy and random-fixed blocks failed.
+14. The pass is workload-specific rather than universal: it replicated across selector seeds and shuffled enterprise splits, but failed on the more varied default prompt corpus.
 
 ## Falsified hypotheses
 
@@ -123,18 +129,19 @@ No deployable winner is reported. The strongest mechanistic result is the final-
 - Logical temporal-cache labeling and CUDA fix: `8774db4`
 - Sparse-order and reproducibility hardening: `414269a`
 - Continuous tangent-utility distillation: `b111378`
+- Block-structured behavioral selector: `f2edbb5`
 - Merge status: open and not merged
 
 ## Blockers
 
 - The 300-example dataset is synthetic smoke data, not realistic enterprise generalization evidence.
-- The best quality points use current dense activations and are noncausal; the 300-prompt tuning run is exploratory rather than a clean final test.
+- The enterprise selector result uses synthetic prompts from one generator family; it is not independent realistic workload evidence and does not pass the varied default corpus.
 - No selective kernel or supported hardware counter has measured physical GDDR6X traffic.
-- Task-level free-running correctness and three-seed uncertainty are not yet available.
-- The promising tangent result is a privileged final-layer oracle. Its causal selector, structured execution unit, request coalescing, and net whole-model benefit remain unresolved.
+- The block selector has two training seeds and two shuffled splits, not a full three-seed confidence interval or task-parser evaluation.
+- Whole-model benefit, request coalescing, dispatch cost, and hardware-supported block-sparse execution remain unresolved.
 
 ## Next three experiments
 
-1. Freeze the 30% final-layer tangent oracle and independently evaluate it on a provenance-tracked corpus with longer dense and sparse rollouts, task parsing, FP16/FP32 controls, three seeds, and uncertainty.
-2. If causal work continues, change the unit and objective rather than scaling the rejected neuron-set classifier: train a block-structured selector directly against held-out behavioral/tangent reconstruction loss and preregister a kill gate of >=99% top-1 at <=90% execution including metadata.
-3. Do not build a physical kernel for the present frontier. Reopen profiling only if a causal structured unit survives held-out quality with enough analytic whole-model margin to absorb coalescing, dispatch, and metadata overhead.
+1. Freeze the passing rank-256, 32-neuron-block configuration and evaluate it without tuning on an independently sourced corpus with longer rollouts, task parsers, FP16/FP32 controls, a third seed, and uncertainty.
+2. Quantify whether the `8.4731%` final-layer analytic margin produces a material whole-model saving after selector compute, block request descriptors, coalescing, and dispatch overhead; test whether the same objective transfers to additional layers.
+3. Implement and profile a fused block-sparse kernel only if the frozen selector survives the independent quality gate. Until then, keep physical bytes and latency `null`.
