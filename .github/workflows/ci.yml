@@ -756,7 +756,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[hf]"
-      - name: Predict working-set transitions and account only physical cache faults
+      - name: Predict working-set transitions and account logical cache misses
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: |
@@ -782,7 +782,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[hf]"
-      - name: Isolate quality versus physical fault lower bound
+      - name: Isolate quality versus logical cache-miss lower bound
         env:
           TOKENIZERS_PARALLELISM: "false"
         run: >-
