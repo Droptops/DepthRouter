@@ -90,5 +90,7 @@ def test_claim_boundary_keeps_physical_metrics_unclaimed():
     )
     assert 'parser.add_argument("--revision")' in source
     assert '"passes_strict_gate"' in source
+    assert '"physical_bytes_per_token": None' in source
+    assert '"latency_ms_per_token": None' in source
     assert "full-vocabulary logits" in source
     assert "physical bytes and latency are null" in source

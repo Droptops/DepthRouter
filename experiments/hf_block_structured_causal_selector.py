@@ -880,6 +880,9 @@ def main() -> None:
             "maximum_execution_fraction": 0.90,
             "metadata_plus_execution_must_be_below_dense": True,
         },
+        "modeled_scope": "final-layer MLP parameter fractions only",
+        "physical_bytes_per_token": None,
+        "latency_ms_per_token": None,
         "identity_diagnostics": diagnostics,
         "rows": rows,
         "claim_boundary": (
