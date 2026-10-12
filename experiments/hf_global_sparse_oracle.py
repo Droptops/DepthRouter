@@ -1,13 +1,21 @@
-# ruff: noqa: I001
 from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
 import torch
 from torch import Tensor, nn
+
+
+def atomic_write(path: str, text: str) -> None:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(destination)
 
 
 DEFAULT_TEXTS = [
@@ -90,23 +98,44 @@ def last_logits(model: nn.Module, encoded: dict[str, Tensor]) -> Tensor:
     return model(**encoded).logits[:, -1, :].detach().float().cpu()
 
 
-def distribution_metrics(reference: Tensor, candidate: Tensor) -> dict[str, float]:
+def distribution_tensors(reference: Tensor, candidate: Tensor) -> tuple[Tensor, Tensor, Tensor]:
     ref_logp = torch.log_softmax(reference, dim=-1)
     cand_logp = torch.log_softmax(candidate, dim=-1)
     p = ref_logp.exp()
     kl = (p * (ref_logp - cand_logp)).sum(dim=-1)
-    agreement = (reference.argmax(dim=-1) == candidate.argmax(dim=-1)).float()
+    agreement = reference.argmax(dim=-1) == candidate.argmax(dim=-1)
 
     ref_top = reference.argmax(dim=-1)
     ref_top_logp = torch.gather(ref_logp, 1, ref_top[:, None]).squeeze(1)
     cand_ref_top_logp = torch.gather(cand_logp, 1, ref_top[:, None]).squeeze(1)
     drop = ref_top_logp - cand_ref_top_logp
+    return kl, agreement, drop
+
+
+def trajectory_metrics(
+    model: nn.Module,
+    dense_states: list[tuple[dict[str, Tensor], Tensor]],
+) -> dict[str, float]:
+    all_kl = []
+    all_agreement = []
+    all_drop = []
+    for encoded, reference in dense_states:
+        candidate = last_logits(model, encoded)
+        kl, agreement, drop = distribution_tensors(reference, candidate)
+        all_kl.append(kl)
+        all_agreement.append(agreement)
+        all_drop.append(drop)
+    kl = torch.cat(all_kl)
+    agreement = torch.cat(all_agreement).float()
+    drop = torch.cat(all_drop)
+    rollout_agreement = torch.stack(all_agreement).all(dim=0).float()
 
     return {
         "mean_kl_nats": float(kl.mean().item()),
         "p95_kl_nats": float(torch.quantile(kl, 0.95).item()),
         "max_kl_nats": float(kl.max().item()),
         "top1_agreement": float(agreement.mean().item()),
+        "exact_rollout_fraction": float(rollout_agreement.mean().item()),
         "mean_reference_top1_logp_drop": float(drop.mean().item()),
         "p95_reference_top1_logp_drop": float(torch.quantile(drop, 0.95).item()),
     }
@@ -146,6 +175,7 @@ def layer_groups(num_layers: int) -> dict[str, list[int]]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--device", default="auto")
@@ -166,9 +196,17 @@ def main() -> None:
         default=["all", "early_half", "late_half", "middle_half", "alternating"],
     )
     parser.add_argument("--json-out")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--max-prompts", type=int)
+    parser.add_argument("--decode-steps", type=int, default=1)
     args = parser.parse_args()
+    if (args.max_length < 2 or (args.max_prompts is not None and args.max_prompts < 1)
+            or args.decode_steps < 1
+            or any(not 0 < fraction <= 1 for fraction in args.fractions)):
+        parser.error("invalid max-length/max-prompts/decode-steps/fractions")
 
     try:
+        import transformers
         from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as exc:
         raise SystemExit('Install with: pip install -e ".[hf]"') from exc
@@ -177,12 +215,20 @@ def main() -> None:
     dtype = parse_dtype(args.dtype)
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
+    torch.manual_seed(args.seed)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cuda.matmul.allow_tf32 = False
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
+    texts = load_texts(args.text_file)
+    if args.max_prompts is not None:
+        texts = texts[:args.max_prompts]
     encoded = tokenizer(
-        load_texts(args.text_file),
+        texts,
         return_tensors="pt",
         padding=True,
         truncation=True,
@@ -194,10 +240,12 @@ def main() -> None:
         if isinstance(value, Tensor)
     }
 
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        torch_dtype=dtype,
-    ).to(device)
+    model_kwargs: dict[str, Any] = {"revision": args.revision}
+    if int(transformers.__version__.split(".")[0]) >= 5:
+        model_kwargs["dtype"] = dtype
+    else:
+        model_kwargs["torch_dtype"] = dtype
+    model = AutoModelForCausalLM.from_pretrained(args.model, **model_kwargs).to(device)
     model.eval()
     layers = resolve_layers(model)
     groups = layer_groups(len(layers))
@@ -205,7 +253,25 @@ def main() -> None:
     if unknown:
         raise ValueError(f"unknown groups: {sorted(unknown)}")
 
-    baseline = last_logits(model, encoded)
+    dense_states = []
+    dense_prefix = {key: value.clone() for key, value in encoded.items()}
+    for _step in range(args.decode_steps):
+        reference = last_logits(model, dense_prefix)
+        dense_states.append((
+            {key: value.clone() for key, value in dense_prefix.items()},
+            reference,
+        ))
+        token = reference.argmax(dim=-1).to(device)
+        dense_prefix["input_ids"] = torch.cat(
+            [dense_prefix["input_ids"], token[:, None]], dim=1
+        )
+        dense_prefix["attention_mask"] = torch.cat(
+            [
+                dense_prefix["attention_mask"],
+                torch.ones_like(token[:, None], device=device),
+            ],
+            dim=1,
+        )
     rows = []
 
     for group_name in args.groups:
@@ -219,7 +285,7 @@ def main() -> None:
                 for layer_idx in selected_layers
             ]
             try:
-                candidate = last_logits(model, encoded)
+                quality = trajectory_metrics(model, dense_states)
             finally:
                 for handle in handles:
                     handle.remove()
@@ -236,15 +302,26 @@ def main() -> None:
                         - (len(selected_layers) / len(layers))
                         * (1.0 - fraction)
                     ),
-                    **distribution_metrics(baseline, candidate),
+                    **quality,
                 }
             )
 
     payload = {
-        "experiment": "hf_global_sparse_oracle_v0",
+        "experiment": "hf_global_sparse_oracle_v1",
         "model": args.model,
+        "requested_revision": args.revision,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
+        "torch_version": torch.__version__,
+        "transformers_version": transformers.__version__,
+        "prompts": len(texts),
+        "decode_steps": args.decode_steps,
         "num_layers": len(layers),
         "rows": rows,
+        "physical_bytes_per_token": None,
         "claim_boundary": (
             "This is a behavioral oracle. Top-k selection is computed from the "
             "already-materialized exact SwiGLU intermediate, so it does not yet "
@@ -252,10 +329,16 @@ def main() -> None:
             "distribution tolerates simultaneous neuron sparsity across many layers."
         ),
     }
+    try:
+        payload["git_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        payload["git_commit"] = None
     rendered = json.dumps(payload, indent=2, sort_keys=True)
     print(rendered)
     if args.json_out:
-        Path(args.json_out).write_text(rendered + "\n", encoding="utf-8")
+        atomic_write(args.json_out, rendered + "\n")
 
 
 if __name__ == "__main__":
