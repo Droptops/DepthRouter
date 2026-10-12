@@ -565,15 +565,15 @@ def main() -> None:
 
             for multiplier in args.cache_multipliers:
                 budget = max(k, min(width, round(k * multiplier)))
-                caches[multiplier], faults = update_cache(
+                caches[multiplier], misses = update_cache(
                     caches[multiplier],
                     selected,
                     budget,
                 )
-                cache_stats[multiplier]["faults"] += faults
+                cache_stats[multiplier]["faults"] += misses
                 cache_stats[multiplier]["requests"] += k
                 if step > 0:
-                    cache_stats[multiplier]["steady_faults"] += faults
+                    cache_stats[multiplier]["steady_faults"] += misses
 
             prev_hidden = hidden
             prev_selected = selected
@@ -589,8 +589,8 @@ def main() -> None:
     for multiplier in args.cache_multipliers:
         stats = cache_stats[multiplier]
         steady_states = len(test_texts) * max(args.test_decode_steps - 1, 1)
-        steady_fault_fraction = stats["steady_faults"] / (steady_states * width)
-        amortized_fault_fraction = stats["faults"] / (states * width)
+        steady_miss_fraction = stats["steady_faults"] / (steady_states * width)
+        amortized_miss_fraction = stats["faults"] / (states * width)
         rows.append(
             {
                 "cache_multiplier": multiplier,
@@ -598,11 +598,12 @@ def main() -> None:
                 "selected_payload_fraction": args.fraction,
                 "resident_address_fraction": metadata,
                 "mean_oracle_set_recall": sum(all_recall) / len(all_recall),
-                "amortized_physical_fault_fraction": amortized_fault_fraction,
-                "steady_state_physical_fault_fraction": steady_fault_fraction,
-                "metadata_plus_steady_fault_fraction": metadata + steady_fault_fraction,
-                "fault_reduction_vs_stateless_sparse": (
-                    1.0 - steady_fault_fraction / args.fraction
+                "amortized_logical_neuron_miss_fraction": amortized_miss_fraction,
+                "steady_state_logical_neuron_miss_fraction": steady_miss_fraction,
+                "metadata_plus_steady_logical_miss_fraction": metadata
+                + steady_miss_fraction,
+                "logical_miss_reduction_vs_stateless_sparse": (
+                    1.0 - steady_miss_fraction / args.fraction
                 ),
                 "cache_request_hit_rate": (
                     1.0 - stats["faults"] / max(stats["requests"], 1)
@@ -634,8 +635,9 @@ def main() -> None:
             "the previous hidden state, and the previous predicted working-set mask. "
             "Selected neurons use exact cold weights. Cache accounting charges only "
             "newly missing selected rows. PyTorch hooks still execute the dense MLP "
-            "before replacement, so physical byte savings remain analytic until a "
-            "selective kernel and hardware profiler confirm them."
+            "before replacement. Reported cache misses are logical neuron-row events; "
+            "physical bytes and savings remain unknown until a selective kernel and "
+            "hardware profiler confirm them."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)

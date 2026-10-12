@@ -286,7 +286,7 @@ def main() -> None:
                 "resident_address_fraction": metadata,
                 "student_amortized_fault_fraction": count["amortized"] / (states * width),
                 "student_steady_fault_fraction": steady,
-                "metadata_plus_student_steady_fault_fraction": metadata + steady,
+                "metadata_plus_student_steady_logical_miss_fraction": metadata + steady,
             }
         )
 
@@ -314,8 +314,9 @@ def main() -> None:
             "oracle_history, copy_previous and oracle_selection use the dense oracle "
             "working set and are privileged diagnostic references, not deployable arms. "
             "Every step decodes from the dense-generated prefix; this is not a "
-            "free-running sparse rollout. Fault fractions assume ideal neuron-granular "
-            "transfers, and no kernel, PCIe/HBM/L2 profiler, or latency test is included."
+            "free-running sparse rollout. Miss fractions are logical neuron-cache events, "
+            "not physical transfers; no kernel, PCIe/HBM/L2 profiler, or latency test "
+            "is included."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)
