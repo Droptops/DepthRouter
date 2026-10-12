@@ -2,11 +2,13 @@
 
 ## Executive finding
 
-**The original paging hypothesis remains rejected, but a new causal block selector clears the strict gate on the synthetic enterprise workload.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
+**The original paging hypothesis remains rejected, but a causal block address plus fallback now clears the strict gate on an independent public prompt distribution.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
 
 The controlled locality test also went the wrong way: sparse page sets at adjacent decode steps were less similar than page sets from different prompts of the same task at the same step. A calibration-only learned layout reduced held-out page demand at unusably sparse fractions, but produced no reduction at the behaviorally viable settings. A finer granularity sweep found that every grouping of eight or more neurons still touched 100% of pages; only one-neuron pages exposed the trivial 10%/5% omission, at 4,378/4,621 requests per token. A corrected multi-layer oracle found no configuration above 1% ideal global MLP savings that met the top-1 gate.
 
 A different final-layer oracle based on the local logit Jacobian did survive an expanded 90-prompt enterprise-synthetic screen: selecting 30% of layer-23 neurons preserved dense top-1 on all 270 evaluated states with mean KL `0.00919`. The original neuron-set distillation path still failed, but changing both the unit and objective produced a causal result: a rank-256 selector trained directly on behavioral reconstruction selected 136 of 152 contiguous 32-neuron blocks before final-layer MLP execution. On a deduplicated and shuffled 160-train/45-test enterprise split it reached `1.0` top-1, `0.00644` mean KL, and `1.0` exact five-token free-running agreement at `89.4737%` execution. Selector metadata is `2.0532%` of final-layer MLP parameters, for a metadata-inclusive analytic fraction of `91.5269%`. A second training seed and a second shuffled split also passed. This remains a benchmark-specific logical result: the varied default corpus failed, PyTorch hooks still execute the dense MLP, and physical bytes and latency remain unmeasured.
+
+The independent-distribution continuation replaced the learned address with a deterministic 2-bit causal gate/up proxy over 16-neuron blocks and added a calibrated probability-margin fallback. On three pairwise-disjoint 200-prompt Stanford Alpaca test sets it produced 1,799/1,800 top-1 matches (`0.99944`, combined 95% Wilson lower `0.99686`), mean KL `0.00820`, and `0.84389` average exact-MLP execution over 1,800 autoregressive states. Packed address metadata raises the modeled final-layer fraction to `0.92834`. The post-freeze third split independently passed at `0.99833` top-1, `0.00806` KL, and `0.84458` execution. Raw 75% sparse selection failed at 92.5%-94.0% top-1, showing that calibrated fallback creates the frontier. Physical bytes and latency remain null because the diagnostic uses dense hooks, reconstructs the packed address into FP32, and does not implement or time fallback completion.
 
 ## Infrastructure
 
@@ -35,6 +37,7 @@ A different final-layer oracle based on the local logit Jacobian did survive an 
 - Commit `414269a` pins the remaining selector runs, separates teacher and execution widths, canonicalizes sparse accumulation order across 20 evaluators, and expands regression coverage.
 - Commit `b111378` adds a backward-compatible hybrid objective that distills continuous marginal logit-tangent utility alongside binary working-set membership.
 - Commit `f2edbb5` adds the direct behavioral block-selector harness, strict budget/gate accounting, free-running evaluation, static/random controls, regression tests, and a pinned CPU CI smoke.
+- Commit `ae3af05` adds the 2-bit causal block address, calibrated fallback accounting, independent Stanford Alpaca evaluation, confidence intervals, committed result payloads, and CI coverage.
 
 ## Experiments executed
 
@@ -63,19 +66,22 @@ A different final-layer oracle based on the local logit Jacobian did survive an 
 | Sparse accumulation audit | 20 selective MLP evaluators | Canonicalized selected neuron indices before FP16 reductions and added a static regression guard |
 | Block-structured causal selector | Final layer, 32-neuron blocks, rank 256, 160/45 deduplicated shuffled enterprise prompts | Passed: 100% top-1, mean KL 0.00644, and 100% exact five-token free-running agreement at 89.47% execution plus 2.05% metadata; static and random controls failed |
 | Block-selector robustness | Second training seed and second shuffled 160/45 split | Passed: 100%/0.00641 and 99.56%/0.00714 top-1/KL; varied default 20/20 corpus failed at 92%/0.01782 |
+| Independent low-bit block fallback | Three pairwise-disjoint 200-prompt Stanford Alpaca test sets, 600 decode states each | Passed: aggregate 99.944% top-1, KL 0.00820, 84.39% exact execution, and 92.83% metadata-inclusive layer fraction; post-freeze split passed independently |
 
 ## Best configuration
 
-No physically validated winner is reported. The best causal benchmark configuration is the final-layer block selector: rank 256, 32 neurons/block, and 136/152 selected blocks. It passed the strict token gate on two shuffled enterprise splits and two training seeds, and the fully evaluated run exactly matched all five generated tokens for all 45 held-out prompts. It did not pass on the varied default corpus, and no selective kernel has executed the advertised sparse path physically.
+No physically validated winner is reported. The strongest causal quality result is a deterministic 2-bit block address plus calibrated fallback over the final-layer MLP. It passed the strict token gate on three pairwise-disjoint test sets drawn from the commit-pinned Stanford Alpaca corpus, including an untouched post-freeze confirmation split. No selective kernel has executed the advertised sparse path physically.
 
-- Working-set fraction: `89.4737%` of final-layer neurons in contiguous 32-neuron blocks
-- Selector metadata: `2.0532%` of final-layer MLP parameters; metadata plus execution is `91.5269%` of the layer-level dense payload
-- KL divergence: `0.00644` mean, `0.01778` p95, `0.05518` maximum on 225 held-out enterprise states
-- Top-1 agreement: `1.0` on the primary split; `1.0` for a second training seed; `0.99556` on a second shuffled split
-- Free-running correctness: `1.0` exact five-token agreement across all 45 primary held-out prompts
-- Controls: static train-energy selection reached `0.98667` top-1 and `0.02408` KL; random fixed selection reached `0.83556` and `0.13155`
-- Scope control: the varied default 20/20 corpus reached only `0.92` top-1 and `0.01782` KL
-- Ideal modeled upper bound: the selector leaves an `8.4731%` layer-relative metadata-inclusive margin before dispatch/coalescing overhead; whole-model savings are not yet established
+- Sparse working-set fraction: `75%` of final-layer neurons in contiguous 16-neuron blocks
+- Sparse acceptance: `62.444%` across 1,800 held-out states; rejected states are charged as 100% execution
+- Average exact execution: `84.389%`
+- Packed address metadata: 2,208,256 bytes, `8.44494%` of the FP16 final-layer MLP
+- Metadata plus execution: `92.834%`, leaving a `7.166%` layer-relative analytic margin
+- KL divergence: aggregate mean `0.00820`; per-split p95 `0.03424`-`0.03825` and maximum `0.16728`-`0.25264`
+- Top-1 agreement: 1,799/1,800 = `0.99944`; combined 95% Wilson lower bound `0.99686`
+- Free-running correctness: 599/600 = `0.99833` exact three-token prompts; 1,799/1,800 matching recursive tokens
+- Control: raw 75% sparse selection reached only `0.925`-`0.940` top-1 and `0.01775`-`0.01912` KL
+- Whole-model scale: the ideal metadata-inclusive saving is roughly `0.19%` of FP16 model parameter bytes before candidate-projection, fallback, dispatch, and kernel overhead
 - Physical transfer measurements: `null`
 - End-to-end latency: `null`
 
@@ -95,6 +101,7 @@ No physically validated winner is reported. The best causal benchmark configurat
 12. The Docker failure was environmental rather than a CUDA limitation: four stale AF_UNIX reparse points blocked listener cleanup. Recoverable in-place renames restored the daemon and a CUDA-container GPU smoke passed.
 13. Changing the execution unit and loss mattered. A direct behavioral selector over contiguous 32-neuron blocks passed the synthetic enterprise gate at 89.47% execution, while static-energy and random-fixed blocks failed.
 14. The pass is workload-specific rather than universal: it replicated across selector seeds and shuffled enterprise splits, but failed on the more varied default prompt corpus.
+15. A deterministic 2-bit causal address plus calibrated fallback crosses the independent-distribution gate. Three non-overlapping Stanford Alpaca test sets reached aggregate top-1 `0.99944` and KL `0.00820` at `0.84389` average execution; the combined Wilson lower bound remains above 99%.
 
 ## Falsified hypotheses
 
@@ -130,18 +137,18 @@ No physically validated winner is reported. The best causal benchmark configurat
 - Sparse-order and reproducibility hardening: `414269a`
 - Continuous tangent-utility distillation: `b111378`
 - Block-structured behavioral selector: `f2edbb5`
+- Independent low-bit block fallback: `ae3af05`
 - Merge status: open and not merged
 
 ## Blockers
 
-- The 300-example dataset is synthetic smoke data, not realistic enterprise generalization evidence.
-- The enterprise selector result uses synthetic prompts from one generator family; it is not independent realistic workload evidence and does not pass the varied default corpus.
 - No selective kernel or supported hardware counter has measured physical GDDR6X traffic.
-- The block selector has two training seeds and two shuffled splits, not a full three-seed confidence interval or task-parser evaluation.
-- Whole-model benefit, request coalescing, dispatch cost, and hardware-supported block-sparse execution remain unresolved.
+- The low-bit diagnostic reconstructs its packed address into FP32 tensors and therefore does not measure the claimed packed execution path.
+- Confidence requires a full-vocabulary sparse candidate projection before fallback; rejected states need completion and a second output projection. These costs are not represented by the final-layer MLP fraction.
+- The remaining ideal saving is only about `0.19%` of whole-model FP16 parameter bytes, so measurable end-to-end benefit is unproven and may be negative.
 
 ## Next three experiments
 
-1. Freeze the passing rank-256, 32-neuron-block configuration and evaluate it without tuning on an independently sourced corpus with longer rollouts, task parsers, FP16/FP32 controls, a third seed, and uncertainty.
-2. Quantify whether the `8.4731%` final-layer analytic margin produces a material whole-model saving after selector compute, block request descriptors, coalescing, and dispatch overhead; test whether the same objective transfers to additional layers.
-3. Implement and profile a fused block-sparse kernel only if the frozen selector survives the independent quality gate. Until then, keep physical bytes and latency `null`.
+1. Build a fused packed 2-bit address plus block-sparse final-layer kernel that can complete omitted blocks without recomputing accepted work.
+2. Measure candidate-projection, completion, dispatch, physical bytes, and end-to-end latency against dense execution; reject the path if the roughly `0.19%` whole-model ideal margin disappears.
+3. Only after physical validation, test whether the same calibrated fallback can be applied to multiple late layers without compounding errors or metadata beyond the dense baseline.

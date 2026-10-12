@@ -1,4 +1,5 @@
 # ruff: noqa: I001
+import json
 import sys
 from pathlib import Path
 
@@ -95,3 +96,37 @@ def test_wilson_interval_and_prompt_hash_are_deterministic():
     assert upper == pytest.approx(1.0)
     assert text_set_sha256(["a", "b"]) == text_set_sha256(["a", "b"])
     assert text_set_sha256(["a", "b"]) != text_set_sha256(["b", "a"])
+
+
+def test_committed_independent_results_clear_gate_without_test_overlap():
+    result_dir = Path(__file__).resolve().parents[1] / "research" / "results"
+    paths = [
+        result_dir / f"block_lowbit_fallback_alpaca_split_{seed}.json"
+        for seed in (20261013, 20261014, 20261015)
+    ]
+    payloads = [json.loads(path.read_text(encoding="utf-8")) for path in paths]
+    assert len({payload["test_prompt_sha256"] for payload in payloads}) == 3
+    assert len({payload["source_prompt_sha256"] for payload in payloads}) == 1
+
+    for payload in payloads:
+        row = next(
+            row
+            for row in payload["rows"]
+            if row["confidence_mode"] == "probability_margin"
+        )
+        assert row["test"]["passes_strict_gate"]
+        assert row["test"]["top1_agreement"] >= 0.99
+        assert row["test"]["mean_kl_nats"] < 0.01
+        assert row["test"]["average_execution_fraction"] <= 0.90
+        assert row["test"]["metadata_plus_average_execution_fraction"] < 1.0
+        assert row["sparse_only_test"]["top1_agreement"] < 0.99
+        assert payload["physical_bytes_per_token"] is None
+        assert payload["latency_ms_per_token"] is None
+
+    confirmatory = payloads[-1]
+    confirmatory_row = next(
+        row
+        for row in confirmatory["rows"]
+        if row["confidence_mode"] == "probability_margin"
+    )
+    assert confirmatory_row["test"]["top1_wilson_95_lower"] > 0.99

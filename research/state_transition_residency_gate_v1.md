@@ -30,6 +30,8 @@ Stage B has a workload-specific pass for a new structured unit. A causal rank-25
 
 This does not satisfy Stage C. The varied default prompt corpus failed (`0.92` top-1, `0.01782` KL), the enterprise data come from one synthetic generator family, and the PyTorch evaluation hook still executes the dense MLP before replacing its output. Physical bytes and latency therefore remain `null`. Freeze this selector before independent-corpus evaluation; do not tune against the new test set.
 
+The subsequent frozen low-bit fallback policy clears the independent Stage B gate on Stanford Alpaca. Three pairwise-disjoint 200-prompt test sets reached aggregate top-1 `0.99944`, mean KL `0.00820`, and average exact execution `0.84389`; the post-freeze split independently passed at `0.99833` top-1 and `0.00806` KL. Packed address metadata raises the aggregate layer-relative analytic fraction to `0.92834`. Stage C is still open because the diagnostic reconstructs the packed address into FP32, uses dense hooks, and does not charge the candidate vocabulary projection or a real sparse dispatch kernel in latency.
+
 ## Falsification
 - No improvement over previous-token reuse on disjoint held-out prompts at matched budget.
 - Transition detector overhead eliminates traffic or latency gain.

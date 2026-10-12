@@ -24,4 +24,6 @@ Freeze the passing configuration before any new held-out corpus. Do not tune on 
 
 **Falsification:** The causal frontier cannot exceed a preregistered analytic margin large enough to cover overhead, or a fused kernel fails to reduce measured physical bytes and latency against dense execution.
 
-The synthetic enterprise causal gate now clears the analytic prerequisite, but the varied default corpus does not. Keep physical bytes and latency `null`. First test the frozen selector on an independently sourced corpus and quantify whole-model savings; only then implement a fused block-sparse kernel if the quality and metadata-inclusive margin survive.
+**Outcome (2026-10-12): independent behavioral gate passed.** A frozen 2-bit causal block address plus probability-margin fallback passed three pairwise-disjoint Stanford Alpaca test splits: aggregate top-1 `0.99944`, mean KL `0.00820`, average exact execution `0.84389`, and metadata-plus-execution `0.92834` over 1,800 decode states. The post-freeze split independently passed at `0.99833`/`0.00806`; its 95% Wilson top-1 lower bound is `0.99062`. See `research/independent_block_fallback_gate.md` and the committed result JSON files.
+
+Physical bytes and latency remain `null`. The diagnostic reconstructs the packed address into FP32, uses dense PyTorch hooks, and requires a candidate vocabulary projection before fallback. The next experiment is a fused packed-address/block-sparse prototype with full candidate-projection, completion, and dispatch costs—not another held-out quality sweep.
