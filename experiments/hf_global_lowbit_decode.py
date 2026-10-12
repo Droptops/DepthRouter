@@ -190,7 +190,7 @@ def sparse_exact_last_token(
 
     rows = []
     for row in range(x.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         gate_bias = (
             mlp.gate_proj.bias[index]
             if mlp.gate_proj.bias is not None

@@ -233,7 +233,7 @@ def sparse_hidden(
     rows = []
     wt = down_weight.T.float()
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         contribution = (
             activation[row, index, None] * wt[index]
         ).sum(dim=0)

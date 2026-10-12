@@ -283,7 +283,7 @@ def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Ten
     rows = []
     fn = act_fn(mlp)
     for row in range(hidden.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,

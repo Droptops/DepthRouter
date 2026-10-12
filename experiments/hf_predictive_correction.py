@@ -285,7 +285,7 @@ def selected_contribution(
 ) -> Tensor:
     rows = []
     for row in range(activation.shape[0]):
-        idx = selected[row]
+        idx = selected[row].sort().values
         rows.append(
             torch.nn.functional.linear(
                 activation[row, idx],

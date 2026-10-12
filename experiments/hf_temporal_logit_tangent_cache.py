@@ -217,7 +217,7 @@ def sparse_hidden(
     rows = []
     wt = down_weight.T.detach().float().cpu()
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         contribution = (activation[row, index, None] * wt[index]).sum(dim=0)
         rows.append(base_hidden[row] + contribution)
     return torch.stack(rows)

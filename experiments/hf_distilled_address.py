@@ -220,7 +220,7 @@ def sparse_exact_output(
     rows = []
     fn = act_fn(mlp)
     for row in range(hidden.shape[0]):
-        idx = selected[row]
+        idx = selected[row].sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,

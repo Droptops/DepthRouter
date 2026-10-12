@@ -168,7 +168,7 @@ def exact_output_from_selected(
 ) -> Tensor:
     rows = []
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         y = torch.nn.functional.linear(
             activation[row, index],
             down.weight[:, index],

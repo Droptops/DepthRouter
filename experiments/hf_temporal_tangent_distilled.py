@@ -348,7 +348,7 @@ def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Ten
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        index = selected[row].to(hidden.device)
+        index = selected[row].to(hidden.device).sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -395,6 +395,7 @@ def metadata_fraction(head: TemporalAddressHead, mlp: nn.Module) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--train-decode-steps", type=int, default=8)
@@ -402,6 +403,11 @@ def main() -> None:
     parser.add_argument("--max-train-prompts", type=int, default=20)
     parser.add_argument("--max-test-prompts", type=int, default=20)
     parser.add_argument("--fraction", type=float, default=0.30)
+    parser.add_argument(
+        "--execution-fraction",
+        type=float,
+        help="causal selected width; defaults to the teacher target fraction",
+    )
     parser.add_argument("--top-logits", type=int, default=128)
     parser.add_argument("--block-size", type=int, default=32)
     parser.add_argument("--rank", type=int, default=16)
@@ -429,17 +435,22 @@ def main() -> None:
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
 
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
     texts = load_texts(args.text_file)
     split = len(texts) // 2
     train_texts = texts[:split][: args.max_train_prompts]
     test_texts = texts[split:][: args.max_test_prompts]
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
+        revision=args.revision,
         torch_dtype=dtype,
     ).to(device)
     model.eval()
@@ -447,7 +458,12 @@ def main() -> None:
     layer = layers[-1]
     mlp = layer.mlp
     width = mlp.down_proj.in_features
-    k = max(1, min(width, round(width * args.fraction)))
+    execution_fraction = (
+        args.fraction if args.execution_fraction is None else args.execution_fraction
+    )
+    if not 0.0 < execution_fraction <= 1.0:
+        raise ValueError("execution fraction must be in (0, 1]")
+    k = max(1, min(width, round(width * execution_fraction)))
 
     train_current, train_previous, train_previous_mask, train_labels = collect_training_states(
         model,
@@ -474,7 +490,7 @@ def main() -> None:
     )
 
     cache_stats = {
-        multiplier: {"faults": 0, "steady_faults": 0, "requests": 0}
+        multiplier: {"misses": 0, "steady_misses": 0, "requests": 0}
         for multiplier in args.cache_multipliers
     }
     all_kl: list[Tensor] = []
@@ -570,10 +586,10 @@ def main() -> None:
                     selected,
                     budget,
                 )
-                cache_stats[multiplier]["faults"] += misses
+                cache_stats[multiplier]["misses"] += misses
                 cache_stats[multiplier]["requests"] += k
                 if step > 0:
-                    cache_stats[multiplier]["steady_faults"] += misses
+                    cache_stats[multiplier]["steady_misses"] += misses
 
             prev_hidden = hidden
             prev_selected = selected
@@ -589,13 +605,17 @@ def main() -> None:
     for multiplier in args.cache_multipliers:
         stats = cache_stats[multiplier]
         steady_states = len(test_texts) * max(args.test_decode_steps - 1, 1)
-        steady_miss_fraction = stats["steady_faults"] / (steady_states * width)
-        amortized_miss_fraction = stats["faults"] / (states * width)
+        steady_miss_fraction = stats["steady_misses"] / (steady_states * width)
+        amortized_miss_fraction = stats["misses"] / (states * width)
         rows.append(
             {
                 "cache_multiplier": multiplier,
-                "cache_fraction_of_mlp_width": min(1.0, args.fraction * multiplier),
-                "selected_payload_fraction": args.fraction,
+                "cache_fraction_of_mlp_width": min(
+                    1.0,
+                    execution_fraction * multiplier,
+                ),
+                "teacher_target_fraction": args.fraction,
+                "selected_payload_fraction": execution_fraction,
                 "resident_address_fraction": metadata,
                 "mean_oracle_set_recall": sum(all_recall) / len(all_recall),
                 "amortized_logical_neuron_miss_fraction": amortized_miss_fraction,
@@ -603,10 +623,10 @@ def main() -> None:
                 "metadata_plus_steady_logical_miss_fraction": metadata
                 + steady_miss_fraction,
                 "logical_miss_reduction_vs_stateless_sparse": (
-                    1.0 - steady_miss_fraction / args.fraction
+                    1.0 - steady_miss_fraction / execution_fraction
                 ),
                 "cache_request_hit_rate": (
-                    1.0 - stats["faults"] / max(stats["requests"], 1)
+                    1.0 - stats["misses"] / max(stats["requests"], 1)
                 ),
                 "mean_kl_nats": float(kl.mean().item()),
                 "p95_kl_nats": float(torch.quantile(kl, 0.95).item()),
@@ -619,8 +639,14 @@ def main() -> None:
     payload = {
         "experiment": "hf_temporal_tangent_distilled_v0",
         "model": args.model,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
         "layer": len(layers) - 1,
-        "fraction": args.fraction,
+        "teacher_target_fraction": args.fraction,
+        "execution_fraction": execution_fraction,
         "top_logit_tangent_dim": args.top_logits,
         "rank": args.rank,
         "train_prompts": len(train_texts),
@@ -633,7 +659,9 @@ def main() -> None:
             "The training teacher uses dense local logit-tangent working sets. "
             "At held-out runtime, the address head sees only the current MLP input, "
             "the previous hidden state, and the previous predicted working-set mask. "
-            "Selected neurons use exact cold weights. Cache accounting charges only "
+            "The execution fraction may exceed the teacher target fraction to test a "
+            "causal safety envelope. Selected neurons use exact cold weights. Cache "
+            "accounting charges only "
             "newly missing selected rows. PyTorch hooks still execute the dense MLP "
             "before replacement. Reported cache misses are logical neuron-row events; "
             "physical bytes and savings remain unknown until a selective kernel and "

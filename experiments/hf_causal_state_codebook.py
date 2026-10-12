@@ -302,7 +302,7 @@ def sparse_exact_output(
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        idx = codebook[state[row]].to(hidden.device)
+        idx = codebook[state[row]].to(hidden.device).sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,

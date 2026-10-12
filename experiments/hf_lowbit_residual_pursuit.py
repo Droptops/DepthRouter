@@ -228,7 +228,7 @@ def sparse_exact_output(
 ) -> Tensor:
     rows = []
     for row in range(hidden.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         x = hidden[row]
         gate_bias = mlp.gate_proj.bias[index] if mlp.gate_proj.bias is not None else None
         up_bias = mlp.up_proj.bias[index] if mlp.up_proj.bias is not None else None
