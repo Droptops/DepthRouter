@@ -131,7 +131,9 @@ def selected_indices(activation: Tensor, mlp: nn.Module, fraction: float) -> Ten
     k = max(1, min(width, round(width * fraction)))
     down_norm = mlp.down_proj.weight.detach().float().cpu().norm(dim=0)
     score = activation.abs() * down_norm[None, :]
-    return torch.topk(score, k=k, dim=-1, sorted=False).indices
+    # Preserve original neuron order after selection. In particular, fraction=1
+    # must not change FP16 accumulation merely by permuting every neuron.
+    return torch.topk(score, k=k, dim=-1, sorted=False).indices.sort(dim=-1).values
 
 
 def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Tensor:
