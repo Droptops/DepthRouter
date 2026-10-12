@@ -1,8 +1,8 @@
-# ruff: noqa: I001
 from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +10,14 @@ import torch
 from torch import Tensor, nn
 
 from depth_router import learn_simhash_codemand_permutation
+
+
+def atomic_write(path: str, text: str) -> None:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(destination)
 
 
 DEFAULT_TEXTS = [
@@ -47,6 +55,21 @@ def load_texts(path: str | None) -> list[str]:
     if not rows:
         raise ValueError("text corpus is empty")
     return rows
+
+
+def split_indices(count: int) -> tuple[Tensor, Tensor]:
+    """Return a deterministic 70/30 prompt-disjoint calibration/test split."""
+    if count < 4:
+        raise ValueError("need at least four texts for calibration/test splitting")
+    calibration = [index for index in range(count) if index % 10 < 7]
+    test = [index for index in range(count) if index % 10 >= 7]
+    if not calibration or not test:
+        # Small corpora may not reach index seven. Keep the split deterministic.
+        boundary = max(1, round(count * 0.7))
+        boundary = min(boundary, count - 1)
+        calibration = list(range(boundary))
+        test = list(range(boundary, count))
+    return torch.tensor(calibration), torch.tensor(test)
 
 
 def resolve_layers(model: nn.Module) -> list[nn.Module]:
@@ -180,6 +203,19 @@ def page_request_mask(
     ).any(dim=-1)
 
 
+def page_demand_metrics(page_requests: Tensor, valid: Tensor) -> dict[str, float]:
+    requested = page_requests.sum(dim=-1).float()[valid]
+    if requested.numel() == 0:
+        raise ValueError("evaluation split has no valid tokens")
+    return {
+        "mean_requested_pages_per_token": float(requested.mean().item()),
+        "p95_requested_pages_per_token": float(torch.quantile(requested, 0.95).item()),
+        "mean_requested_page_fraction": float(
+            (requested / page_requests.shape[-1]).mean().item()
+        ),
+    }
+
+
 def lru_fault_metrics(
     page_requests: Tensor,
     valid: Tensor,
@@ -229,6 +265,7 @@ def lru_fault_metrics(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=48)
     parser.add_argument("--device", default="auto")
@@ -257,9 +294,15 @@ def main() -> None:
         default=[0.25, 0.50, 0.75],
     )
     parser.add_argument("--json-out")
+    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    if (args.max_length < 2 or args.units_per_page < 1
+            or any(not 0 < fraction <= 1 for fraction in args.fractions)
+            or any(not 0 < fraction <= 1 for fraction in args.cache_fractions)):
+        parser.error("invalid max-length/units-per-page/fractions/cache-fractions")
 
     try:
+        import transformers
         from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as exc:
         raise SystemExit('Install with: pip install -e ".[hf]"') from exc
@@ -268,12 +311,18 @@ def main() -> None:
     dtype = parse_dtype(args.dtype)
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
+    torch.manual_seed(args.seed)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cuda.matmul.allow_tf32 = False
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    texts = load_texts(args.text_file)
+    calibration_indices, test_indices = split_indices(len(texts))
     encoded = tokenizer(
-        load_texts(args.text_file),
+        texts,
         return_tensors="pt",
         padding=True,
         truncation=True,
@@ -286,10 +335,12 @@ def main() -> None:
     }
     valid = encoded["attention_mask"].bool().cpu()
 
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        torch_dtype=dtype,
-    ).to(device)
+    model_kwargs: dict[str, Any] = {"revision": args.revision}
+    if int(transformers.__version__.split(".")[0]) >= 5:
+        model_kwargs["dtype"] = dtype
+    else:
+        model_kwargs["torch_dtype"] = dtype
+    model = AutoModelForCausalLM.from_pretrained(args.model, **model_kwargs).to(device)
     model.eval()
     layers = resolve_layers(model)
     if any(idx < 0 or idx >= len(layers) for idx in args.layers):
@@ -302,62 +353,98 @@ def main() -> None:
         column_norm = down.weight.detach().float().cpu().norm(dim=0)
         score = intermediate.abs() * column_norm
 
-        flattened = intermediate[valid]
-        permutation = learn_simhash_codemand_permutation(
-            flattened,
+        calibration_intermediate = intermediate[calibration_indices]
+        calibration_valid = valid[calibration_indices]
+        test_score = score[test_indices]
+        test_valid = valid[test_indices]
+        flattened_calibration = calibration_intermediate[calibration_valid]
+        learned_permutation = learn_simhash_codemand_permutation(
+            flattened_calibration,
             down.cpu(),
             bits=16,
             max_trace_tokens=2048,
-            seed=layer_index + 17,
+            seed=args.seed + layer_index + 17,
         )
         model.to(device)
+        width = intermediate.shape[-1]
+        random_generator = torch.Generator().manual_seed(args.seed + layer_index + 101)
+        layouts = {
+            "identity": torch.arange(width),
+            "random": torch.randperm(width, generator=random_generator),
+            "calibration_learned": learned_permutation,
+        }
 
         for fraction in args.fractions:
-            neurons = topk_mask(score, fraction)
-            temporal = adjacent_metrics(neurons, valid)
-            pages = page_request_mask(
-                neurons,
-                permutation,
-                units_per_page=args.units_per_page,
-            )
-            num_pages = pages.shape[-1]
-            cache_results = {}
-            for cache_fraction in args.cache_fractions:
-                capacity = max(1, round(num_pages * cache_fraction))
-                cache_results[str(cache_fraction)] = {
-                    "cache_pages": capacity,
-                    **lru_fault_metrics(
-                        pages,
-                        valid,
-                        cache_pages=capacity,
-                    ),
+            neurons = topk_mask(test_score, fraction)
+            temporal = adjacent_metrics(neurons, test_valid)
+            layout_results = {}
+            for layout_name, permutation in layouts.items():
+                pages = page_request_mask(
+                    neurons,
+                    permutation,
+                    units_per_page=args.units_per_page,
+                )
+                num_pages = pages.shape[-1]
+                cache_results = {}
+                for cache_fraction in args.cache_fractions:
+                    capacity = max(1, round(num_pages * cache_fraction))
+                    cache_results[str(cache_fraction)] = {
+                        "cache_pages": capacity,
+                        **lru_fault_metrics(
+                            pages,
+                            test_valid,
+                            cache_pages=capacity,
+                        ),
+                    }
+                layout_results[layout_name] = {
+                    "num_pages": num_pages,
+                    **page_demand_metrics(pages, test_valid),
+                    "lru": cache_results,
                 }
 
             rows.append(
                 {
                     "layer": layer_index,
                     "active_neuron_fraction": fraction,
-                    "num_pages": num_pages,
                     "units_per_page": args.units_per_page,
                     **temporal,
-                    "lru": cache_results,
+                    "layouts": layout_results,
                 }
             )
 
     payload = {
-        "experiment": "hf_temporal_locality_v0",
+        "experiment": "hf_calibration_layout_locality_v1",
         "model": args.model,
+        "requested_revision": args.revision,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
+        "torch_version": torch.__version__,
+        "transformers_version": transformers.__version__,
+        "calibration_prompts": len(calibration_indices),
+        "test_prompts": len(test_indices),
+        "split": "prompt-disjoint index_mod_10: calibration=0..6, test=7..9",
         "rows": rows,
+        "physical_bytes_per_token": None,
         "claim_boundary": (
-            "Active sets are defined by exact post-gate activations, so this "
-            "measures real temporal locality but not yet a deployable prefetch "
-            "policy. LRU page faults are simulated over token order."
+            "The layout is learned only from calibration prompts and evaluated on "
+            "prompt-disjoint test prompts. Active sets still use exact post-gate "
+            "activations, pages are simulated contiguous neuron groups, and LRU "
+            "faults are logical. No causal selector or physical traffic is measured."
         ),
     }
+    try:
+        payload["git_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        payload["git_commit"] = None
     rendered = json.dumps(payload, indent=2, sort_keys=True)
     print(rendered)
     if args.json_out:
-        Path(args.json_out).write_text(rendered + "\n", encoding="utf-8")
+        atomic_write(args.json_out, rendered + "\n")
 
 
 if __name__ == "__main__":
