@@ -8,17 +8,17 @@
 
 The expanded 90-prompt enterprise-synthetic result reached 100% top-1 with mean KL 0.00919, but used dense-generated trajectories and a privileged current-state Jacobian. Use task-level parsers, dense and sparse free-running rollouts, FP32 and FP16, three seeds, and uncertainty intervals.
 
-## 2. Causal tangent-selector gate
+## 2. Block-structured causal selector gate
 
-**Prediction:** A causal selector using only information available before final-layer MLP execution can approximate the frozen tangent-oracle set closely enough to preserve behavior.
+**Prediction:** A causal selector using only information available before final-layer MLP execution can choose a coarser block-structured unit and directly minimize behavioral/tangent reconstruction loss closely enough to preserve behavior at no more than 90% execution.
 
-**Falsification:** Held-out top-1 agreement is below 99%, mean KL is at least 0.01, or selector/cache metadata removes the analytic payload margin.
+**Falsification:** Held-out top-1 agreement is below 99%, mean KL is at least 0.01, execution exceeds 90%, or selector/cache metadata removes the analytic payload margin.
 
-The current distilled selector is falsified at its tested settings: 30% and 40% payloads reached only 78% and 83% top-1. Improve the representation or use a coarser structured unit; do not tune against the test prompts.
+The current neuron-set family is closed at useful widths. Rank 128 at 30% reached only 81.5% top-1; a continuous marginal-utility objective reached 78.5%; a 30%-teacher safety sweep needed the 100% identity control to cross 99%; direct 90%-teacher training reached only 83.5%. Do not spend more runs scaling the same binary/rank head or tune against the test prompts.
 
 ## 3. Conditional physical implementation
 
-**Prediction:** A causal, structured tangent selector that clears the quality gate can retain enough whole-model savings after coalescing and dispatch overhead to improve measured latency or physical traffic.
+**Prediction:** A causal, structured tangent selector that clears the revised quality gate can retain enough whole-model savings after coalescing and dispatch overhead to improve measured latency or physical traffic.
 
 **Falsification:** The causal frontier cannot exceed a preregistered analytic margin large enough to cover overhead, or a fused kernel fails to reduce measured physical bytes and latency against dense execution.
 
