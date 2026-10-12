@@ -7,6 +7,7 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.request import urlopen
 
 import torch
 from torch import Tensor, nn
@@ -19,6 +20,7 @@ from hf_temporal_tangent_distilled import (
     resolve_layers,
     sparse_exact_output,
 )
+from hf_global_lowbit_decode import LowBitAddress
 
 
 @dataclass
@@ -41,13 +43,59 @@ class EvaluationState:
 class BlockSelectorHead(nn.Module):
     """Causal low-rank address head over contiguous MLP neuron blocks."""
 
-    def __init__(self, hidden: int, blocks: int, rank: int) -> None:
+    def __init__(
+        self,
+        hidden: int,
+        blocks: int,
+        rank: int,
+        *,
+        use_prior: bool = False,
+    ) -> None:
         super().__init__()
         self.in_proj = nn.Linear(hidden, rank, bias=False)
         self.out_proj = nn.Linear(rank, blocks, bias=True)
+        if use_prior:
+            nn.init.zeros_(self.out_proj.weight)
+            nn.init.zeros_(self.out_proj.bias)
+            self.prior_scale = nn.Parameter(torch.ones(()))
+        else:
+            self.register_parameter("prior_scale", None)
 
-    def forward(self, hidden: Tensor) -> Tensor:
-        return self.out_proj(torch.tanh(self.in_proj(hidden)))
+    def forward(self, hidden: Tensor, prior: Tensor | None = None) -> Tensor:
+        scores = self.out_proj(torch.tanh(self.in_proj(hidden)))
+        if self.prior_scale is not None:
+            if prior is None:
+                raise ValueError("a prior-enabled selector requires prior scores")
+            scores = scores + self.prior_scale * prior
+        return scores
+
+
+def texts_from_json_records(records: object) -> list[str]:
+    if not isinstance(records, list):
+        raise TypeError("remote text source must contain a JSON list")
+    texts: list[str] = []
+    for record in records:
+        if not isinstance(record, dict):
+            raise TypeError("every remote text record must be a JSON object")
+        if "text" in record:
+            text = str(record["text"]).strip()
+        elif "instruction" in record:
+            instruction = str(record["instruction"]).strip()
+            extra = str(record.get("input", "")).strip()
+            text = instruction if not extra else f"{instruction}\n\nInput:\n{extra}"
+        else:
+            raise ValueError("remote text record needs 'text' or 'instruction'")
+        if text:
+            texts.append(text)
+    if len(texts) < 12:
+        raise ValueError("need at least twelve remote texts")
+    return texts
+
+
+def load_texts_from_url(url: str) -> list[str]:
+    with urlopen(url, timeout=60) as response:
+        records = json.loads(response.read().decode("utf-8"))
+    return texts_from_json_records(records)
 
 
 @torch.inference_mode()
@@ -204,11 +252,22 @@ def straight_through_topk_mask(
     hard = torch.zeros_like(scores)
     hard.scatter_(1, hard_index, 1.0)
 
-    target_fraction = k / scores.shape[-1]
-    bounded_fraction = min(max(target_fraction, 1e-4), 1.0 - 1e-4)
-    target_logit = math.log(bounded_fraction / (1.0 - bounded_fraction))
-    centered = scores - scores.mean(dim=-1, keepdim=True)
-    soft = torch.sigmoid(centered / temperature + target_logit)
+    if k == scores.shape[-1]:
+        soft = torch.ones_like(scores)
+    else:
+        centered = scores - scores.mean(dim=-1, keepdim=True)
+        with torch.no_grad():
+            lower = centered.amin(dim=-1, keepdim=True) - 20.0 * temperature
+            upper = centered.amax(dim=-1, keepdim=True) + 20.0 * temperature
+            for _ in range(32):
+                threshold = (lower + upper) * 0.5
+                mass = torch.sigmoid(
+                    (centered - threshold) / temperature
+                ).sum(dim=-1, keepdim=True)
+                lower = torch.where(mass > k, threshold, lower)
+                upper = torch.where(mass > k, upper, threshold)
+            threshold = ((lower + upper) * 0.5).detach()
+        soft = torch.sigmoid((centered - threshold) / temperature)
     mask = hard + soft - soft.detach()
     return mask, hard, soft
 
@@ -285,6 +344,7 @@ def train_selector(
     budget_loss_weight: float,
     seed: int,
     device: torch.device,
+    prior_scores: Tensor | None = None,
 ) -> tuple[BlockSelectorHead, dict[str, float]]:
     blocks = block_contributions.shape[1]
     width = mlp.down_proj.in_features
@@ -299,7 +359,12 @@ def train_selector(
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-    head = BlockSelectorHead(states.current.shape[-1], blocks, rank).to(device)
+    head = BlockSelectorHead(
+        states.current.shape[-1],
+        blocks,
+        rank,
+        use_prior=prior_scores is not None,
+    ).to(device)
     optimizer = torch.optim.AdamW(head.parameters(), lr=lr, weight_decay=1e-4)
     generator = torch.Generator().manual_seed(seed + 1)
     final: dict[str, float] = {}
@@ -317,7 +382,8 @@ def train_selector(
         top_ids = states.top_ids[index].to(device)
         reference = states.reference_top_logits[index].to(device)
 
-        scores = head(current)
+        prior = None if prior_scores is None else prior_scores[index].to(device)
+        scores = head(current, prior)
         mask, _hard, soft = straight_through_topk_mask(
             scores,
             k=k,
@@ -427,10 +493,12 @@ def make_trained_selector(
     block_size: int,
     width: int,
     device: torch.device,
+    prior_scorer: Callable[[Tensor], Tensor] | None = None,
 ) -> Callable[[Tensor], Tensor]:
     @torch.inference_mode()
     def select(hidden: Tensor) -> Tensor:
-        scores = head(hidden.to(device))
+        prior = None if prior_scorer is None else prior_scorer(hidden)
+        scores = head(hidden.to(device), prior)
         blocks = torch.topk(scores, k=k, dim=-1, sorted=False).indices[0]
         return blocks_to_neurons(
             blocks,
@@ -455,6 +523,125 @@ def make_fixed_selector(
 
     def select(_hidden: Tensor) -> Tensor:
         return selected
+
+    return select
+
+
+def lowbit_metadata_fraction(
+    mlp: nn.Module,
+    *,
+    bits: int,
+) -> float:
+    address_bytes, cold_bytes = lowbit_metadata_bytes(mlp, bits=bits)
+    return address_bytes / cold_bytes
+
+
+def lowbit_metadata_bytes(
+    mlp: nn.Module,
+    *,
+    bits: int,
+) -> tuple[int, int]:
+    if bits not in (1, 2, 3, 4):
+        raise ValueError("bits must be one of {1, 2, 3, 4}")
+    gate = mlp.gate_proj
+    up = mlp.up_proj
+    down = mlp.down_proj
+    cold_parameters = (
+        gate.weight.numel()
+        + up.weight.numel()
+        + down.weight.numel()
+    )
+    cold_bytes = cold_parameters * 2
+    packed_bits = bits * (gate.weight.numel() + up.weight.numel())
+    address_bytes = (packed_bits + 7) // 8
+    # Per-neuron FP16 gate scale, up scale, and down-column norm.
+    address_bytes += down.in_features * 3 * 2
+    return address_bytes, cold_bytes
+
+
+class LowBitBlockScorer:
+    """Causal block scores from packed low-bit gate/up projection proxies."""
+
+    def __init__(
+        self,
+        address: LowBitAddress,
+        mlp: nn.Module,
+        *,
+        block_size: int,
+        width: int,
+        device: torch.device,
+    ) -> None:
+        self.gate_hat = address.gate_hat.to(device)
+        self.up_hat = address.up_hat.to(device)
+        self.down_norm = address.down_norm.to(device)
+        self.fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
+        self.block_size = block_size
+        self.width = width
+        self.blocks = math.ceil(width / block_size)
+        self.padding = self.blocks * block_size - width
+        self.device = device
+
+    @torch.inference_mode()
+    def __call__(self, hidden: Tensor) -> Tensor:
+        current = hidden.to(self.device).float()
+        gate = torch.nn.functional.linear(current, self.gate_hat)
+        up = torch.nn.functional.linear(current, self.up_hat)
+        neuron_score = (self.fn(gate) * up).abs() * self.down_norm[None, :]
+        if self.padding:
+            neuron_score = torch.nn.functional.pad(
+                neuron_score,
+                (0, self.padding),
+            )
+        block_score = neuron_score.view(
+            neuron_score.shape[0],
+            self.blocks,
+            self.block_size,
+        ).sum(dim=-1)
+        log_score = block_score.clamp_min(1e-12).log()
+        centered = log_score - log_score.mean(dim=-1, keepdim=True)
+        return centered / centered.std(dim=-1, keepdim=True).clamp_min(1e-6)
+
+
+@torch.inference_mode()
+def score_hidden_states(
+    scorer: Callable[[Tensor], Tensor],
+    hidden: Tensor,
+    *,
+    chunk_size: int = 64,
+) -> Tensor:
+    rows = [
+        scorer(hidden[start : start + chunk_size]).cpu()
+        for start in range(0, hidden.shape[0], chunk_size)
+    ]
+    return torch.cat(rows).detach().clone()
+
+
+def make_lowbit_block_selector(
+    address: LowBitAddress,
+    mlp: nn.Module,
+    *,
+    k: int,
+    block_size: int,
+    width: int,
+    device: torch.device,
+) -> Callable[[Tensor], Tensor]:
+    scorer = LowBitBlockScorer(
+        address,
+        mlp,
+        block_size=block_size,
+        width=width,
+        device=device,
+    )
+
+    @torch.inference_mode()
+    def select(hidden: Tensor) -> Tensor:
+        block_score = scorer(hidden)
+        chosen = torch.topk(block_score, k=k, dim=-1, sorted=False).indices[0]
+        return blocks_to_neurons(
+            chosen,
+            block_size=block_size,
+            width=width,
+        )
 
     return select
 
@@ -588,6 +775,7 @@ def main() -> None:
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--revision")
     parser.add_argument("--text-file")
+    parser.add_argument("--text-url")
     parser.add_argument(
         "--deduplicate-texts",
         action="store_true",
@@ -622,6 +810,19 @@ def main() -> None:
         default="bfloat16",
     )
     parser.add_argument("--skip-controls", action="store_true")
+    parser.add_argument(
+        "--lowbit-controls",
+        nargs="*",
+        type=int,
+        default=[],
+        help="Evaluate causal block scores from packed low-bit gate/up proxies.",
+    )
+    parser.add_argument(
+        "--train-lowbit-prior-bits",
+        type=int,
+        choices=[1, 2, 3, 4],
+        help="Train the low-rank selector as a residual over causal low-bit scores.",
+    )
     parser.add_argument("--skip-free-running", action="store_true")
     parser.add_argument("--json-out")
     args = parser.parse_args()
@@ -635,6 +836,8 @@ def main() -> None:
         raise ValueError("every execution fraction must be in (0, 0.90]")
     if any(block_size <= 0 for block_size in args.block_sizes):
         raise ValueError("block sizes must be positive")
+    if any(bits not in (1, 2, 3, 4) for bits in args.lowbit_controls):
+        raise ValueError("low-bit controls must use 1, 2, 3, or 4 bits")
 
     device = resolve_device(args.device)
     dtype = parse_dtype(args.dtype)
@@ -644,7 +847,13 @@ def main() -> None:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
-    texts = load_texts(args.text_file)
+    if args.text_file and args.text_url:
+        raise ValueError("choose only one of --text-file and --text-url")
+    texts = (
+        load_texts_from_url(args.text_url)
+        if args.text_url
+        else load_texts(args.text_file)
+    )
     if args.deduplicate_texts:
         texts = list(dict.fromkeys(texts))
     if args.split_seed is not None:
@@ -676,6 +885,13 @@ def main() -> None:
     norm = model.model.norm
     lm_head = model.lm_head
     width = mlp.down_proj.in_features
+    requested_lowbit = set(args.lowbit_controls)
+    if args.train_lowbit_prior_bits is not None:
+        requested_lowbit.add(args.train_lowbit_prior_bits)
+    lowbit_addresses = {
+        bits: LowBitAddress(mlp, bits)
+        for bits in sorted(requested_lowbit)
+    }
 
     training = collect_training_states(
         model,
@@ -707,6 +923,20 @@ def main() -> None:
             device=device,
         )
         blocks = contributions.shape[1]
+        prior_scorer = None
+        training_prior = None
+        if args.train_lowbit_prior_bits is not None:
+            prior_scorer = LowBitBlockScorer(
+                lowbit_addresses[args.train_lowbit_prior_bits],
+                mlp,
+                block_size=block_size,
+                width=width,
+                device=device,
+            )
+            training_prior = score_hidden_states(
+                prior_scorer,
+                training.current,
+            )
         block_energy = contributions.square().mean(dim=(0, 2))
         identity = identity_diagnostics(
             training,
@@ -751,6 +981,7 @@ def main() -> None:
                 budget_loss_weight=args.budget_loss_weight,
                 seed=args.seed + block_size + round(fraction * 1000),
                 device=device,
+                prior_scores=training_prior,
             )
             selector = make_trained_selector(
                 head,
@@ -758,6 +989,7 @@ def main() -> None:
                 block_size=block_size,
                 width=width,
                 device=device,
+                prior_scorer=prior_scorer,
             )
             metrics = evaluate_dense_states(
                 model,
@@ -767,8 +999,17 @@ def main() -> None:
                 device=device,
             )
             metadata = selector_metadata_fraction(head, mlp)
+            if args.train_lowbit_prior_bits is not None:
+                metadata += lowbit_metadata_fraction(
+                    mlp,
+                    bits=args.train_lowbit_prior_bits,
+                )
             row = {
-                "policy": "causal_trained",
+                "policy": (
+                    "causal_trained"
+                    if args.train_lowbit_prior_bits is None
+                    else f"causal_trained_lowbit_{args.train_lowbit_prior_bits}bit"
+                ),
                 "block_size": block_size,
                 "block_count": blocks,
                 "selected_blocks": k,
@@ -800,6 +1041,61 @@ def main() -> None:
             else:
                 row["free_running_exact_prompt_fraction"] = None
             rows.append(row)
+
+            for bits, address in lowbit_addresses.items():
+                lowbit_selector = make_lowbit_block_selector(
+                    address,
+                    mlp,
+                    k=k,
+                    block_size=block_size,
+                    width=width,
+                    device=device,
+                )
+                lowbit_metrics = evaluate_dense_states(
+                    model,
+                    mlp,
+                    evaluation,
+                    lowbit_selector,
+                    device=device,
+                )
+                lowbit_metadata = lowbit_metadata_fraction(mlp, bits=bits)
+                lowbit_row = {
+                    "policy": f"causal_lowbit_{bits}bit",
+                    "block_size": block_size,
+                    "block_count": blocks,
+                    "selected_blocks": k,
+                    "requested_fraction": fraction,
+                    "execution_fraction": actual_fraction,
+                    "selector_rank": None,
+                    "resident_selector_fraction": lowbit_metadata,
+                    "metadata_plus_execution_fraction": (
+                        actual_fraction + lowbit_metadata
+                    ),
+                    "train_final": None,
+                    **lowbit_metrics,
+                }
+                lowbit_row["passes_strict_gate"] = passes_strict_gate(
+                    top1_agreement=lowbit_row["top1_agreement"],
+                    mean_kl_nats=lowbit_row["mean_kl_nats"],
+                    execution_fraction=actual_fraction,
+                    metadata_fraction=lowbit_metadata,
+                )
+                if not args.skip_free_running:
+                    lowbit_row["free_running_exact_prompt_fraction"] = (
+                        evaluate_free_running(
+                            model,
+                            layer,
+                            tokenizer,
+                            test_texts,
+                            dense_tokens,
+                            lowbit_selector,
+                            max_length=args.max_length,
+                            device=device,
+                        )
+                    )
+                else:
+                    lowbit_row["free_running_exact_prompt_fraction"] = None
+                rows.append(lowbit_row)
 
             if not args.skip_controls:
                 static_blocks = torch.topk(
@@ -862,6 +1158,7 @@ def main() -> None:
         "seed": args.seed,
         "split_seed": args.split_seed,
         "deduplicated_texts": args.deduplicate_texts,
+        "text_source": args.text_url or args.text_file or "built-in defaults",
         "device": str(device),
         "dtype": str(dtype),
         "layer": len(layers) - 1,
@@ -890,6 +1187,9 @@ def main() -> None:
             "chooses contiguous neuron blocks before gate/up/down execution. Training "
             "uses dense block contributions but optimizes exact normalized-hidden "
             "reconstruction plus top-logit KL and margin losses, not oracle-set labels. "
+            "Optional low-bit controls use only a packed causal approximation of the "
+            "current gate/up projections and include its resident metadata; a trained "
+            "hybrid learns a direct behavioral residual over those causal scores. "
             "Held-out quality uses full-vocabulary logits; free-running rows recursively "
             "feed sparse-selected tokens. PyTorch hooks still execute the dense MLP for "
             "instrumentation before replacement, so physical bytes and latency are null."

@@ -970,7 +970,26 @@ jobs:
           --skip-controls
           --skip-free-running
           --json-out block_structured_causal_selector_smoke.json
+      - name: Exercise low-bit block address and calibrated fallback accounting
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+        run: >-
+          python experiments/hf_block_lowbit_fallback.py
+          --model Qwen/Qwen2.5-0.5B-Instruct
+          --revision 7ae557604adf67be50417f59c2c2f167def9a775
+          --device cpu
+          --dtype float32
+          --max-length 32
+          --decode-steps 2
+          --max-calibration-prompts 8
+          --max-test-prompts 8
+          --block-sizes 16
+          --fractions 0.75
+          --address-bits 2
+          --json-out block_lowbit_fallback_smoke.json
       - uses: actions/upload-artifact@v4
         with:
           name: block-structured-causal-selector-smoke
-          path: block_structured_causal_selector_smoke.json
+          path: |
+            block_structured_causal_selector_smoke.json
+            block_lowbit_fallback_smoke.json
