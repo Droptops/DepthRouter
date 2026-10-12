@@ -198,6 +198,59 @@ def teacher_selected(
     )
 
 
+def marginal_gain_ranks(effects: Tensor) -> Tensor:
+    """Return per-row percentile ranks for each neuron's first-step tangent gain."""
+
+    target = effects.sum(dim=1)
+    gain = 2.0 * torch.einsum("bm,bnm->bn", target, effects)
+    gain = gain - effects.square().sum(dim=-1)
+    order = torch.argsort(gain, dim=-1)
+    width = gain.shape[-1]
+    scale = max(width - 1, 1)
+    values = torch.arange(width, dtype=torch.float32)[None, :] / scale
+    ranks = torch.empty_like(gain, dtype=torch.float32)
+    ranks.scatter_(1, order, values.expand(gain.shape[0], -1))
+    return ranks
+
+
+def teacher_selected_and_ranks(
+    reference: Tensor,
+    dense_hidden: Tensor,
+    activation: Tensor,
+    mlp: nn.Module,
+    norm: nn.Module,
+    lm_head: nn.Linear,
+    *,
+    fraction: float,
+    top_logits: int,
+    block_size: int,
+) -> tuple[Tensor, Tensor]:
+    """Return the greedy working set plus continuous marginal-utility ranks."""
+
+    top_ids = torch.topk(
+        reference,
+        k=min(top_logits, reference.shape[-1]),
+        dim=-1,
+    ).indices
+    jacobian = rmsnorm_logit_jacobian(
+        dense_hidden,
+        top_ids,
+        norm,
+        lm_head,
+    )
+    effects = projected_neuron_effects(
+        activation,
+        mlp.down_proj.weight,
+        jacobian,
+    )
+    selected = greedy_effect_indices(
+        effects,
+        fraction=fraction,
+        block_size=block_size,
+    )
+    return selected, marginal_gain_ranks(effects)
+
+
 class TemporalAddressHead(nn.Module):
     def __init__(self, hidden: int, width: int, rank: int) -> None:
         super().__init__()
@@ -237,7 +290,7 @@ def collect_training_states(
     top_logits: int,
     block_size: int,
     device: torch.device,
-) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     mlp = layer.mlp
     norm = model.model.norm
     lm_head = model.lm_head
@@ -247,6 +300,7 @@ def collect_training_states(
     previous_hidden: list[Tensor] = []
     previous_mask: list[Tensor] = []
     labels: list[Tensor] = []
+    gain_ranks: list[Tensor] = []
 
     for text in texts:
         prefix = tokenizer(
@@ -268,7 +322,7 @@ def collect_training_states(
             hidden = hidden.detach().clone()
             dense_hidden = dense_hidden.detach().clone()
             activation = activation.detach().clone()
-            selected = teacher_selected(
+            selected, ranks = teacher_selected_and_ranks(
                 reference,
                 dense_hidden,
                 activation,
@@ -288,6 +342,7 @@ def collect_training_states(
                 previous_hidden.append(prev_hidden)
                 previous_mask.append(labels_from_indices(prev_selected, width))
             labels.append(labels_from_indices(selected, width))
+            gain_ranks.append(ranks)
 
             prev_hidden = hidden
             prev_selected = selected
@@ -299,6 +354,7 @@ def collect_training_states(
         torch.cat(previous_hidden).detach().clone(),
         torch.cat(previous_mask).detach().clone(),
         torch.cat(labels).detach().clone(),
+        torch.cat(gain_ranks).detach().clone(),
     )
 
 
@@ -307,12 +363,15 @@ def train_head(
     previous: Tensor,
     previous_mask: Tensor,
     labels: Tensor,
+    gain_ranks: Tensor,
     *,
     rank: int,
     steps: int,
     batch_size: int,
     lr: float,
     seed: int,
+    loss_mode: str,
+    ordinal_weight: float,
 ) -> TemporalAddressHead:
     torch.manual_seed(seed)
     head = TemporalAddressHead(current.shape[-1], labels.shape[-1], rank)
@@ -338,6 +397,23 @@ def train_head(
             labels[index],
             pos_weight=pos_weight,
         )
+        if loss_mode == "hybrid-rank":
+            centered_logits = logits - logits.mean(dim=-1, keepdim=True)
+            normalized_logits = centered_logits / centered_logits.std(
+                dim=-1,
+                keepdim=True,
+            ).clamp_min(1e-6)
+            target = gain_ranks[index]
+            centered_target = target - target.mean(dim=-1, keepdim=True)
+            normalized_target = centered_target / centered_target.std(
+                dim=-1,
+                keepdim=True,
+            ).clamp_min(1e-6)
+            ordinal_loss = torch.nn.functional.smooth_l1_loss(
+                normalized_logits,
+                normalized_target,
+            )
+            loss = loss + ordinal_weight * ordinal_loss
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
@@ -414,6 +490,12 @@ def main() -> None:
     parser.add_argument("--steps", type=int, default=500)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=3e-3)
+    parser.add_argument(
+        "--loss-mode",
+        choices=["binary", "hybrid-rank"],
+        default="binary",
+    )
+    parser.add_argument("--ordinal-weight", type=float, default=1.0)
     parser.add_argument("--cache-multipliers", nargs="+", type=float, default=[1.0, 1.5, 2.0])
     parser.add_argument("--seed", type=int, default=907)
     parser.add_argument("--device", default="auto")
@@ -465,7 +547,13 @@ def main() -> None:
         raise ValueError("execution fraction must be in (0, 1]")
     k = max(1, min(width, round(width * execution_fraction)))
 
-    train_current, train_previous, train_previous_mask, train_labels = collect_training_states(
+    (
+        train_current,
+        train_previous,
+        train_previous_mask,
+        train_labels,
+        train_gain_ranks,
+    ) = collect_training_states(
         model,
         layer,
         tokenizer,
@@ -482,11 +570,14 @@ def main() -> None:
         train_previous,
         train_previous_mask,
         train_labels,
+        train_gain_ranks,
         rank=args.rank,
         steps=args.steps,
         batch_size=args.batch_size,
         lr=args.lr,
         seed=args.seed,
+        loss_mode=args.loss_mode,
+        ordinal_weight=args.ordinal_weight,
     )
 
     cache_stats = {
@@ -649,6 +740,8 @@ def main() -> None:
         "execution_fraction": execution_fraction,
         "top_logit_tangent_dim": args.top_logits,
         "rank": args.rank,
+        "loss_mode": args.loss_mode,
+        "ordinal_weight": args.ordinal_weight,
         "train_prompts": len(train_texts),
         "test_prompts": len(test_texts),
         "train_decode_steps": args.train_decode_steps,

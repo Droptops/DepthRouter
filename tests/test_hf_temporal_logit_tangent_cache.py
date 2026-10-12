@@ -48,6 +48,18 @@ def test_tangent_student_separates_teacher_and_execution_widths():
     assert '"selected_payload_fraction": execution_fraction' in source
 
 
+def test_tangent_student_supports_continuous_rank_distillation():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "experiments"
+        / "hf_temporal_tangent_distilled.py"
+    ).read_text(encoding="utf-8")
+    assert 'choices=["binary", "hybrid-rank"]' in source
+    assert "def marginal_gain_ranks" in source
+    assert "smooth_l1_loss" in source
+    assert '"loss_mode": args.loss_mode' in source
+
+
 def test_tangent_student_canonicalizes_sparse_accumulation_order():
     source = (
         Path(__file__).resolve().parents[1]
