@@ -8,18 +8,18 @@
 
 The 300-prompt run was exploratory and included the original screen distribution, so it is not a final held-out result. Use longer rollouts, task-level parsers, FP32 and FP16, three seeds, and uncertainty intervals.
 
-## 2. Multi-layer behavioral frontier
+## 2. Corrected research-job reruns
 
-**Prediction:** Modest exact-current-activation omissions spread across multiple layers may preserve the quality gate while exceeding a 1% global MLP-payload reduction.
+**Prediction:** Some historical batched research results will not reproduce after evaluating real next-token positions instead of right-padding positions.
 
-**Falsification:** No tested multi-layer group exceeds 1% ideal global MLP-payload reduction while meeting mean KL < 0.01 and top-1 agreement >= 0.99.
+**Falsification:** Every affected job reproduces its prior qualitative conclusion and passes its identity controls under left padding.
 
-The granularity experiment is complete: every layout and seed touched 100% of pages at page sizes from 8 through 128 neurons. One-neuron pages retained only the trivial 90%/95% payload fractions while requiring 4,378/4,621 requests per token. Freeze the multi-layer candidates before the expanded evaluation.
+The global multi-layer frontier is complete and negative above 1% ideal savings. Commit `7cd3cf1` fixes 17 additional harnesses with the same risk. Treat pre-fix outputs as provisional until rerun.
 
-## 3. Conditional selective kernel and profiling
+## 3. Conditional structured-sparsity pivot
 
-**Prediction:** Only if the multi-layer frontier survives overhead modeling, a real selective kernel can reduce measured bytes/token or latency at matched quality.
+**Prediction:** A coarser structured unit or trained causal sparsity mechanism may create a quality-compatible working set without thousands of requests per token.
 
-**Falsification:** Supported profiler counters show no physical-traffic improvement, end-to-end latency regresses after selector/metadata overhead, or any required quality threshold fails.
+**Falsification:** A dense-activation oracle for the proposed unit cannot exceed 1% ideal global payload reduction at the quality gate, or a causal selector cannot reproduce the oracle on held-out data.
 
-Keep physical bytes `null` until this kernel exists. Transition-selector work remains paused because the current representation failed its adjacent-over-control locality prerequisite.
+Do not implement a physical kernel for the current neuron-page formulation. Keep physical bytes `null`, and require the oracle and causal-selector gates before any future kernel work.
