@@ -286,7 +286,7 @@ def main() -> None:
         type=float,
         default=[0.10, 0.25, 0.50],
     )
-    parser.add_argument("--units-per-page", type=int, default=32)
+    parser.add_argument("--units-per-page", nargs="+", type=int, default=[32])
     parser.add_argument(
         "--cache-fractions",
         nargs="+",
@@ -295,8 +295,9 @@ def main() -> None:
     )
     parser.add_argument("--json-out")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--skip-lru", action="store_true")
     args = parser.parse_args()
-    if (args.max_length < 2 or args.units_per_page < 1
+    if (args.max_length < 2 or any(units < 1 for units in args.units_per_page)
             or any(not 0 < fraction <= 1 for fraction in args.fractions)
             or any(not 0 < fraction <= 1 for fraction in args.cache_fractions)):
         parser.error("invalid max-length/units-per-page/fractions/cache-fractions")
@@ -377,40 +378,42 @@ def main() -> None:
         for fraction in args.fractions:
             neurons = topk_mask(test_score, fraction)
             temporal = adjacent_metrics(neurons, test_valid)
-            layout_results = {}
-            for layout_name, permutation in layouts.items():
-                pages = page_request_mask(
-                    neurons,
-                    permutation,
-                    units_per_page=args.units_per_page,
-                )
-                num_pages = pages.shape[-1]
-                cache_results = {}
-                for cache_fraction in args.cache_fractions:
-                    capacity = max(1, round(num_pages * cache_fraction))
-                    cache_results[str(cache_fraction)] = {
-                        "cache_pages": capacity,
-                        **lru_fault_metrics(
-                            pages,
-                            test_valid,
-                            cache_pages=capacity,
-                        ),
+            for units_per_page in args.units_per_page:
+                layout_results = {}
+                for layout_name, permutation in layouts.items():
+                    pages = page_request_mask(
+                        neurons,
+                        permutation,
+                        units_per_page=units_per_page,
+                    )
+                    num_pages = pages.shape[-1]
+                    cache_results = {}
+                    if not args.skip_lru:
+                        for cache_fraction in args.cache_fractions:
+                            capacity = max(1, round(num_pages * cache_fraction))
+                            cache_results[str(cache_fraction)] = {
+                                "cache_pages": capacity,
+                                **lru_fault_metrics(
+                                    pages,
+                                    test_valid,
+                                    cache_pages=capacity,
+                                ),
+                            }
+                    layout_results[layout_name] = {
+                        "num_pages": num_pages,
+                        **page_demand_metrics(pages, test_valid),
+                        "lru": cache_results if not args.skip_lru else None,
                     }
-                layout_results[layout_name] = {
-                    "num_pages": num_pages,
-                    **page_demand_metrics(pages, test_valid),
-                    "lru": cache_results,
-                }
 
-            rows.append(
-                {
-                    "layer": layer_index,
-                    "active_neuron_fraction": fraction,
-                    "units_per_page": args.units_per_page,
-                    **temporal,
-                    "layouts": layout_results,
-                }
-            )
+                rows.append(
+                    {
+                        "layer": layer_index,
+                        "active_neuron_fraction": fraction,
+                        "units_per_page": units_per_page,
+                        **temporal,
+                        "layouts": layout_results,
+                    }
+                )
 
     payload = {
         "experiment": "hf_calibration_layout_locality_v1",
