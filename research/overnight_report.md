@@ -23,7 +23,7 @@ A different final-layer oracle based on the local logit Jacobian did survive an 
 - Demands larger than capacity produce `infeasible_capacity` instead of misleading results.
 - Sequence-reset scope, noncausal oracle labeling, and physical-metric nulls are explicit.
 - Added replay, locality, layout, padding-position, cache-claim, oracle-schema, sparse-order, and selector-reproducibility invariant tests; Ruff passes and the full local suite passes (`82 passed`).
-- All 28 checks in GitHub Actions run `38205060063` passed on final head `070b622`, including Python 3.10/3.12 and the corrected research jobs; the resulting artifacts were audited.
+- The previous remote checkpoint had all 28 checks pass in GitHub Actions run `38205060063` on head `070b622`, including Python 3.10/3.12 and the corrected research jobs; the resulting artifacts were audited. The continuation head is reported in the PR handoff after its full revalidation run completes.
 - Commit `e41abb9` adds pinned-revision CUDA trace metadata, atomic outputs, exact environment metadata, held-out-split validation, and correct cold-start/steady latency summaries.
 - Commit `6cb9837` adds a deterministic prompt-disjoint locality control.
 - Commit `9585cc1` removes false “physical fault” names from the oracle schema and records revision, seed, device, precision, and explicit physical-metric nulls.
