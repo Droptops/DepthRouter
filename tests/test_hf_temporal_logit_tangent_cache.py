@@ -36,6 +36,12 @@ def test_tangent_student_harnesses_pin_and_report_revisions():
         assert '"student_amortized_fault_fraction"' not in source, name
         assert '"student_steady_fault_fraction"' not in source, name
 
+    exposure = (experiments / "hf_temporal_tangent_exposure_diagnostic.py").read_text(
+        encoding="utf-8"
+    )
+    assert "train_gain_ranks" in exposure
+    assert 'loss_mode="binary"' in exposure
+
 
 def test_tangent_student_separates_teacher_and_execution_widths():
     source = (

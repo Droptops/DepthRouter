@@ -153,7 +153,13 @@ def main() -> None:
     width = mlp.down_proj.in_features
     k = max(1, min(width, round(width * args.fraction)))
 
-    train_current, train_previous, train_previous_mask, train_labels = collect_training_states(
+    (
+        train_current,
+        train_previous,
+        train_previous_mask,
+        train_labels,
+        train_gain_ranks,
+    ) = collect_training_states(
         model,
         layer,
         tokenizer,
@@ -170,11 +176,14 @@ def main() -> None:
         train_previous,
         train_previous_mask,
         train_labels,
+        train_gain_ranks,
         rank=args.rank,
         steps=args.steps,
         batch_size=args.batch_size,
         lr=args.lr,
         seed=args.seed,
+        loss_mode="binary",
+        ordinal_weight=0.0,
     )
 
     all_steps = empty_samples()
