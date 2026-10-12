@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 
 import torch
-
 from enterprise_tasks import examples
 
 
@@ -50,10 +49,13 @@ def main():
         lagged_signal = 0.0
         for step in range(a.steps):
             observed = {}
-            def hidden_hook(_module, args):
-                observed["hidden"] = args[0][:, -1, :].detach().float().clone()
-            def activation_hook(_module, args):
-                observed["activation"] = args[0][:, -1, :].detach().float().clone()
+
+            def hidden_hook(_module, args, observations=observed):
+                observations["hidden"] = args[0][:, -1, :].detach().float().clone()
+
+            def activation_hook(_module, args, observations=observed):
+                observations["activation"] = args[0][:, -1, :].detach().float().clone()
+
             h1 = mlp.register_forward_pre_hook(hidden_hook)
             h2 = mlp.down_proj.register_forward_pre_hook(activation_hook)
             try:
@@ -64,7 +66,7 @@ def main():
             score = observed["activation"].abs().flatten() * weight_norm
             k = max(1, round(width * a.active_fraction))
             neurons = torch.topk(score, k=k, sorted=False).indices.tolist()
-            pages = sorted(set(index // a.page_units for index in neurons))
+            pages = sorted({index // a.page_units for index in neurons})
             row = {"task": item["task"], "sequence": item["sequence"],
                    "step": step, "pages": pages,
                    "transition_signal": lagged_signal}
