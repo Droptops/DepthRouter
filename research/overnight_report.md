@@ -2,9 +2,11 @@
 
 ## Executive finding
 
-**Inconclusive, with evidence against the current breakthrough hypothesis.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
+**The current paging hypothesis is rejected; one noncausal tangent-space oracle remains worth studying.** The repaired replay shows that the original layer-23 configuration (top 10% of activation-weight contributions grouped into contiguous 128-neuron pages) touches all 38 pages on every observed token. No constrained working set exists under that definition, and static, previous-token, transition, and noncausal-oracle policies tie once all initialization and prefetch transfers are charged.
 
-The controlled locality test also went the wrong way: sparse page sets at adjacent decode steps were less similar than page sets from different prompts of the same task at the same step. A calibration-only learned layout reduced held-out page demand at unusably sparse fractions, but produced no reduction at the behaviorally viable settings. A finer granularity sweep found that every grouping of eight or more neurons still touched 100% of pages; only one-neuron pages exposed the trivial 10%/5% omission, at 4,378/4,621 requests per token. A corrected multi-layer oracle found no configuration above 1% ideal global MLP savings that met the top-1 gate. These are exact-current-activation oracle results on synthetic data, not causal routing or physical bandwidth improvements.
+The controlled locality test also went the wrong way: sparse page sets at adjacent decode steps were less similar than page sets from different prompts of the same task at the same step. A calibration-only learned layout reduced held-out page demand at unusably sparse fractions, but produced no reduction at the behaviorally viable settings. A finer granularity sweep found that every grouping of eight or more neurons still touched 100% of pages; only one-neuron pages exposed the trivial 10%/5% omission, at 4,378/4,621 requests per token. A corrected multi-layer oracle found no configuration above 1% ideal global MLP savings that met the top-1 gate.
+
+A different final-layer oracle based on the local logit Jacobian did survive an expanded 90-prompt enterprise-synthetic screen: selecting 30% of layer-23 neurons preserved dense top-1 on all 270 evaluated states with mean KL `0.00919`. With a logical cache sized to 60% of the layer width, steady misses were 14.33% of layer width per token. This is a useful mechanism result, not a deployable design: selection requires the current dense activation and local Jacobian, the trajectory is dense-generated, row misses are logical rather than physical transfers, and the tested causal distillation reached only 78%-83% top-1.
 
 ## Infrastructure
 
@@ -20,8 +22,8 @@ The controlled locality test also went the wrong way: sparse page sets at adjace
 - Every insertion now records transfers and evictions; cache capacity is asserted.
 - Demands larger than capacity produce `infeasible_capacity` instead of misleading results.
 - Sequence-reset scope, noncausal oracle labeling, and physical-metric nulls are explicit.
-- Added replay, locality, layout, padding-position, and oracle-schema invariant tests; Ruff passes and the full local suite passes (`75 passed`).
-- GitHub Python 3.10 and 3.12 CI jobs passed after the repair. Long research jobs were still completing at this checkpoint.
+- Added replay, locality, layout, padding-position, cache-claim, and oracle-schema invariant tests; Ruff passes and the full local suite passes (`76 passed`).
+- All 27 checks in GitHub Actions run `38203357420` passed, including Python 3.10/3.12 and the corrected research jobs; the resulting artifacts were audited.
 - Commit `e41abb9` adds pinned-revision CUDA trace metadata, atomic outputs, exact environment metadata, held-out-split validation, and correct cold-start/steady latency summaries.
 - Commit `6cb9837` adds a deterministic prompt-disjoint locality control.
 - Commit `9585cc1` removes false “physical fault” names from the oracle schema and records revision, seed, device, precision, and explicit physical-metric nulls.
@@ -29,6 +31,7 @@ The controlled locality test also went the wrong way: sparse page sets at adjace
 - Commit `499b577` adds multi-granularity held-out layout sweeps and a no-LRU mode for isolating demand amplification.
 - Commit `080cc79` corrects the global oracle to use real next-token positions, adds full-width controls, and supports dense-trajectory rollouts.
 - Commit `7cd3cf1` fixes the same right-padding/last-position hazard in 17 additional batched research harnesses and adds a static regression guard.
+- Commit `8774db4` fixes a CUDA device-mutation bug in the tangent oracle, pins its revision/seed metadata, and relabels analytic row misses as logical rather than physical across temporal cache harnesses.
 
 ## Experiments executed
 
@@ -46,17 +49,20 @@ The controlled locality test also went the wrong way: sparse page sets at adjace
 | Page-granularity frontier, 3 seeds | Quality points, 1/8/16/32/64/128 neurons/page | 1-neuron pages retained the 90%/95% fractions; every page size >=8 saturated to 100% |
 | Corrected global sparse oracle | 300 prompts, all/half/alternating layer groups, full-width control | Every configuration above 1% ideal global MLP savings failed top-1 >=99%; 100% width passed identity |
 | Batched-harness audit | 18 scripts that read the last position of padded batches | Found and fixed right-padding contamination in 17 additional scripts |
+| Expanded logit-tangent oracle | Final layer, 90 independent enterprise prompts, 3 steps, 30%-40% selected | All fractions reached 100% top-1; 30% had mean KL 0.00919 and 14.33% steady logical row misses with a 60% cache |
+| Causal tangent distillation | Final layer, 20 train + 20 test prompts, 10 steps | Failed: 30%/40% payload reached only 78%/83% top-1 |
+| Calibrated selective fallback | Layer 18, 16/16/16 train/calibration/test prompts | 99.49% top-1, but only 8.1% sparse acceptance and 2.24% ideal payload reduction after metadata |
 
 ## Best configuration
 
-No winner is reported. The smallest observed expanded-smoke single-layer point that passed the token-distribution gate was layer 12 at 90% selected neurons: mean KL `0.0000463`, top-1 agreement `0.99444`, and exact agreement over all three-token rollouts for `0.9833` of prompts. In the corrected global screen, omitting 1% of neurons in the late 12 layers passed one-step quality but saves only 0.5% of ideal global MLP payload; every tested configuration above 1% global MLP savings failed the top-1 gate. These tuning runs are exploratory and not independent held-out confirmations.
+No deployable winner is reported. The strongest mechanistic result is the final-layer logit-tangent oracle at 30% selected neurons: mean KL `0.00919`, top-1 agreement `1.0`, and dense-trajectory three-step agreement `1.0` over 90 independent enterprise-synthetic prompts. With a logical cache holding 60% of the layer, steady logical row misses were 14.33% of layer width per token. The oracle requires dense current-state information and its causal distillation failed, so this does not supersede the negative paging verdict or justify a kernel.
 
-- Working-set fraction: smallest observed behavioral smoke pass is 90% of layer 12's MLP neurons
+- Working-set fraction: 30% of final-layer neurons for the noncausal logit-tangent oracle
 - Number of physical pages: not established for a compiled layout
-- KL divergence: 0.0000463 on the expanded synthetic smoke set
-- Top-1 agreement: 0.99444 on dense greedy trajectories
-- Free-running correctness: exact three-token agreement 0.9833; task correctness not measured
-- Logical transfer costs: every tested page size >=8 neurons saturated; 1-neuron pages required 4,378 requests/token at layer 12
+- KL divergence: 0.00919 mean, 0.03032 p95, 0.09749 maximum on the expanded tangent-oracle screen
+- Top-1 agreement: 1.0 on 270 dense-trajectory states
+- Free-running correctness: not measured; `1.0` exact three-step agreement is on dense-generated trajectories, not a sparse rollout
+- Logical transfer costs: 14.33% of layer width in steady row misses with a 60%-width cache; no coalescing or request metadata modeled
 - Ideal modeled upper bound: omitting 10% of one FP16 MLP layer saves at most 2,614,886 weight bytes/token, only `0.2646%` of the model's FP16 parameter bytes before selector and dispatch overhead
 - Physical transfer measurements: `null`
 - End-to-end latency: `null`
@@ -70,6 +76,7 @@ No winner is reported. The smallest observed expanded-smoke single-layer point t
 5. Calibration-only layout learning generalized at very sparse widths: over three seeds it reduced mean requested pages by `13.9%` versus identity at layer 12 and `13.7%` at layer 23 for 0.5% active neurons. The benefit collapsed to zero at behaviorally viable fractions.
 6. At the quality-passing fractions, granularity dominates layout: pages of 8-128 neurons all saturated, while per-neuron paging preserves only a 10%/5% payload reduction and creates thousands of requests per token.
 7. Right-padded batch evaluation can manufacture impressive false positives. The invalid padded-position global screen showed 10% ideal savings with 100% agreement; the corrected real-token evaluation at the same point produced only `0.9633` top-1 agreement.
+8. Probability-space importance is much sparser than raw activation importance in the final layer: a 30% local logit-tangent oracle preserved all top-1 decisions on the expanded screen, but a small causal predictor reproduced too little of its working set to preserve behavior.
 
 ## Falsified hypotheses
 
@@ -82,6 +89,7 @@ No winner is reported. The smallest observed expanded-smoke single-layer point t
 - Reducing page size to 8, 16, 32, or 64 neurons did not expose any quality-compatible page sparsity; each configuration requested 100% of pages across three seeds.
 - Spreading exact-current-activation sparsity across layer groups did not produce a >1% ideal global MLP reduction at the quality gate. At 1.25% savings, top-1 agreement ranged only from `0.9233` to `0.9267` despite small mean KL.
 - The initial multi-layer positive result was falsified as a padding-position artifact and is excluded from claims.
+- The first causal tangent-address attempt did not recover the oracle frontier: 30% and 40% payloads reached only `0.78` and `0.83` top-1 agreement.
 
 ## Engineering status
 
@@ -95,6 +103,7 @@ No winner is reported. The smallest observed expanded-smoke single-layer point t
 - Page-granularity commit: `499b577`
 - Corrected global-oracle commit: `080cc79`
 - Batched-padding audit commit: `7cd3cf1`
+- Logical temporal-cache labeling and CUDA fix: `8774db4`
 - Merge status: open and not merged
 
 ## Blockers
@@ -104,10 +113,10 @@ No winner is reported. The smallest observed expanded-smoke single-layer point t
 - The best quality points use current dense activations and are noncausal; the 300-prompt tuning run is exploratory rather than a clean final test.
 - No selective kernel or supported hardware counter has measured physical GDDR6X traffic.
 - Task-level free-running correctness and three-seed uncertainty are not yet available.
-- Historical research-job results produced before `7cd3cf1` require rerun or explicit verification if they used batched last-position evaluation.
+- The promising tangent result is a privileged final-layer oracle. Its causal selector, structured execution unit, request coalescing, and net whole-model benefit remain unresolved.
 
 ## Next three experiments
 
-1. Freeze candidate fractions before evaluating a provenance-tracked, prompt-disjoint corpus with longer rollouts, task parsing, FP16/FP32 controls, three seeds, and uncertainty.
-2. Rerun affected CI research jobs under the left-padding invariant and invalidate any historical result that does not reproduce at real next-token positions.
-3. Do not build the current paging kernel: neither the state-transition, layout, granularity, nor multi-layer oracle gates leave a plausible benefit. A future branch should require a coarser structured unit or trained causal sparsity mechanism before reopening physical profiling.
+1. Freeze the 30% final-layer tangent oracle and evaluate it on a provenance-tracked corpus with longer dense and sparse rollouts, task parsing, FP16/FP32 controls, three seeds, and uncertainty.
+2. Train a causal selector specifically against that frozen oracle and require >=99% top-1, mean KL <0.01, and a useful net payload bound after selector/cache metadata. The current 78%-83% distilled result fails this gate.
+3. Do not build a physical kernel yet. Reopen profiling only if a causal, structured unit survives held-out quality with enough analytic whole-model margin to absorb coalescing, dispatch, and metadata overhead.
