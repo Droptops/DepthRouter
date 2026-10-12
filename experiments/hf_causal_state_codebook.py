@@ -480,6 +480,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     train_encoded = encode(tokenizer, train_texts, device, args.max_length)
     test_encoded = encode(tokenizer, test_texts, device, args.max_length)
 
