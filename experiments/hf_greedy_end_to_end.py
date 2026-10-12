@@ -168,7 +168,7 @@ def exact_output_from_selected(
 ) -> Tensor:
     rows = []
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         y = torch.nn.functional.linear(
             activation[row, index],
             down.weight[:, index],
@@ -266,6 +266,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     encoded = tokenizer(
         load_texts(args.text_file),
         return_tensors="pt",

@@ -228,7 +228,7 @@ def sparse_exact_output(
 ) -> Tensor:
     rows = []
     for row in range(hidden.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         x = hidden[row]
         gate_bias = mlp.gate_proj.bias[index] if mlp.gate_proj.bias is not None else None
         up_bias = mlp.up_proj.bias[index] if mlp.up_proj.bias is not None else None
@@ -352,6 +352,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     encoded = tokenizer(
         load_texts(args.text_file),
         return_tensors="pt",

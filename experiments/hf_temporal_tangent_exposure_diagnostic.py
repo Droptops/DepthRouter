@@ -92,6 +92,7 @@ def summarize(samples: dict[str, list[float]]) -> dict[str, float]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--train-decode-steps", type=int, default=8)
@@ -126,15 +127,23 @@ def main() -> None:
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
 
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
     texts = load_texts(args.text_file)
     split = len(texts) // 2
     train_texts = texts[:split][: args.max_train_prompts]
     test_texts = texts[split:][: args.max_test_prompts]
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=dtype).to(device)
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model,
+        revision=args.revision,
+        torch_dtype=dtype,
+    ).to(device)
     model.eval()
     layers = resolve_layers(model)
     layer = layers[-1]
@@ -144,7 +153,13 @@ def main() -> None:
     width = mlp.down_proj.in_features
     k = max(1, min(width, round(width * args.fraction)))
 
-    train_current, train_previous, train_previous_mask, train_labels = collect_training_states(
+    (
+        train_current,
+        train_previous,
+        train_previous_mask,
+        train_labels,
+        train_gain_ranks,
+    ) = collect_training_states(
         model,
         layer,
         tokenizer,
@@ -161,18 +176,21 @@ def main() -> None:
         train_previous,
         train_previous_mask,
         train_labels,
+        train_gain_ranks,
         rank=args.rank,
         steps=args.steps,
         batch_size=args.batch_size,
         lr=args.lr,
         seed=args.seed,
+        loss_mode="binary",
+        ordinal_weight=0.0,
     )
 
     all_steps = empty_samples()
     first_step = empty_samples()
     steady_steps = empty_samples()
     exact_prompts = {arm: 0 for arm in ARMS}
-    faults = {m: {"amortized": 0, "steady": 0} for m in args.cache_multipliers}
+    misses = {m: {"amortized": 0, "steady": 0} for m in args.cache_multipliers}
     zero_mask = torch.zeros(1, width)
 
     for text in test_texts:
@@ -260,9 +278,9 @@ def main() -> None:
             for multiplier in args.cache_multipliers:
                 budget = max(k, min(width, round(k * multiplier)))
                 caches[multiplier], missing = update_cache(caches[multiplier], student, budget)
-                faults[multiplier]["amortized"] += missing
+                misses[multiplier]["amortized"] += missing
                 if step > 0:
-                    faults[multiplier]["steady"] += missing
+                    misses[multiplier]["steady"] += missing
 
             prev_hidden = hidden
             prev_student = student
@@ -277,22 +295,28 @@ def main() -> None:
     states = len(test_texts) * args.test_decode_steps
     steady_states = len(test_texts) * max(args.test_decode_steps - 1, 1)
     cache_rows = []
-    for multiplier, count in faults.items():
+    for multiplier, count in misses.items():
         steady = count["steady"] / (steady_states * width)
         cache_rows.append(
             {
                 "cache_multiplier": multiplier,
                 "cache_fraction_of_mlp_width": min(1.0, args.fraction * multiplier),
                 "resident_address_fraction": metadata,
-                "student_amortized_fault_fraction": count["amortized"] / (states * width),
-                "student_steady_fault_fraction": steady,
-                "metadata_plus_student_steady_fault_fraction": metadata + steady,
+                "student_amortized_logical_neuron_miss_fraction": count["amortized"]
+                / (states * width),
+                "student_steady_logical_neuron_miss_fraction": steady,
+                "metadata_plus_student_steady_logical_miss_fraction": metadata + steady,
             }
         )
 
     payload = {
         "experiment": "hf_temporal_tangent_exposure_diagnostic_v0",
         "model": args.model,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
         "layer": len(layers) - 1,
         "fraction": args.fraction,
         "top_logit_tangent_dim": args.top_logits,
@@ -314,8 +338,9 @@ def main() -> None:
             "oracle_history, copy_previous and oracle_selection use the dense oracle "
             "working set and are privileged diagnostic references, not deployable arms. "
             "Every step decodes from the dense-generated prefix; this is not a "
-            "free-running sparse rollout. Fault fractions assume ideal neuron-granular "
-            "transfers, and no kernel, PCIe/HBM/L2 profiler, or latency test is included."
+            "free-running sparse rollout. Miss fractions are logical neuron-cache events, "
+            "not physical transfers; no kernel, PCIe/HBM/L2 profiler, or latency test "
+            "is included."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)

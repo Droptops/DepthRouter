@@ -275,7 +275,7 @@ def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Ten
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        idx = selected[row]
+        idx = selected[row].sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -466,6 +466,7 @@ def metadata_fraction(head: AddressHead, mlp: nn.Module) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--layer", type=int, default=18)
     parser.add_argument("--max-length", type=int, default=32)
@@ -497,6 +498,10 @@ def main() -> None:
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
 
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
     texts = load_texts(args.text_file)
     one = len(texts) // 3
     two = 2 * one
@@ -504,7 +509,7 @@ def main() -> None:
     calibration_texts = texts[one:two]
     test_texts = texts[two:]
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -519,6 +524,7 @@ def main() -> None:
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
+        revision=args.revision,
         torch_dtype=dtype,
     ).to(device)
     model.eval()
@@ -613,6 +619,11 @@ def main() -> None:
     payload = {
         "experiment": "hf_selective_fallback_v0",
         "model": args.model,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
         "layer": args.layer,
         "rank": args.rank,
         "sparse_fraction": args.fraction,

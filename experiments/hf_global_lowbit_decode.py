@@ -190,7 +190,7 @@ def sparse_exact_last_token(
 
     rows = []
     for row in range(x.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         gate_bias = (
             mlp.gate_proj.bias[index]
             if mlp.gate_proj.bias is not None
@@ -301,6 +301,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     encoded = tokenizer(
         load_texts(args.text_file),
         return_tensors="pt",

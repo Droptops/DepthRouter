@@ -221,7 +221,7 @@ def selected_contribution(
     weight = mlp.down_proj.weight.detach().float().cpu()
     rows = []
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         rows.append(
             torch.nn.functional.linear(
                 activation[row, index],
@@ -317,7 +317,7 @@ def sparse_contribution(
     fn = act_fn(mlp)
     rows = []
     for row in range(hidden.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,

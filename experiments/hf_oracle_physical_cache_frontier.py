@@ -1,13 +1,21 @@
-# ruff: noqa: I001
 from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
 import torch
 from torch import Tensor, nn
+
+
+def atomic_write(path: str, text: str) -> None:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(destination)
 
 
 DEFAULT_TEXTS = [
@@ -131,14 +139,16 @@ def selected_indices(activation: Tensor, mlp: nn.Module, fraction: float) -> Ten
     k = max(1, min(width, round(width * fraction)))
     down_norm = mlp.down_proj.weight.detach().float().cpu().norm(dim=0)
     score = activation.abs() * down_norm[None, :]
-    return torch.topk(score, k=k, dim=-1, sorted=False).indices
+    # Preserve original neuron order after selection. In particular, fraction=1
+    # must not change FP16 accumulation merely by permuting every neuron.
+    return torch.topk(score, k=k, dim=-1, sorted=False).indices.sort(dim=-1).values
 
 
 def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Tensor:
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        index = selected[row].to(hidden.device)
+        index = selected[row].to(hidden.device).sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -213,6 +223,7 @@ def distribution_metrics(reference: Tensor, candidate: Tensor) -> tuple[Tensor, 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--decode-steps", type=int, default=10)
@@ -237,9 +248,15 @@ def main() -> None:
         default="bfloat16",
     )
     parser.add_argument("--json-out")
+    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+    if (args.decode_steps < 2 or args.max_prompts < 1
+            or any(not 0 < fraction <= 1 for fraction in args.fractions)
+            or any(multiplier < 1 for multiplier in args.cache_multipliers)):
+        parser.error("invalid decode-steps/max-prompts/fractions/cache-multipliers")
 
     try:
+        import transformers
         from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as exc:
         raise SystemExit('Install with: pip install -e ".[hf]"') from exc
@@ -249,14 +266,21 @@ def main() -> None:
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    torch.manual_seed(args.seed)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cuda.matmul.allow_tf32 = False
+
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        torch_dtype=dtype,
-    ).to(device)
+    model_kwargs: dict[str, Any] = {"revision": args.revision}
+    if int(transformers.__version__.split(".")[0]) >= 5:
+        model_kwargs["dtype"] = dtype
+    else:
+        model_kwargs["torch_dtype"] = dtype
+    model = AutoModelForCausalLM.from_pretrained(args.model, **model_kwargs).to(device)
     model.eval()
     layers = resolve_layers(model)
     if any(index < 0 or index >= len(layers) for index in args.layers):
@@ -335,41 +359,58 @@ def main() -> None:
                 rows.append(
                     {
                         "layer": layer_index,
-                        "selected_payload_fraction": fraction,
+                        "selected_neuron_fraction": fraction,
                         "cache_multiplier": multiplier,
                         "cache_fraction_of_mlp_width": min(1.0, fraction * multiplier),
-                        "amortized_physical_fault_fraction": amortized_fault_fraction,
-                        "steady_state_physical_fault_fraction": steady_fault_fraction,
-                        "fault_reduction_vs_stateless_sparse": (
+                        "logical_amortized_neuron_fault_fraction": amortized_fault_fraction,
+                        "logical_steady_state_neuron_fault_fraction": steady_fault_fraction,
+                        "logical_fault_reduction_vs_stateless_subset": (
                             1.0 - steady_fault_fraction / fraction
                         ),
-                        "cache_request_hit_rate": (
+                        "logical_neuron_request_hit_rate": (
                             1.0 - stats["faults"] / max(stats["requests"], 1)
                         ),
+                        "physical_bytes_per_token": None,
                         **quality,
                     }
                 )
 
     payload = {
-        "experiment": "hf_oracle_physical_cache_frontier_v0",
+        "experiment": "hf_oracle_logical_neuron_cache_frontier_v1",
         "model": args.model,
+        "requested_revision": args.revision,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
+        "torch_version": torch.__version__,
+        "transformers_version": transformers.__version__,
         "prompts": len(texts),
         "decode_steps": args.decode_steps,
         "rows": rows,
+        "physical_bytes_per_token": None,
         "claim_boundary": (
             "Current active neurons are selected with exact dense activations, so "
             "this is an oracle lower bound rather than a deployable address path. "
             "The sparse candidate evaluates exact selected weights and quality is "
-            "measured along held-out dense greedy trajectories. Cache faults count "
-            "only selected pages absent from an LRU-like resident working set. "
-            "Reported fractions remain analytic until a selective kernel and "
+            "measured along dense greedy trajectories. Logical faults count only "
+            "selected neurons absent from an LRU-like simulated resident set. "
+            "They are not pages or physical transfers. Results remain analytic until a "
+            "compiled layout, selective kernel, and "
             "hardware profiler measure real HBM/cache traffic."
         ),
     }
+    try:
+        payload["git_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        payload["git_commit"] = None
     rendered = json.dumps(payload, indent=2, sort_keys=True)
     print(rendered)
     if args.json_out:
-        Path(args.json_out).write_text(rendered + "\n", encoding="utf-8")
+        atomic_write(args.json_out, rendered + "\n")
 
 
 if __name__ == "__main__":

@@ -299,7 +299,7 @@ def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Ten
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        idx = selected[row].to(hidden.device)
+        idx = selected[row].to(hidden.device).sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -560,9 +560,9 @@ def main() -> None:
     metadata = metadata_fraction(full_head, delta_head, mlp)
     rows = []
     for multiplier in args.cache_multipliers:
-        faults = cache_stats[multiplier]["faults"]
+        misses = cache_stats[multiplier]["faults"]
         requests = cache_stats[multiplier]["requests"]
-        per_state_fault_fraction = faults / (len(all_kl) * width)
+        per_state_miss_fraction = misses / (len(all_kl) * width)
         rows.append(
             {
                 "cache_multiplier": multiplier,
@@ -575,12 +575,12 @@ def main() -> None:
                 "max_kl_nats": float(kl.max().item()),
                 "top1_agreement": float(agree.mean().item()),
                 "exact_rollout_fraction": exact_rollouts / len(test_texts),
-                "physical_fault_fraction_of_full_mlp": per_state_fault_fraction,
-                "fault_reduction_vs_stateless_selected_payload": (
-                    1.0 - per_state_fault_fraction / args.fraction
+                "logical_neuron_miss_fraction_of_full_mlp": per_state_miss_fraction,
+                "logical_miss_reduction_vs_stateless_selected_payload": (
+                    1.0 - per_state_miss_fraction / args.fraction
                 ),
-                "cache_request_hit_rate": 1.0 - faults / max(requests, 1),
-                "metadata_plus_physical_fault_fraction": metadata + per_state_fault_fraction,
+                "cache_request_hit_rate": 1.0 - misses / max(requests, 1),
+                "metadata_plus_logical_miss_fraction": metadata + per_state_miss_fraction,
             }
         )
 
@@ -600,10 +600,10 @@ def main() -> None:
             "The first decode state uses a tiny full address head; later states use "
             "a tiny hidden-delta address head plus the previous selected set as a "
             "persistence prior. Exact selected cold weights are evaluated, while an "
-            "LRU-like resident cache accounts only newly missing selected pages as "
-            "physical faults. The PyTorch hook still runs the dense MLP before "
-            "replacement, so physical fault fractions are analytic until a true "
-            "selective kernel and hardware profiler confirm them."
+            "LRU-like resident cache accounts for newly missing selected neuron rows. "
+            "The PyTorch hook still runs the dense MLP before replacement, so these "
+            "are logical cache events; physical bytes remain unknown until a true "
+            "selective kernel and hardware profiler measure them."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)

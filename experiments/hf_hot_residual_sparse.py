@@ -174,7 +174,7 @@ def selected_contribution_from_activation(
     weight = mlp.down_proj.weight.detach().float().cpu()
     rows = []
     for row in range(activation.shape[0]):
-        idx = selected[row]
+        idx = selected[row].sort().values
         rows.append(
             torch.nn.functional.linear(
                 activation[row, idx],
@@ -295,7 +295,7 @@ def sparse_contribution(
     rows = []
     fn = act_fn(mlp)
     for row in range(hidden.shape[0]):
-        idx = selected[row]
+        idx = selected[row].sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -502,6 +502,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
 
     def encode(rows: list[str]) -> dict[str, Tensor]:
         batch = tokenizer(

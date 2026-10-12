@@ -217,21 +217,21 @@ def sparse_hidden(
     rows = []
     wt = down_weight.T.detach().float().cpu()
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         contribution = (activation[row, index, None] * wt[index]).sum(dim=0)
         rows.append(base_hidden[row] + contribution)
     return torch.stack(rows)
 
 
+@torch.inference_mode()
 def exact_logits_from_hidden(
     hidden: Tensor,
     norm: nn.Module,
     lm_head: nn.Linear,
 ) -> Tensor:
-    norm_cpu = norm.cpu()
-    head_cpu = lm_head.cpu()
-    normalized = norm_cpu(hidden.to(norm_cpu.weight.dtype))
-    return head_cpu(normalized).float()
+    device = norm.weight.device
+    normalized = norm(hidden.to(device=device, dtype=norm.weight.dtype))
+    return lm_head(normalized).float().cpu()
 
 
 def distribution_metrics(reference: Tensor, candidate: Tensor) -> tuple[Tensor, Tensor]:
@@ -252,7 +252,7 @@ def set_overlap(current: Tensor, previous: Tensor) -> float:
 def update_cache(cache: list[int], selected: Tensor, budget: int) -> tuple[list[int], int]:
     requested = selected.tolist()
     resident = set(cache)
-    faults = sum(1 for index in requested if index not in resident)
+    misses = sum(1 for index in requested if index not in resident)
 
     ordered: list[int] = []
     seen: set[int] = set()
@@ -263,12 +263,13 @@ def update_cache(cache: list[int], selected: Tensor, budget: int) -> tuple[list[
         ordered.append(index)
         if len(ordered) >= budget:
             break
-    return ordered, faults
+    return ordered, misses
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--decode-steps", type=int, default=6)
@@ -283,6 +284,7 @@ def main() -> None:
         default=[1.0, 1.5, 2.0, 3.0],
     )
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--dtype",
         choices=["float32", "float16", "bfloat16"],
@@ -301,12 +303,17 @@ def main() -> None:
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
+        revision=args.revision,
         torch_dtype=dtype,
     ).to(device)
     model.eval()
@@ -328,7 +335,7 @@ def main() -> None:
         exact_rollouts = 0
         total_states = 0
         cache_stats = {
-            multiplier: {"faults": 0, "steady_faults": 0, "requests": 0}
+            multiplier: {"misses": 0, "steady_misses": 0, "requests": 0}
             for multiplier in args.cache_multipliers
         }
 
@@ -399,15 +406,15 @@ def main() -> None:
                 k = selected.shape[1]
                 for multiplier in args.cache_multipliers:
                     budget = max(k, min(width, round(k * multiplier)))
-                    caches[multiplier], faults = update_cache(
+                    caches[multiplier], misses = update_cache(
                         caches[multiplier],
                         selected[0],
                         budget,
                     )
-                    cache_stats[multiplier]["faults"] += faults
+                    cache_stats[multiplier]["misses"] += misses
                     cache_stats[multiplier]["requests"] += k
                     if step > 0:
-                        cache_stats[multiplier]["steady_faults"] += faults
+                        cache_stats[multiplier]["steady_misses"] += misses
 
                 previous_selected = selected[0].detach().clone()
                 token = reference.argmax(dim=-1).to(device)
@@ -454,8 +461,8 @@ def main() -> None:
         for multiplier in args.cache_multipliers:
             stats = cache_stats[multiplier]
             steady_states = len(texts) * max(args.decode_steps - 1, 1)
-            amortized_fault_fraction = stats["faults"] / (total_states * width)
-            steady_fault_fraction = stats["steady_faults"] / (steady_states * width)
+            amortized_miss_fraction = stats["misses"] / (total_states * width)
+            steady_miss_fraction = stats["steady_misses"] / (steady_states * width)
             rows.append(
                 {
                     "top_logit_tangent_dim": args.top_logits,
@@ -465,21 +472,26 @@ def main() -> None:
                         1.0,
                         fraction * multiplier,
                     ),
-                    "amortized_physical_fault_fraction": amortized_fault_fraction,
-                    "steady_state_physical_fault_fraction": steady_fault_fraction,
-                    "fault_reduction_vs_stateless_sparse": (
-                        1.0 - steady_fault_fraction / selected_fraction
+                    "amortized_logical_neuron_miss_fraction": amortized_miss_fraction,
+                    "steady_state_logical_neuron_miss_fraction": steady_miss_fraction,
+                    "logical_miss_reduction_vs_stateless_sparse": (
+                        1.0 - steady_miss_fraction / selected_fraction
                     ),
                     "cache_request_hit_rate": (
-                        1.0 - stats["faults"] / max(stats["requests"], 1)
+                        1.0 - stats["misses"] / max(stats["requests"], 1)
                     ),
                     **quality,
                 }
             )
 
     payload = {
-        "experiment": "hf_temporal_logit_tangent_cache_v0",
+        "experiment": "hf_temporal_logit_tangent_cache_v1",
         "model": args.model,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
         "layer": len(layers) - 1,
         "prompts": len(texts),
         "decode_steps": args.decode_steps,
@@ -489,9 +501,10 @@ def main() -> None:
             "so this test is not deployable. It asks one narrow question: whether "
             "probability-optimal exact working sets both preserve dense next-token "
             "behavior and exhibit enough temporal locality that only a small set "
-            "of new exact weight rows must move per decode step. Physical fault "
-            "fractions are analytic until confirmed with a selective kernel and "
-            "hardware profiler."
+            "of new exact weight rows would be requested per decode step. Reported "
+            "misses are logical neuron-cache events, not physical transfers. Physical "
+            "bytes and latency remain unknown until confirmed with a selective kernel "
+            "and hardware profiler."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)

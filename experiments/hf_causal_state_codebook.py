@@ -302,7 +302,7 @@ def sparse_exact_output(
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        idx = codebook[state[row]].to(hidden.device)
+        idx = codebook[state[row]].to(hidden.device).sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -480,6 +480,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     train_encoded = encode(tokenizer, train_texts, device, args.max_length)
     test_encoded = encode(tokenizer, test_texts, device, args.max_length)
 

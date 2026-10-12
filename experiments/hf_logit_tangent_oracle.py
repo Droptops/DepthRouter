@@ -233,7 +233,7 @@ def sparse_hidden(
     rows = []
     wt = down_weight.T.float()
     for row in range(activation.shape[0]):
-        index = selected[row]
+        index = selected[row].sort().values
         contribution = (
             activation[row, index, None] * wt[index]
         ).sum(dim=0)
@@ -304,6 +304,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     encoded = tokenizer(
         load_texts(args.text_file),
         return_tensors="pt",

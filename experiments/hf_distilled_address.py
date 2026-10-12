@@ -220,7 +220,7 @@ def sparse_exact_output(
     rows = []
     fn = act_fn(mlp)
     for row in range(hidden.shape[0]):
-        idx = selected[row]
+        idx = selected[row].sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -373,6 +373,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
 
     def encode(rows: list[str]) -> dict[str, Tensor]:
         batch = tokenizer(

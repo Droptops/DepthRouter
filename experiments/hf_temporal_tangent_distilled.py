@@ -198,6 +198,59 @@ def teacher_selected(
     )
 
 
+def marginal_gain_ranks(effects: Tensor) -> Tensor:
+    """Return per-row percentile ranks for each neuron's first-step tangent gain."""
+
+    target = effects.sum(dim=1)
+    gain = 2.0 * torch.einsum("bm,bnm->bn", target, effects)
+    gain = gain - effects.square().sum(dim=-1)
+    order = torch.argsort(gain, dim=-1)
+    width = gain.shape[-1]
+    scale = max(width - 1, 1)
+    values = torch.arange(width, dtype=torch.float32)[None, :] / scale
+    ranks = torch.empty_like(gain, dtype=torch.float32)
+    ranks.scatter_(1, order, values.expand(gain.shape[0], -1))
+    return ranks
+
+
+def teacher_selected_and_ranks(
+    reference: Tensor,
+    dense_hidden: Tensor,
+    activation: Tensor,
+    mlp: nn.Module,
+    norm: nn.Module,
+    lm_head: nn.Linear,
+    *,
+    fraction: float,
+    top_logits: int,
+    block_size: int,
+) -> tuple[Tensor, Tensor]:
+    """Return the greedy working set plus continuous marginal-utility ranks."""
+
+    top_ids = torch.topk(
+        reference,
+        k=min(top_logits, reference.shape[-1]),
+        dim=-1,
+    ).indices
+    jacobian = rmsnorm_logit_jacobian(
+        dense_hidden,
+        top_ids,
+        norm,
+        lm_head,
+    )
+    effects = projected_neuron_effects(
+        activation,
+        mlp.down_proj.weight,
+        jacobian,
+    )
+    selected = greedy_effect_indices(
+        effects,
+        fraction=fraction,
+        block_size=block_size,
+    )
+    return selected, marginal_gain_ranks(effects)
+
+
 class TemporalAddressHead(nn.Module):
     def __init__(self, hidden: int, width: int, rank: int) -> None:
         super().__init__()
@@ -237,7 +290,7 @@ def collect_training_states(
     top_logits: int,
     block_size: int,
     device: torch.device,
-) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     mlp = layer.mlp
     norm = model.model.norm
     lm_head = model.lm_head
@@ -247,6 +300,7 @@ def collect_training_states(
     previous_hidden: list[Tensor] = []
     previous_mask: list[Tensor] = []
     labels: list[Tensor] = []
+    gain_ranks: list[Tensor] = []
 
     for text in texts:
         prefix = tokenizer(
@@ -268,7 +322,7 @@ def collect_training_states(
             hidden = hidden.detach().clone()
             dense_hidden = dense_hidden.detach().clone()
             activation = activation.detach().clone()
-            selected = teacher_selected(
+            selected, ranks = teacher_selected_and_ranks(
                 reference,
                 dense_hidden,
                 activation,
@@ -288,6 +342,7 @@ def collect_training_states(
                 previous_hidden.append(prev_hidden)
                 previous_mask.append(labels_from_indices(prev_selected, width))
             labels.append(labels_from_indices(selected, width))
+            gain_ranks.append(ranks)
 
             prev_hidden = hidden
             prev_selected = selected
@@ -299,6 +354,7 @@ def collect_training_states(
         torch.cat(previous_hidden).detach().clone(),
         torch.cat(previous_mask).detach().clone(),
         torch.cat(labels).detach().clone(),
+        torch.cat(gain_ranks).detach().clone(),
     )
 
 
@@ -307,12 +363,15 @@ def train_head(
     previous: Tensor,
     previous_mask: Tensor,
     labels: Tensor,
+    gain_ranks: Tensor,
     *,
     rank: int,
     steps: int,
     batch_size: int,
     lr: float,
     seed: int,
+    loss_mode: str,
+    ordinal_weight: float,
 ) -> TemporalAddressHead:
     torch.manual_seed(seed)
     head = TemporalAddressHead(current.shape[-1], labels.shape[-1], rank)
@@ -338,6 +397,23 @@ def train_head(
             labels[index],
             pos_weight=pos_weight,
         )
+        if loss_mode == "hybrid-rank":
+            centered_logits = logits - logits.mean(dim=-1, keepdim=True)
+            normalized_logits = centered_logits / centered_logits.std(
+                dim=-1,
+                keepdim=True,
+            ).clamp_min(1e-6)
+            target = gain_ranks[index]
+            centered_target = target - target.mean(dim=-1, keepdim=True)
+            normalized_target = centered_target / centered_target.std(
+                dim=-1,
+                keepdim=True,
+            ).clamp_min(1e-6)
+            ordinal_loss = torch.nn.functional.smooth_l1_loss(
+                normalized_logits,
+                normalized_target,
+            )
+            loss = loss + ordinal_weight * ordinal_loss
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
@@ -348,7 +424,7 @@ def sparse_exact_output(hidden: Tensor, mlp: nn.Module, selected: Tensor) -> Ten
     fn = getattr(mlp, "act_fn", torch.nn.functional.silu)
     rows = []
     for row in range(hidden.shape[0]):
-        index = selected[row].to(hidden.device)
+        index = selected[row].to(hidden.device).sort().values
         x = hidden[row]
         gate = torch.nn.functional.linear(
             x,
@@ -395,6 +471,7 @@ def metadata_fraction(head: TemporalAddressHead, mlp: nn.Module) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--revision")
     parser.add_argument("--text-file")
     parser.add_argument("--max-length", type=int, default=32)
     parser.add_argument("--train-decode-steps", type=int, default=8)
@@ -402,12 +479,23 @@ def main() -> None:
     parser.add_argument("--max-train-prompts", type=int, default=20)
     parser.add_argument("--max-test-prompts", type=int, default=20)
     parser.add_argument("--fraction", type=float, default=0.30)
+    parser.add_argument(
+        "--execution-fraction",
+        type=float,
+        help="causal selected width; defaults to the teacher target fraction",
+    )
     parser.add_argument("--top-logits", type=int, default=128)
     parser.add_argument("--block-size", type=int, default=32)
     parser.add_argument("--rank", type=int, default=16)
     parser.add_argument("--steps", type=int, default=500)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=3e-3)
+    parser.add_argument(
+        "--loss-mode",
+        choices=["binary", "hybrid-rank"],
+        default="binary",
+    )
+    parser.add_argument("--ordinal-weight", type=float, default=1.0)
     parser.add_argument("--cache-multipliers", nargs="+", type=float, default=[1.0, 1.5, 2.0])
     parser.add_argument("--seed", type=int, default=907)
     parser.add_argument("--device", default="auto")
@@ -429,17 +517,22 @@ def main() -> None:
     if device.type == "cpu" and dtype == torch.float16:
         dtype = torch.float32
 
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
     texts = load_texts(args.text_file)
     split = len(texts) // 2
     train_texts = texts[:split][: args.max_train_prompts]
     test_texts = texts[split:][: args.max_test_prompts]
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
+        revision=args.revision,
         torch_dtype=dtype,
     ).to(device)
     model.eval()
@@ -447,9 +540,20 @@ def main() -> None:
     layer = layers[-1]
     mlp = layer.mlp
     width = mlp.down_proj.in_features
-    k = max(1, min(width, round(width * args.fraction)))
+    execution_fraction = (
+        args.fraction if args.execution_fraction is None else args.execution_fraction
+    )
+    if not 0.0 < execution_fraction <= 1.0:
+        raise ValueError("execution fraction must be in (0, 1]")
+    k = max(1, min(width, round(width * execution_fraction)))
 
-    train_current, train_previous, train_previous_mask, train_labels = collect_training_states(
+    (
+        train_current,
+        train_previous,
+        train_previous_mask,
+        train_labels,
+        train_gain_ranks,
+    ) = collect_training_states(
         model,
         layer,
         tokenizer,
@@ -466,15 +570,18 @@ def main() -> None:
         train_previous,
         train_previous_mask,
         train_labels,
+        train_gain_ranks,
         rank=args.rank,
         steps=args.steps,
         batch_size=args.batch_size,
         lr=args.lr,
         seed=args.seed,
+        loss_mode=args.loss_mode,
+        ordinal_weight=args.ordinal_weight,
     )
 
     cache_stats = {
-        multiplier: {"faults": 0, "steady_faults": 0, "requests": 0}
+        multiplier: {"misses": 0, "steady_misses": 0, "requests": 0}
         for multiplier in args.cache_multipliers
     }
     all_kl: list[Tensor] = []
@@ -565,15 +672,15 @@ def main() -> None:
 
             for multiplier in args.cache_multipliers:
                 budget = max(k, min(width, round(k * multiplier)))
-                caches[multiplier], faults = update_cache(
+                caches[multiplier], misses = update_cache(
                     caches[multiplier],
                     selected,
                     budget,
                 )
-                cache_stats[multiplier]["faults"] += faults
+                cache_stats[multiplier]["misses"] += misses
                 cache_stats[multiplier]["requests"] += k
                 if step > 0:
-                    cache_stats[multiplier]["steady_faults"] += faults
+                    cache_stats[multiplier]["steady_misses"] += misses
 
             prev_hidden = hidden
             prev_selected = selected
@@ -589,23 +696,28 @@ def main() -> None:
     for multiplier in args.cache_multipliers:
         stats = cache_stats[multiplier]
         steady_states = len(test_texts) * max(args.test_decode_steps - 1, 1)
-        steady_fault_fraction = stats["steady_faults"] / (steady_states * width)
-        amortized_fault_fraction = stats["faults"] / (states * width)
+        steady_miss_fraction = stats["steady_misses"] / (steady_states * width)
+        amortized_miss_fraction = stats["misses"] / (states * width)
         rows.append(
             {
                 "cache_multiplier": multiplier,
-                "cache_fraction_of_mlp_width": min(1.0, args.fraction * multiplier),
-                "selected_payload_fraction": args.fraction,
+                "cache_fraction_of_mlp_width": min(
+                    1.0,
+                    execution_fraction * multiplier,
+                ),
+                "teacher_target_fraction": args.fraction,
+                "selected_payload_fraction": execution_fraction,
                 "resident_address_fraction": metadata,
                 "mean_oracle_set_recall": sum(all_recall) / len(all_recall),
-                "amortized_physical_fault_fraction": amortized_fault_fraction,
-                "steady_state_physical_fault_fraction": steady_fault_fraction,
-                "metadata_plus_steady_fault_fraction": metadata + steady_fault_fraction,
-                "fault_reduction_vs_stateless_sparse": (
-                    1.0 - steady_fault_fraction / args.fraction
+                "amortized_logical_neuron_miss_fraction": amortized_miss_fraction,
+                "steady_state_logical_neuron_miss_fraction": steady_miss_fraction,
+                "metadata_plus_steady_logical_miss_fraction": metadata
+                + steady_miss_fraction,
+                "logical_miss_reduction_vs_stateless_sparse": (
+                    1.0 - steady_miss_fraction / execution_fraction
                 ),
                 "cache_request_hit_rate": (
-                    1.0 - stats["faults"] / max(stats["requests"], 1)
+                    1.0 - stats["misses"] / max(stats["requests"], 1)
                 ),
                 "mean_kl_nats": float(kl.mean().item()),
                 "p95_kl_nats": float(torch.quantile(kl, 0.95).item()),
@@ -618,10 +730,18 @@ def main() -> None:
     payload = {
         "experiment": "hf_temporal_tangent_distilled_v0",
         "model": args.model,
+        "model_revision": getattr(model.config, "_commit_hash", None) or args.revision,
+        "tokenizer_revision": tokenizer.init_kwargs.get("_commit_hash") or args.revision,
+        "seed": args.seed,
+        "device": str(device),
+        "dtype": str(dtype),
         "layer": len(layers) - 1,
-        "fraction": args.fraction,
+        "teacher_target_fraction": args.fraction,
+        "execution_fraction": execution_fraction,
         "top_logit_tangent_dim": args.top_logits,
         "rank": args.rank,
+        "loss_mode": args.loss_mode,
+        "ordinal_weight": args.ordinal_weight,
         "train_prompts": len(train_texts),
         "test_prompts": len(test_texts),
         "train_decode_steps": args.train_decode_steps,
@@ -632,10 +752,13 @@ def main() -> None:
             "The training teacher uses dense local logit-tangent working sets. "
             "At held-out runtime, the address head sees only the current MLP input, "
             "the previous hidden state, and the previous predicted working-set mask. "
-            "Selected neurons use exact cold weights. Cache accounting charges only "
+            "The execution fraction may exceed the teacher target fraction to test a "
+            "causal safety envelope. Selected neurons use exact cold weights. Cache "
+            "accounting charges only "
             "newly missing selected rows. PyTorch hooks still execute the dense MLP "
-            "before replacement, so physical byte savings remain analytic until a "
-            "selective kernel and hardware profiler confirm them."
+            "before replacement. Reported cache misses are logical neuron-row events; "
+            "physical bytes and savings remain unknown until a selective kernel and "
+            "hardware profiler confirm them."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)
