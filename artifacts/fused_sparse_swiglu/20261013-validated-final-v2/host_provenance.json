@@ -1,0 +1,7 @@
+{
+  "base_branch": "research/photonic-parallel-minimal-inference",
+  "base_commit": "55aec303c7148c228defe9b7dedfc89936a58aa6",
+  "experiment_branch": "codex/fused-sparse-swiglu",
+  "main_merged": false,
+  "pr_14_modified": false
+}

@@ -16,3 +16,8 @@ artifacts/photonic_parallel/20261012-overnight/
 artifacts/predictive_working_set/20261013-final/
 artifacts/predictive_working_set/20261013-final3/
 artifacts/predictive_working_set/20261013-validated/
+artifacts/fused_sparse_swiglu/**/*.pt
+artifacts/fused_sparse_swiglu/20261013-development-negative/
+artifacts/fused_sparse_swiglu/20261013-failed-*/
+artifacts/fused_sparse_swiglu/20261013-kernel-tuning*/
+artifacts/fused_sparse_swiglu/20261013-validated-final/

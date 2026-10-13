@@ -78,3 +78,9 @@ The larger causal working-set follow-up is documented in
 [`PREDICTIVE_WORKING_SET_REPORT.md`](PREDICTIVE_WORKING_SET_REPORT.md). It retained
 the negative neuron-level result, skipped the fused benchmark because quality
 failed, and recorded the first structured operator-page pivot.
+
+The RTX 4070 SUPER fused-kernel follow-up is documented in
+[`FUSED_SPARSE_SWIGLU_REPORT.md`](FUSED_SPARSE_SWIGLU_REPORT.md). A prepacked 75%
+Triton kernel beats dense execution only as a non-deployable upper bound; no
+sub-full policy passes the quality gate, while graph-captured full-width dense
+execution remains the fastest exact implementation.

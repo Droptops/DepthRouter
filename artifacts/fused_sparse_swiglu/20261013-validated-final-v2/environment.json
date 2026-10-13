@@ -1,0 +1,21 @@
+{
+  "cuda_runtime": "12.8",
+  "cudnn": 90701,
+  "git_branch": "unavailable: [Errno 2] No such file or directory: 'git'",
+  "git_commit": "unavailable: [Errno 2] No such file or directory: 'git'",
+  "git_status": "unavailable: [Errno 2] No such file or directory: 'git'",
+  "gpu": "NVIDIA GeForce RTX 4070 SUPER",
+  "gpu_compute_capability": [
+    8,
+    9
+  ],
+  "gpu_total_memory_bytes": 12878086144,
+  "ncu_path": null,
+  "ncu_version": null,
+  "nvidia_smi": "NVIDIA GeForce RTX 4070 SUPER, 12282, 11169, 610.88, 43, 275.00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "python": "3.11.13",
+  "torch": "2.7.1+cu128",
+  "transformers": "4.57.1",
+  "triton": "3.3.1"
+}
