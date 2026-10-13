@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-
 SPLIT_SIZES = {
     "calibration": 256,
     "development": 256,

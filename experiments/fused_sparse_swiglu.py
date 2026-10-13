@@ -219,7 +219,7 @@ def capture_split(
     log: RunLog,
 ) -> Capture:
     mlp = resolve_mlp(layer)
-    post_norm = getattr(layer, "post_attention_layernorm")
+    post_norm = layer.post_attention_layernorm
     captured: dict[str, Tensor] = {}
     states: list[Tensor] = []
     activations: list[Tensor] = []
@@ -786,7 +786,7 @@ def benchmark_kernels(
         for name, fraction, module in implementations:
             try:
                 stats, peak = benchmark_callable(
-                    lambda module=module: module(x),
+                    lambda module=module, x=x: module(x),
                     device=device,
                     batch=int(batch),
                     warmup=int(config["kernel_warmup"]),
