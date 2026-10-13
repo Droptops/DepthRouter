@@ -1,0 +1,17 @@
+ARG BASE_IMAGE=depthrouter-photonic:local
+FROM ${BASE_IMAGE}
+
+# Keep the profiler out of the runtime image: it is large and only needed for
+# explicit hardware-counter captures.  The NVIDIA repository is pinned to the
+# Ubuntu release used by the PyTorch CUDA image.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget \
+    && wget -q \
+        https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb \
+        -O /tmp/cuda-keyring.deb \
+    && dpkg -i /tmp/cuda-keyring.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nsight-compute-2026.3.1 \
+    && rm -rf /var/lib/apt/lists/* /tmp/cuda-keyring.deb
+
+ENV PATH="/opt/nvidia/nsight-compute/2026.3.1:${PATH}"

@@ -1,0 +1,19 @@
+{
+  "attempted": true,
+  "container_image": "depthrouter-photonic:ncu",
+  "hardware_hbm_bytes_available": false,
+  "hardware_occupancy_available": false,
+  "install_source": "NVIDIA CUDA apt repository for Ubuntu 22.04",
+  "nsight_compute_version": "2026.3.1.0",
+  "result": "ERR_NVGPUCTRPERM",
+  "target": {
+    "batch_size": 1,
+    "method": "triton_partial_m16_n32_w4",
+    "retained_fraction": 0.75
+  },
+  "unavailable_metrics": [
+    "measured HBM traffic",
+    "achieved occupancy"
+  ],
+  "user_action_if_reprofiling": "Enable NVIDIA GPU performance counters for all users in the Windows NVIDIA Control Panel, then rerun the documented ncu command."
+}

@@ -1,0 +1,61 @@
+{
+  "decision_failure": {
+    "decision": "NO_DEPLOYABLE_SPARSE_POLICY_PASSED_DEVELOPMENT",
+    "development_gate": {
+      "mean_kl_strictly_below": 0.01,
+      "top1_agreement_at_least": 0.99
+    },
+    "best_deployable_sub_full_policy": {
+      "mean_kl": 0.001594509470599803,
+      "method": "static_output_sensitive_f0.95",
+      "retained_fraction": 0.9500411184210527,
+      "top1_agreement": 0.97265625
+    },
+    "frozen_negative_heldout_audit": {
+      "actual_triton_mean_kl": 0.02167044873452717,
+      "actual_triton_top1_agreement": 0.955078125,
+      "matched_mean_kl": 0.002211175304930535,
+      "matched_top1_agreement": 0.95703125,
+      "ood_mean_kl": 0.041129722164123805,
+      "ood_top1_agreement": 0.953125
+    }
+  },
+  "instrumentation_failure": {
+    "effect": "Hardware HBM traffic and achieved occupancy remain null; Torch traces and analytic minimum bytes are retained.",
+    "error": "ERR_NVGPUCTRPERM",
+    "log": "profiler/ncu-triton-b1-f0.75.log",
+    "nsight_compute_version": "2026.3.1.0"
+  },
+  "invalidated_runs": [
+    {
+      "name": "20261013-failed-autograd",
+      "reason": "The learned residual target retained an autograd graph.",
+      "resolution": "Detached the calibration residual target before optimization."
+    },
+    {
+      "name": "20261013-failed-rank-parser",
+      "reason": "Residual-rank metadata was parsed from the wrong method-name segment.",
+      "resolution": "Parsed the rank after the residual_r marker and reran."
+    },
+    {
+      "name": "20261013-failed-logit-quantization",
+      "reason": "Reference logits were serialized at BF16, contaminating small-KL comparisons.",
+      "resolution": "Preserved captured logits in FP32 and reran all quality arms."
+    },
+    {
+      "name": "20261013-failed-offline-reduction",
+      "reason": "Offline last-token reconstruction changed GEMM shapes and reduction order relative to model execution.",
+      "resolution": "Measured quality by replacing the MLP in the complete model forward pass."
+    },
+    {
+      "name": "20261013-failed-topk-tie-metric",
+      "reason": "The reference used the first index from topk while the candidate used argmax, producing false disagreements on tied logits.",
+      "resolution": "Used argmax for both reference and candidate; retained topk only for margin analysis."
+    },
+    {
+      "name": "20261013-development-negative",
+      "reason": "The corrected individual-neuron sweep had no sub-full development pass.",
+      "resolution": "Added the preregistered structured contiguous-page pivot, kept held-out sealed, and reran the final audit."
+    }
+  ]
+}

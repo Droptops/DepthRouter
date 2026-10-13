@@ -1,0 +1,6 @@
+{
+  "low_margin_threshold": 0.125,
+  "mean_logit_effect_cancellation_ratio": 0.035237230360507965,
+  "mean_margin": 0.38037109375,
+  "p05_logit_effect_cancellation_ratio": 0.002602194668725133
+}

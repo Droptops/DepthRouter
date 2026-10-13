@@ -1,0 +1,68 @@
+{
+  "decision": "NO_DEPLOYABLE_SPARSE_POLICY_PASSED_DEVELOPMENT",
+  "end_to_end_executed": false,
+  "free_running_generation_executed": false,
+  "kernel_upper_bound": [
+    {
+      "batch_size": 1,
+      "conservative_ci95_speedup": 1.8727102391554211,
+      "dense_median_ms": 0.03788800165057182,
+      "median_speedup": 1.9473685923702007,
+      "sparse_median_ms": 0.01945599913597107,
+      "sparse_method": "triton_partial_m16_n32_w4"
+    },
+    {
+      "batch_size": 8,
+      "conservative_ci95_speedup": 1.5459604267612193,
+      "dense_median_ms": 0.027648000046610832,
+      "median_speedup": 1.5882352689413235,
+      "sparse_median_ms": 0.01740800030529499,
+      "sparse_method": "triton_partial_m16_n32_w4"
+    },
+    {
+      "batch_size": 32,
+      "conservative_ci95_speedup": 1.2783505138809028,
+      "dense_median_ms": 0.04198399931192398,
+      "median_speedup": 1.366666678793263,
+      "sparse_median_ms": 0.030719999223947525,
+      "sparse_method": "triton_partial_m16_n64_w4"
+    }
+  ],
+  "quality": {
+    "development_gate_passed": false,
+    "frozen_negative_policy": "static_output_sensitive_f0.95",
+    "frozen_policy_development_mean_kl": 0.001594509470599803,
+    "frozen_policy_development_top1_agreement": 0.97265625,
+    "heldout_actual_triton_mean_kl": 0.02167044873452717,
+    "heldout_actual_triton_top1_agreement": 0.955078125,
+    "mean_kl_gate": 0.01,
+    "top1_agreement_gate": 0.99
+  },
+  "promotion_conditions": {
+    "credible_end_to_end_speedup": false,
+    "development_quality": false,
+    "full_overhead_accounting": false,
+    "heldout_quality": false,
+    "no_task_degradation": false
+  },
+  "separate_full_width_engineering_result": [
+    {
+      "batch_size": 1,
+      "execution": "cuda_graph",
+      "median_ms": 0.03788800165057182,
+      "method": "dense_eager"
+    },
+    {
+      "batch_size": 8,
+      "execution": "cuda_graph",
+      "median_ms": 0.027648000046610832,
+      "method": "dense_eager"
+    },
+    {
+      "batch_size": 32,
+      "execution": "cuda_graph",
+      "median_ms": 0.04198399931192398,
+      "method": "dense_eager"
+    }
+  ]
+}
