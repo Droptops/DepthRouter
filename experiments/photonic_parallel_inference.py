@@ -19,9 +19,10 @@ import shutil
 import subprocess
 import time
 from collections import defaultdict
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Callable, Iterator, Sequence
+from typing import Any
 
 import numpy as np
 import torch
@@ -37,7 +38,6 @@ from depth_router.photonic_parallel import (
     swiglu_subset,
     top_fraction_indices,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DATASET_PATH = ROOT / "data" / "photonic_parallel_manifest.jsonl"
@@ -331,7 +331,7 @@ def run_dense_baseline(
         )
 
         prefill, prefill_peak = benchmark_call(
-            lambda: model(**encoded, use_cache=False),
+            lambda encoded=encoded: model(**encoded, use_cache=False),
             warmup=warmup,
             repetitions=repetitions,
             device=device,
@@ -356,13 +356,15 @@ def run_dense_baseline(
             "eos_token_id": tokenizer.eos_token_id,
         }
         ttft, ttft_peak = benchmark_call(
-            lambda: model.generate(**generation_kwargs, max_new_tokens=1),
+            lambda generation_kwargs=generation_kwargs: model.generate(
+                **generation_kwargs, max_new_tokens=1
+            ),
             warmup=max(2, warmup // 2),
             repetitions=max(5, repetitions // 2),
             device=device,
         )
         full, full_peak = benchmark_call(
-            lambda: model.generate(
+            lambda generation_kwargs=generation_kwargs: model.generate(
                 **generation_kwargs,
                 max_new_tokens=int(config["max_new_tokens"]),
             ),
@@ -1099,7 +1101,7 @@ def benchmark_operators(
     for batch in config["operator_batch_sizes"]:
         x = torch.randn(int(batch), 1, hidden_size, device=device, dtype=dtype)
         dense_stats, dense_peak = benchmark_call(
-            lambda: mlp(x), warmup=warmup, repetitions=repetitions, device=device
+            lambda x=x: mlp(x), warmup=warmup, repetitions=repetitions, device=device
         )
         rows.append(
             {
@@ -1115,7 +1117,10 @@ def benchmark_operators(
             }
         )
         packed_stats, packed_peak = benchmark_call(
-            lambda: packed(x), warmup=warmup, repetitions=repetitions, device=device
+            lambda packed=packed, x=x: packed(x),
+            warmup=warmup,
+            repetitions=repetitions,
+            device=device,
         )
         rows.append(
             {
@@ -1138,7 +1143,10 @@ def benchmark_operators(
             [PackedSwiGLU(gate, up, down, indices).to(device) for indices in state_indices],
         )
         routed_stats, routed_peak = benchmark_call(
-            lambda: routed(x), warmup=warmup, repetitions=repetitions, device=device
+            lambda routed=routed, x=x: routed(x),
+            warmup=warmup,
+            repetitions=repetitions,
+            device=device,
         )
         rows.append(
             {
@@ -1157,7 +1165,7 @@ def benchmark_operators(
         for branches in config["parallel_branches"]:
             modules = make_group_modules(gate, up, down, selected, int(branches))
             serial_stats, serial_peak = benchmark_call(
-                lambda: serial_group_call(modules, x),
+                lambda modules=modules, x=x: serial_group_call(modules, x),
                 warmup=warmup,
                 repetitions=repetitions,
                 device=device,
@@ -1177,7 +1185,7 @@ def benchmark_operators(
             )
             concurrent = ConcurrentGroupExecutor(modules, device)
             concurrent_stats, concurrent_peak = benchmark_call(
-                lambda: concurrent(x),
+                lambda concurrent=concurrent, x=x: concurrent(x),
                 warmup=warmup,
                 repetitions=repetitions,
                 device=device,
@@ -1206,7 +1214,10 @@ def benchmark_operators(
         ).to(device)
         module = PackedSwiGLU(gate, up, down, sweep_indices).to(device)
         stats, peak = benchmark_call(
-            lambda: module(x), warmup=warmup, repetitions=repetitions, device=device
+            lambda module=module, x=x: module(x),
+            warmup=warmup,
+            repetitions=repetitions,
+            device=device,
         )
         fraction_rows.append(
             {
@@ -1237,17 +1248,19 @@ def benchmark_operators(
             sample_modules = make_group_modules(gate, up, down, selected, min(4, selected.numel()))
             sample_executor = ConcurrentGroupExecutor(sample_modules, device)
             trace_path = output_dir / "cuda_stream_trace.json"
-            with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
-                with record_function("concurrent_selected_swiglu"):
-                    for _ in range(5):
-                        sample_executor(x)
+            with (
+                profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof,
+                record_function("concurrent_selected_swiglu"),
+            ):
+                for _ in range(5):
+                    sample_executor(x)
             torch.cuda.synchronize(device)
             prof.export_chrome_trace(str(trace_path))
             profiler_summary["trace"] = trace_path.name
             profiler_summary["cuda_time_total_us"] = float(
                 sum(item.cuda_time_total for item in prof.key_averages())
             )
-        except Exception as exc:  # profiling support varies by image/driver
+        except Exception as exc:  # noqa: BLE001  # profiling support varies
             profiler_summary["error"] = repr(exc)
 
     heldout = [row for row in examples if row["split"] == "heldout"]
@@ -1261,7 +1274,7 @@ def benchmark_operators(
             int(config["max_prompt_tokens"]),
         )
         dense_stats, dense_peak = benchmark_call(
-            lambda: model(**encoded, use_cache=False),
+            lambda encoded=encoded: model(**encoded, use_cache=False),
             warmup=warmup,
             repetitions=max(8, repetitions // 2),
             device=device,
@@ -1276,7 +1289,7 @@ def benchmark_operators(
             seed=int(config["seed"]),
         ):
             candidate_stats, candidate_peak = benchmark_call(
-                lambda: model(**encoded, use_cache=False),
+                lambda encoded=encoded: model(**encoded, use_cache=False),
                 warmup=warmup,
                 repetitions=max(8, repetitions // 2),
                 device=device,
