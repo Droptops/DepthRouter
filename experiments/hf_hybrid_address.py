@@ -359,8 +359,8 @@ def evaluate(
         hidden_device = args[0][:, -1, :]
         hidden = hidden_device.detach().float().cpu()
         h = zscore_rows(head(hidden))
-        l = zscore_rows(lowbit_scores(hidden, mlp, bits))
-        combined = alpha * h + (1.0 - alpha) * l
+        lowbit = zscore_rows(lowbit_scores(hidden, mlp, bits))
+        combined = alpha * h + (1.0 - alpha) * lowbit
         selected = torch.topk(combined, k=k, dim=-1, sorted=False).indices
         sparse = sparse_exact_output(
             hidden_device,
