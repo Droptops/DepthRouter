@@ -1,0 +1,30 @@
+{
+  "bootstrap_draws": 2000,
+  "capture_batch_size": 16,
+  "dtype": "bfloat16",
+  "early_stop_patience": 30,
+  "evaluation_batch_size": 16,
+  "feature_variants": [
+    "state",
+    "state_transition"
+  ],
+  "fused_repetitions": 500,
+  "fused_warmup": 50,
+  "learning_rate": 0.003,
+  "max_prompt_tokens": 96,
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "operator_pages": 16,
+  "predictor_ranks": [
+    16,
+    64
+  ],
+  "quality_gate_kl": 0.01,
+  "quality_gate_top1": 0.99,
+  "retained_fraction": 0.75,
+  "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "seed": 20261013,
+  "target_layer": 23,
+  "training_batch_size": 32,
+  "training_epochs": 120,
+  "weight_decay": 0.0001
+}

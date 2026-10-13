@@ -199,3 +199,25 @@ either removes the launch/aggregation loss or confirms it.
 Raw measurements, confidence intervals, failure examples, environment metadata,
 plots, and the CUDA trace are under
 [`artifacts/photonic_parallel/20261012-final`](artifacts/photonic_parallel/20261012-final).
+
+## Predictive working-set follow-up (2026-10-13)
+
+A larger, split-isolated follow-up tested whether a lightweight causal predictor
+could recover the layer-23 contribution-norm oracle's 75% neuron set. It used 256
+calibration, 128 development, and 512 held-out prompts. Predictor feature form
+and rank were fixed before the held-out split was captured.
+
+The 100%-width reconstruction control produced effectively zero KL and 100%
+top-1 agreement. The non-deployable 75% oracle reached KL 0.000983 but only
+98.633% top-1 agreement, narrowly missing the 99% gate. The selected rank-64
+state-plus-transition predictor recovered 78.892% of oracle members but reached
+KL 0.103771 and 68.945% agreement. A calibration-static set was slightly better
+on output quality, so causal prediction did not justify its added machinery.
+
+The failure triggered a structured 16-page, 12-selected-page pivot. Even its
+page oracle failed (KL 0.208599, 66.602% agreement), establishing that the raw
+contiguous weight layout is not a sufficient operator specialization. The fused
+performance test was skipped under the preregistered decision rule.
+
+See [`PREDICTIVE_WORKING_SET_REPORT.md`](PREDICTIVE_WORKING_SET_REPORT.md) and the
+[`validated raw artifacts`](artifacts/predictive_working_set/20261013-validated-final).

@@ -33,3 +33,25 @@
 
 See [RESEARCH_REPORT.md](RESEARCH_REPORT.md) and the
 [raw run artifacts](artifacts/photonic_parallel/20261012-final).
+
+## Predictive working-set follow-up
+
+- The follow-up used 256 calibration, 128 development, and 512 held-out prompts;
+  predictor selection was complete before held-out activations were captured.
+- The 100%-width control reconstructed dense output exactly.
+- The non-deployable 75% contribution-norm oracle passed KL (0.000983) but
+  narrowly missed top-1 agreement: 98.633%, or 505/512 instead of the required
+  507/512.
+- The selected rank-64 state-plus-transition predictor recovered 78.892% of the
+  oracle set, with KL 0.103771 and 68.945% top-1 agreement. It failed decisively
+  and did not outperform a static set on output quality.
+- The automatic 16-contiguous-page pivot also failed at 75% width; even its
+  oracle reached only 66.602% agreement. The raw physical layout is therefore
+  not a useful specialization unit.
+- The fused benchmark was correctly skipped because quality did not pass. The
+  next candidate should first construct meaningful operator units (permuted
+  co-active blocks, experts with residuals, or block/low-rank components) and
+  establish oracle sufficiency before router or kernel work.
+
+See [PREDICTIVE_WORKING_SET_REPORT.md](PREDICTIVE_WORKING_SET_REPORT.md) and the
+[validated artifacts](artifacts/predictive_working_set/20261013-validated-final).

@@ -1,0 +1,362 @@
+[
+  {
+    "id": "hel-gen-0081",
+    "kl": 3.1874730587005615,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0064",
+    "kl": 2.94216251373291,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0088",
+    "kl": 2.7981743812561035,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0041",
+    "kl": 2.7883124351501465,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0065",
+    "kl": 2.777791738510132,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0048",
+    "kl": 2.7750775814056396,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0081",
+    "kl": 2.747987985610962,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0049",
+    "kl": 2.726858615875244,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0072",
+    "kl": 2.7202467918395996,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0073",
+    "kl": 2.6780834197998047,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0097",
+    "kl": 2.6710164546966553,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0080",
+    "kl": 2.6587109565734863,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0040",
+    "kl": 2.641157865524292,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0056",
+    "kl": 2.6266515254974365,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0096",
+    "kl": 2.6120474338531494,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0016",
+    "kl": 2.6108124256134033,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0008",
+    "kl": 2.607391357421875,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0024",
+    "kl": 2.5553529262542725,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0089",
+    "kl": 2.5409886837005615,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0032",
+    "kl": 2.5407702922821045,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0057",
+    "kl": 2.5277323722839355,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0089",
+    "kl": 2.4272632598876953,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0009",
+    "kl": 2.4193050861358643,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0000",
+    "kl": 2.4076452255249023,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0041",
+    "kl": 2.34098219871521,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0049",
+    "kl": 2.2846500873565674,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0073",
+    "kl": 2.2687277793884277,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0025",
+    "kl": 2.2427592277526855,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.8461538553237915,
+    "oracle_set_recall": 0.9166666865348816,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0097",
+    "kl": 2.242513418197632,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0065",
+    "kl": 2.2350411415100098,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0104",
+    "kl": 2.2341597080230713,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0112",
+    "kl": 2.2332420349121094,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0033",
+    "kl": 2.2109920978546143,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0009",
+    "kl": 2.028611421585083,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0057",
+    "kl": 2.0252223014831543,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0001",
+    "kl": 2.0241403579711914,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0033",
+    "kl": 1.9866077899932861,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0017",
+    "kl": 1.9774377346038818,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 1.0
+  },
+  {
+    "id": "hel-gen-0120",
+    "kl": 1.9199825525283813,
+    "method": "operator_page_predictor",
+    "oracle_set_jaccard": 0.7142857313156128,
+    "oracle_set_recall": 0.8333333134651184,
+    "task": "generation",
+    "top1_agreement": 0.0
+  },
+  {
+    "id": "hel-gen-0025",
+    "kl": 1.9170414209365845,
+    "method": "operator_page_oracle",
+    "oracle_set_jaccard": 1.0,
+    "oracle_set_recall": 1.0,
+    "task": "generation",
+    "top1_agreement": 0.0
+  }
+]
