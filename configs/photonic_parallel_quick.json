@@ -1,0 +1,23 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "seed": 20261012,
+  "dtype": "bfloat16",
+  "max_prompt_tokens": 64,
+  "max_new_tokens": 8,
+  "baseline_batches": [1, 8, 32],
+  "baseline_repetitions": 12,
+  "benchmark_warmup": 6,
+  "decomposition_groups": [2, 4, 8, 16],
+  "retention_fractions": [0.1, 0.25, 0.5, 0.75, 1.0],
+  "quality_layers": [23],
+  "progressive_layer_sets": [[23], [12, 23], [0, 6, 12, 18, 23]],
+  "selection_methods": ["random", "static_activation", "static_weight", "calibration_activation", "task_conditioned", "state_transition_conditioned", "oracle"],
+  "parallel_branches": [2, 4, 8, 16],
+  "operator_batch_sizes": [1, 8, 32],
+  "operator_repetitions": 40,
+  "free_running_examples": 4,
+  "profile_cuda": true,
+  "compile_baseline": false,
+  "min_vram_headroom_fraction": 0.15
+}

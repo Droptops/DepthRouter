@@ -1,0 +1,12 @@
+FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONUNBUFFERED=1 \
+    TOKENIZERS_PARALLELISM=false \
+    HF_HOME=/cache/huggingface
+
+WORKDIR /workspace
+COPY requirements-photonic.txt /tmp/requirements-photonic.txt
+RUN python -m pip install --no-cache-dir -r /tmp/requirements-photonic.txt
+
+CMD ["python", "experiments/photonic_parallel_inference.py"]

@@ -1,0 +1,92 @@
+{
+  "best_parallel_batch1_speedup": 0.4567376438972008,
+  "central_photonic_model": {
+    "amortized_programming_ns": 97.65625,
+    "area_mm2": 8.0,
+    "assumptions": {
+      "aggregation_ns": 300.0,
+      "branches": 4,
+      "controller_ns": 250.0,
+      "controller_power_w": 4.0,
+      "cooldown_ns": 2500.0,
+      "cooldown_overlaps_next_programming": true,
+      "feedback_ns": 20.0,
+      "input_conversion_ns": 250.0,
+      "iterations": 9,
+      "lane_area_mm2": 2.0,
+      "lanes": 4,
+      "matrix_programming_ns": 25000.0,
+      "optical_power_w": 8.0,
+      "readout_ns": 6400.0,
+      "readout_overlaps_feedback": false,
+      "residency_lifetime_inferences": 256
+    },
+    "claim_boundary": "Simulated optical cost; no photonic hardware was measured.",
+    "device_occupancy_ns": 9427.65625,
+    "elapsed_latency_ns": 7477.65625,
+    "energy_j_per_inference": 0.000105331875,
+    "feedback_loop_ns": 180.0,
+    "lane_utilization": 1.0,
+    "margin_ns": 74611.34375,
+    "measured_gpu_latency_ns": 82089.0,
+    "modeled_break_even": true,
+    "modeled_speedup_vs_gpu": 10.977905008671668,
+    "throughput_bound_per_second": 106070.90176840081,
+    "waves": 1
+  },
+  "free_running_dense_agreement": 1.0,
+  "measured_end_to_end_speedup": 1.0421107855579597,
+  "measured_operator_method": "packed_fraction_sweep",
+  "measured_operator_speedup": 1.187389706945931,
+  "plots": [
+    "accuracy_latency_pareto.png",
+    "photonic_break_even_heatmap.png"
+  ],
+  "quality_arm": {
+    "active_neuron_fraction": 1.0,
+    "deployable": true,
+    "failure_examples": [],
+    "layer_count": 1,
+    "layers": "23",
+    "max_kl_nats": 0.0,
+    "mean_cross_entropy_nats": 2.0587090516928583,
+    "mean_kl_ci95_high": 0.0,
+    "mean_kl_ci95_low": 0.0,
+    "mean_kl_nats": 0.0,
+    "method": "calibration_activation",
+    "p95_kl_nats": 0.0,
+    "strict_distribution_gate": true,
+    "task_mean_kl": {
+      "classification": 0.0,
+      "extraction": 0.0,
+      "generation": 0.0,
+      "numerical": 0.0
+    },
+    "task_metrics": {
+      "classification": {
+        "mean_kl_nats": 0.0,
+        "strict_distribution_gate": true,
+        "top1_agreement": 1.0
+      },
+      "extraction": {
+        "mean_kl_nats": 0.0,
+        "strict_distribution_gate": true,
+        "top1_agreement": 1.0
+      },
+      "generation": {
+        "mean_kl_nats": 0.0,
+        "strict_distribution_gate": true,
+        "top1_agreement": 1.0
+      },
+      "numerical": {
+        "mean_kl_nats": 0.0,
+        "strict_distribution_gate": true,
+        "top1_agreement": 1.0
+      }
+    },
+    "top1_agreement": 1.0,
+    "top1_agreement_ci95_high": 1.0,
+    "top1_agreement_ci95_low": 1.0
+  },
+  "quality_arm_operator_speedup": 1.171177469289923
+}

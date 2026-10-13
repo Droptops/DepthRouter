@@ -1,0 +1,24 @@
+{"id":"cal-cls-01","split":"calibration","task":"classification","prompt":"Label the sentiment as POSITIVE or NEGATIVE: The repair worked on the first retry.","answer":"POSITIVE"}
+{"id":"cal-cls-02","split":"calibration","task":"classification","prompt":"Choose ANIMAL, PLANT, or MINERAL for granite.","answer":"MINERAL"}
+{"id":"cal-ext-01","split":"calibration","task":"extraction","prompt":"Return only the city from: The conference begins in Kyoto on Tuesday.","answer":"Kyoto"}
+{"id":"cal-ext-02","split":"calibration","task":"extraction","prompt":"Extract the order code only: receipt AB-417 costs twelve dollars.","answer":"AB-417"}
+{"id":"cal-num-01","split":"calibration","task":"numerical","prompt":"Compute 18 + 27. Reply with the number only.","answer":"45"}
+{"id":"cal-num-02","split":"calibration","task":"numerical","prompt":"A box has 6 rows of 7 bolts. How many bolts? Give one integer.","answer":"42"}
+{"id":"cal-gen-01","split":"calibration","task":"generation","prompt":"In one short sentence, explain why measurements need units.","answer":"Units give measurements an interpretable scale."}
+{"id":"cal-gen-02","split":"calibration","task":"generation","prompt":"Write a concise safety reminder about saving work before an update.","answer":"Save and back up your work before starting the update."}
+{"id":"dev-cls-01","split":"development","task":"classification","prompt":"Answer TRUE or FALSE: every square has four sides.","answer":"TRUE"}
+{"id":"dev-cls-02","split":"development","task":"classification","prompt":"Classify the message as URGENT or ROUTINE: Please send the weekly notes by Friday.","answer":"ROUTINE"}
+{"id":"dev-ext-01","split":"development","task":"extraction","prompt":"From 'Mira emailed Noah at noon', output the recipient's name and nothing else.","answer":"Noah"}
+{"id":"dev-ext-02","split":"development","task":"extraction","prompt":"Read ticket ZX9-204, priority low. Respond with just the ticket identifier.","answer":"ZX9-204"}
+{"id":"dev-num-01","split":"development","task":"numerical","prompt":"What is 81 divided by 9? Output only the result.","answer":"9"}
+{"id":"dev-num-02","split":"development","task":"numerical","prompt":"Start with 50, subtract 13, then add 4. Return one number.","answer":"41"}
+{"id":"dev-gen-01","split":"development","task":"generation","prompt":"State one reason to keep a control group, using no more than twelve words.","answer":"A control group isolates the effect of the tested change."}
+{"id":"dev-gen-02","split":"development","task":"generation","prompt":"Give a one-sentence definition of latency.","answer":"Latency is the elapsed time before an operation produces its result."}
+{"id":"test-cls-01","split":"heldout","task":"classification","prompt":"Decide VALID or INVALID: a triangle is described as having four corners.","answer":"INVALID"}
+{"id":"test-cls-02","split":"heldout","task":"classification","prompt":"Use SUPPORTS or CONTRADICTS: Claim: water freezes below its freezing point. Evidence: the sample became ice at minus five Celsius.","answer":"SUPPORTS"}
+{"id":"test-ext-01","split":"heldout","task":"extraction","prompt":"The parcel for Elena carries tracking reference QP-8801. Print only that reference.","answer":"QP-8801"}
+{"id":"test-ext-02","split":"heldout","task":"extraction","prompt":"Sentence: At 14:30, Omar met Priya beside the library. Name the person Omar met; no prose.","answer":"Priya"}
+{"id":"test-num-01","split":"heldout","task":"numerical","prompt":"There are 15 red markers and 28 blue markers. Return their total as digits.","answer":"43"}
+{"id":"test-num-02","split":"heldout","task":"numerical","prompt":"Evaluate three times nineteen minus two. Respond with the integer alone.","answer":"55"}
+{"id":"test-gen-01","split":"heldout","task":"generation","prompt":"In one sentence, distinguish throughput from latency.","answer":"Throughput measures work per unit time, while latency measures time per operation."}
+{"id":"test-gen-02","split":"heldout","task":"generation","prompt":"Offer one brief reason a negative experimental result is useful.","answer":"A negative result rules out an approach and guides the next test."}
