@@ -1,0 +1,23 @@
+{
+  "cuda_available": true,
+  "cudnn": 90701,
+  "gpu": "NVIDIA GeForce RTX 4070 SUPER",
+  "gpu_compute_capability": [
+    8,
+    9
+  ],
+  "gpu_total_memory_bytes": 12878086144,
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "ncu_path": null,
+  "numpy": "2.2.6",
+  "nvidia_smi": "NVIDIA GeForce RTX 4070 SUPER, 12282, 610.88, 42, 275.00",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "python": "3.11.13",
+  "seeds": {
+    "python_numpy_torch_cuda": 20261012
+  },
+  "torch": "2.7.1+cu128",
+  "torch_cuda": "12.8",
+  "transformers": "4.57.1"
+}

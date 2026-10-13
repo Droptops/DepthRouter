@@ -1,0 +1,52 @@
+{
+  "0": {
+    "intermediate_width": 4864,
+    "records": 8,
+    "tasks": [
+      "classification",
+      "extraction",
+      "generation",
+      "numerical"
+    ]
+  },
+  "12": {
+    "intermediate_width": 4864,
+    "records": 8,
+    "tasks": [
+      "classification",
+      "extraction",
+      "generation",
+      "numerical"
+    ]
+  },
+  "18": {
+    "intermediate_width": 4864,
+    "records": 8,
+    "tasks": [
+      "classification",
+      "extraction",
+      "generation",
+      "numerical"
+    ]
+  },
+  "23": {
+    "intermediate_width": 4864,
+    "records": 8,
+    "tasks": [
+      "classification",
+      "extraction",
+      "generation",
+      "numerical"
+    ]
+  },
+  "6": {
+    "intermediate_width": 4864,
+    "records": 8,
+    "tasks": [
+      "classification",
+      "extraction",
+      "generation",
+      "numerical"
+    ]
+  }
+}

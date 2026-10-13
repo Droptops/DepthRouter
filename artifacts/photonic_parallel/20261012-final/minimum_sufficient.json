@@ -1,0 +1,528 @@
+{
+  "by_task": [
+    {
+      "layers": "0,6,12,18,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "12,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "12,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "12,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "12,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "12,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "12,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "12,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "12,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "12,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "12,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "12,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "12,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "12,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "12,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "12,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "12,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "12,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    },
+    {
+      "layers": "23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "classification"
+    },
+    {
+      "layers": "23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "extraction"
+    },
+    {
+      "layers": "23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "generation"
+    },
+    {
+      "layers": "23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0,
+      "task": "numerical"
+    }
+  ],
+  "overall": [
+    {
+      "layers": "0,6,12,18,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "0,6,12,18,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "12,23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "12,23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "12,23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "12,23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "12,23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "12,23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "23",
+      "method": "calibration_activation",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "23",
+      "method": "random",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "23",
+      "method": "state_transition_conditioned",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "23",
+      "method": "static_activation",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "23",
+      "method": "static_weight",
+      "minimum_sufficient_fraction": 1.0
+    },
+    {
+      "layers": "23",
+      "method": "task_conditioned",
+      "minimum_sufficient_fraction": 1.0
+    }
+  ]
+}

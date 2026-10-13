@@ -1,0 +1,66 @@
+[
+  {
+    "best_epoch": 120,
+    "development_oracle_set_recall": 0.809900164604187,
+    "development_oracle_utility_mass_ratio": 0.9379615783691406,
+    "epochs_executed": 120,
+    "family": "individual_neuron",
+    "feature_variant": "state_transition",
+    "footprint": {
+      "bytes_bfloat16": 861824,
+      "fraction_of_swiglu_macs": 0.03258145363408521,
+      "macs_per_token": 425984,
+      "parameters": 430912
+    },
+    "rank": 64,
+    "training_seconds": 2.1344284499973583
+  },
+  {
+    "best_epoch": 115,
+    "development_oracle_set_recall": 0.8058525323867798,
+    "development_oracle_utility_mass_ratio": 0.9320591688156128,
+    "epochs_executed": 120,
+    "family": "individual_neuron",
+    "feature_variant": "state",
+    "footprint": {
+      "bytes_bfloat16": 747136,
+      "fraction_of_swiglu_macs": 0.02819548872180451,
+      "macs_per_token": 368640,
+      "parameters": 373568
+    },
+    "rank": 64,
+    "training_seconds": 2.1068902349979908
+  },
+  {
+    "best_epoch": 118,
+    "development_oracle_set_recall": 0.8053792715072632,
+    "development_oracle_utility_mass_ratio": 0.9326514601707458,
+    "epochs_executed": 120,
+    "family": "individual_neuron",
+    "feature_variant": "state_transition",
+    "footprint": {
+      "bytes_bfloat16": 222752,
+      "fraction_of_swiglu_macs": 0.008145363408521303,
+      "macs_per_token": 106496,
+      "parameters": 111376
+    },
+    "rank": 16,
+    "training_seconds": 2.1557213619998947
+  },
+  {
+    "best_epoch": 119,
+    "development_oracle_set_recall": 0.8020383715629578,
+    "development_oracle_utility_mass_ratio": 0.9250068664550781,
+    "epochs_executed": 120,
+    "family": "individual_neuron",
+    "feature_variant": "state",
+    "footprint": {
+      "bytes_bfloat16": 194080,
+      "fraction_of_swiglu_macs": 0.007048872180451127,
+      "macs_per_token": 92160,
+      "parameters": 97040
+    },
+    "rank": 16,
+    "training_seconds": 2.3021643639985996
+  }
+]

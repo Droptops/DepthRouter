@@ -6,3 +6,13 @@ __pycache__/
 build/
 dist/
 .venv/
+.venv-photonic/
+.hf-cache/
+artifacts/photonic_parallel/checkpoints/
+artifacts/photonic_parallel/logs/*.pid
+artifacts/photonic_parallel/logs/*.lock
+artifacts/photonic_parallel/logs/
+artifacts/photonic_parallel/20261012-overnight/
+artifacts/predictive_working_set/20261013-final/
+artifacts/predictive_working_set/20261013-final3/
+artifacts/predictive_working_set/20261013-validated/

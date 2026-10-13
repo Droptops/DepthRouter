@@ -69,3 +69,12 @@ experiments, but it is no longer the main architectural thesis.
 
 Research prototype. No bandwidth, latency, or quality win is claimed until the
 hardware-counter experiment passes.
+
+The isolated minimum-sufficient parallel-inference falsification run is documented
+in [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md). Its measured CUDA and simulated
+photonic outputs are kept separate; the combined promotion gate did not pass.
+
+The larger causal working-set follow-up is documented in
+[`PREDICTIVE_WORKING_SET_REPORT.md`](PREDICTIVE_WORKING_SET_REPORT.md). It retained
+the negative neuron-level result, skipped the fused benchmark because quality
+failed, and recorded the first structured operator-page pivot.

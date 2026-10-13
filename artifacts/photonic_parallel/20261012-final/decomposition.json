@@ -1,0 +1,70 @@
+[
+  {
+    "bitwise_equal": false,
+    "coverage_fraction": 1.0,
+    "end_to_end_generated_tokens_equal": true,
+    "full_model_max_abs_logit_error": 0.28125,
+    "full_model_mean_kl_nats": 0.0026618901174515486,
+    "full_model_top1_agreement": 1.0,
+    "groups": 2,
+    "layer": 12,
+    "local_max_abs_error": 0.00390625,
+    "local_relative_l2_error": 0.0031250368350846567,
+    "tolerance": {
+      "atol": 0.03125,
+      "basis": "bfloat16 reduction-order tolerance",
+      "rtol": 0.01
+    }
+  },
+  {
+    "bitwise_equal": false,
+    "coverage_fraction": 1.0,
+    "end_to_end_generated_tokens_equal": true,
+    "full_model_max_abs_logit_error": 0.28125,
+    "full_model_mean_kl_nats": 0.0019825149793177843,
+    "full_model_top1_agreement": 1.0,
+    "groups": 4,
+    "layer": 12,
+    "local_max_abs_error": 0.0078125,
+    "local_relative_l2_error": 0.0037980936782038574,
+    "tolerance": {
+      "atol": 0.03125,
+      "basis": "bfloat16 reduction-order tolerance",
+      "rtol": 0.01
+    }
+  },
+  {
+    "bitwise_equal": false,
+    "coverage_fraction": 1.0,
+    "end_to_end_generated_tokens_equal": true,
+    "full_model_max_abs_logit_error": 0.3125,
+    "full_model_mean_kl_nats": 0.0028335924725979567,
+    "full_model_top1_agreement": 1.0,
+    "groups": 8,
+    "layer": 12,
+    "local_max_abs_error": 0.0078125,
+    "local_relative_l2_error": 0.0047829010887124514,
+    "tolerance": {
+      "atol": 0.03125,
+      "basis": "bfloat16 reduction-order tolerance",
+      "rtol": 0.01
+    }
+  },
+  {
+    "bitwise_equal": false,
+    "coverage_fraction": 1.0,
+    "end_to_end_generated_tokens_equal": true,
+    "full_model_max_abs_logit_error": 0.265625,
+    "full_model_mean_kl_nats": 0.003333522006869316,
+    "full_model_top1_agreement": 1.0,
+    "groups": 16,
+    "layer": 12,
+    "local_max_abs_error": 0.0078125,
+    "local_relative_l2_error": 0.0057292094369109856,
+    "tolerance": {
+      "atol": 0.03125,
+      "basis": "bfloat16 reduction-order tolerance",
+      "rtol": 0.01
+    }
+  }
+]

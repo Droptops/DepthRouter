@@ -1,0 +1,5 @@
+bitwise_equal,coverage_fraction,end_to_end_generated_tokens_equal,full_model_max_abs_logit_error,full_model_mean_kl_nats,full_model_top1_agreement,groups,layer,local_max_abs_error,local_relative_l2_error,tolerance
+False,1.0,True,0.28125,0.0026618901174515486,1.0,2,12,0.00390625,0.0031250368350846567,"{'atol': 0.03125, 'rtol': 0.01, 'basis': 'bfloat16 reduction-order tolerance'}"
+False,1.0,True,0.28125,0.0019825149793177843,1.0,4,12,0.0078125,0.0037980936782038574,"{'atol': 0.03125, 'rtol': 0.01, 'basis': 'bfloat16 reduction-order tolerance'}"
+False,1.0,True,0.3125,0.0028335924725979567,1.0,8,12,0.0078125,0.0047829010887124514,"{'atol': 0.03125, 'rtol': 0.01, 'basis': 'bfloat16 reduction-order tolerance'}"
+False,1.0,True,0.265625,0.003333522006869316,1.0,16,12,0.0078125,0.0057292094369109856,"{'atol': 0.03125, 'rtol': 0.01, 'basis': 'bfloat16 reduction-order tolerance'}"

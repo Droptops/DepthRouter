@@ -1,0 +1,52 @@
+{
+  "candidate_manifest_exact_match": 0.25,
+  "dense_candidate_exact_match": 1.0,
+  "dense_manifest_exact_match": 0.25,
+  "mean_token_prefix_agreement": 1.0,
+  "rows": [
+    {
+      "candidate_exact_manifest_match": false,
+      "candidate_text": "The statement \"a triangle is described as",
+      "dense_exact_manifest_match": false,
+      "dense_text": "The statement \"a triangle is described as",
+      "exact_dense_match": true,
+      "id": "test-cls-01",
+      "reference_answer": "INVALID",
+      "task": "classification",
+      "token_prefix_agreement": 1.0
+    },
+    {
+      "candidate_exact_manifest_match": false,
+      "candidate_text": "Based on the information provided in the evidence",
+      "dense_exact_manifest_match": false,
+      "dense_text": "Based on the information provided in the evidence",
+      "exact_dense_match": true,
+      "id": "test-cls-02",
+      "reference_answer": "SUPPORTS",
+      "task": "classification",
+      "token_prefix_agreement": 1.0
+    },
+    {
+      "candidate_exact_manifest_match": true,
+      "candidate_text": "QP-8801",
+      "dense_exact_manifest_match": true,
+      "dense_text": "QP-8801",
+      "exact_dense_match": true,
+      "id": "test-ext-01",
+      "reference_answer": "QP-8801",
+      "task": "extraction",
+      "token_prefix_agreement": 1.0
+    },
+    {
+      "candidate_exact_manifest_match": false,
+      "candidate_text": "Omar met Priya at 1",
+      "dense_exact_manifest_match": false,
+      "dense_text": "Omar met Priya at 1",
+      "exact_dense_match": true,
+      "id": "test-ext-02",
+      "reference_answer": "Priya",
+      "task": "extraction",
+      "token_prefix_agreement": 1.0
+    }
+  ]
+}
