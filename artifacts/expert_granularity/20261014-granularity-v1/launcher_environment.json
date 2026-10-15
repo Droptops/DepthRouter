@@ -1,0 +1,13 @@
+{
+  "container_name": "depthrouter-expert-granularity-20261014-granularity-v1",
+  "image_tag": "depthrouter-photonic:local",
+  "image_id_observed_during_run": "sha256:da418ab718f638781995c7077193006b6deed2dfb9a589e4b34f4e477f35df08",
+  "image_probe": "docker.exe inspect depthrouter-expert-granularity-20261014-granularity-v1 --format '{{.Image}} {{.State.Running}}'",
+  "image_probe_running": true,
+  "launcher": "scripts/run_expert_granularity.ps1 -RunId 20261014-granularity-v1 -SkipBuild",
+  "gpu_access": "all; one physical RTX 4070 SUPER present",
+  "container_memory_limit": "40g",
+  "container_shared_memory": "6g",
+  "checkout_branch": "codex/expert-granularity-audit",
+  "interpretation": "Supplemental host-side launch observation, not part of the prospective scientific seal and not an inference performance measurement."
+}

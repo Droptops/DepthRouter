@@ -99,9 +99,13 @@ interval 70.69%-81.25%). It stopped before selector training or timing; the
 interval spans the threshold, so this is not a resolved population-level failure.
 Prior negative findings and the project's hardware-counter gate remain unchanged.
 
-The bounded nested-granularity follow-up is preregistered in
-[`EXPERT_GRANULARITY_PREREGISTRATION.md`](EXPERT_GRANULARITY_PREREGISTRATION.md).
-It compares the original 28-mask portfolio with calibration-selected 28-mask
-portfolios drawn from finer balanced subdivisions, keeping 75% active width.
-The full 1,820-mask oracle is diagnostic only; this cycle excludes router
-training and runtime claims.
+The bounded nested-granularity follow-up is documented in
+[`EXPERT_GRANULARITY_REPORT.md`](EXPERT_GRANULARITY_REPORT.md) and its
+[`prospective protocol`](EXPERT_GRANULARITY_PREREGISTRATION.md). At the same 75%
+active width and 28-choice budget, the selected portfolios reached 87.89%-88.54%
+OOD coverage versus 84.90% for the original 28 on the same fresh contexts.
+The paired seed-mean improvement was +3.30 percentage points (95% context interval
++1.65 to +4.86). All three seeds passed all capability gates, including resolved
+lower bounds. This is not a comparison against the old 75.78% confirmation result.
+The full 1,820-mask oracle remains diagnostic only; no causal router, inference
+timing, physical bandwidth or net savings was established.

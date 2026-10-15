@@ -1,0 +1,14 @@
+{
+  "current_newline_only_differences_explicitly_allowed": false,
+  "current_source_hashes_match_exactly": true,
+  "current_source_newline_only_differences": [],
+  "gpu_used": false,
+  "heldout_artifacts_opened": false,
+  "language_model_loaded": false,
+  "pass": true,
+  "prospective_partitions_and_parity_ids_recomputed": true,
+  "registered_sources_checked": 29,
+  "registered_utc": "2026-10-15T05:06:06.516867+00:00",
+  "scope": "preregistration_only",
+  "snapshot_source_hashes_match": true
+}

@@ -233,6 +233,9 @@ def test_report_primary_equal_budget_and_unmeasured_economics(synthetic_run):
     assert "capability gate passed" in text
     assert text.count("| Selected 28 |") == 10  # Scope row plus all nine evaluation cells.
     assert "Paired selected-28 minus original-28" in text
+    assert "original-28 coverage was 50.000%" in text
+    assert "earlier failed confirmation set is not the comparative baseline" in text
+    assert "sole cause of the earlier confirmation failure" in text
     assert "population failure" in text and "threshold remains unresolved" in text
     assert "about 65 times as many choices" in text
     assert "Parent-permuted KL" in text and "0.000199" in text

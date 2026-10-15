@@ -1,0 +1,26 @@
+{
+  "scope": "Post-implementation software and packaging checks; no extra model inference",
+  "pinned_container_image": "sha256:da418ab718f638781995c7077193006b6deed2dfb9a589e4b34f4e477f35df08",
+  "pinned_python": "3.11",
+  "pinned_ruff": "0.14.0",
+  "host_ruff": "0.16.2",
+  "repository_wide_ruff_passes_both_versions": true,
+  "working_checkout_pytest": {"passed": 336, "failed": 0},
+  "fresh_checkout_pytest": {"passed": 336, "failed": 0},
+  "fresh_checkout_commit": "2362661856431bbd7bbc7026e090f26084d43b08",
+  "fresh_checkout_core_autocrlf": false,
+  "fresh_checkout_runtime": "CPU-only Linux container; no --gpus flag",
+  "fresh_checkout_prior_recognition_verifier": {
+    "pass": true,
+    "registered_source_hashes_exact": 26,
+    "confirmation_negative_result_recomputed": true,
+    "language_model_loaded": false
+  },
+  "checks": [
+    "ruff check .",
+    "pytest -q",
+    "python scripts/verify_expert_recognition.py --run-dir artifacts/expert_recognition/20261014-recognition-v1"
+  ],
+  "packaging_repairs": "Explicit checkout attributes preserve sealed CRLF source and historical manifest bytes; no scientific source or prompt bytes changed during the run.",
+  "not_a_scientific_result_or_performance_benchmark": true
+}

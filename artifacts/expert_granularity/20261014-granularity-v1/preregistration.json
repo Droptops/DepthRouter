@@ -1,0 +1,91 @@
+{
+  "before_model_load_fit_and_fresh_outputs": true,
+  "config": {
+    "active_children": 12,
+    "archive_candidate_chunk_size": 256,
+    "attention": "sdpa",
+    "base_commit": "1be53fefd37c344dbc4cdc44bb708e3e226ae0e9",
+    "batch_size": 16,
+    "bootstrap_repetitions": 2000,
+    "bootstrap_seed": 17,
+    "candidate_count": 1820,
+    "candidate_tile_size": 28,
+    "children": 16,
+    "continuation_positions": [
+      1,
+      3,
+      7,
+      11
+    ],
+    "dtype": "bfloat16",
+    "fit": "calibration_only_greedy_28_mask_selection_no_gradients",
+    "frozen_partition": "artifacts/expert_construction/20261014-bounded-v1/partition-C-29.json",
+    "frozen_partition_sha256": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d",
+    "gates": {
+      "all_three_seeds_all_evaluation_splits": true,
+      "coverage": 0.8,
+      "local_kl_strictly_less_than": 0.01,
+      "portfolio_advantage": 0.05,
+      "same_greedy_token": true,
+      "seed_mean_paired_ood_coverage_ci_lower_strictly_above": 0.0
+    },
+    "gpu_wall_budget_seconds": 14400,
+    "manifest": "data/expert_granularity/evaluation_manifest.jsonl",
+    "max_prompt_tokens": 512,
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "parents": 8,
+    "parity_new_masks_per_seed": 16,
+    "portfolio_size": 28,
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "runtime_training_or_timing": false,
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "split_sizes": {
+      "calibration": 768,
+      "development": 128,
+      "heldout_matched": 512,
+      "heldout_ood": 192
+    }
+  },
+  "frozen_artifact_sha256": {
+    "partitions.json": "f7ce002a378f8a50c2a00178c6bada860ca2c41fe16d84eba229d1d3f2b292b7",
+    "quarantined_confirmation.json": "72a7a93d5a445a909b98d3a5d83f43b32900d2b1d15718836e83ad34a3aba0c6",
+    "verified_data_audit.json": "c04b157e6827069a4f88ffbd6bb3857dc2d15c628a4e59d28786269d0c6e9a1c"
+  },
+  "prior_negative_results_unchanged": true,
+  "source_sha256": {
+    "Dockerfile.photonic": "f9a23c57acc4229fc62ae7b4b5711b2441ceb8d9246b11287a816cd780ad7703",
+    "EXPERT_GRANULARITY_PREREGISTRATION.md": "bee2bf8ad3ea88c7540489f645b2ecb422ff54a88a6c0bf284c16dc6782db26c",
+    "artifacts/expert_construction/20261014-bounded-v1/partition-C-29.json": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d",
+    "configs/expert_granularity.json": "32abd61e2ac02e5ca8564be40098e7ea5a9da57943aecdd3aafcddf72330700b",
+    "data/expert_audit/evaluation_manifest.jsonl": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+    "data/expert_audit/historical_alpaca_prompts.jsonl": "8de9ac8e65f79b7242e924c217e2adcbf966fc998139ecdc10d48f3a0dcc08c4",
+    "data/expert_audit/historical_alpaca_provenance.json": "030b0d7a2b896c97999389ebae00a9960cb1d38a0bb29b6968e700e0d1e631bd",
+    "data/expert_granularity/README.md": "b70277feddf14823d711818d41d10cba7b70656804784582500cf5ef16c61113",
+    "data/expert_granularity/data_audit.json": "c04b157e6827069a4f88ffbd6bb3857dc2d15c628a4e59d28786269d0c6e9a1c",
+    "data/expert_granularity/evaluation_manifest.jsonl": "7242e95f04f3b1b991c07b1a5e8a0ad632afe47f2fcf9d7602bbb929d3ca522f",
+    "data/expert_granularity/quarantined_confirmation.json": "72a7a93d5a445a909b98d3a5d83f43b32900d2b1d15718836e83ad34a3aba0c6",
+    "data/expert_granularity/source_provenance.json": "9ef0534bf1f19ca759e26682dad17eaad19046ad55c49f06b2d7295762766d94",
+    "data/expert_recognition/data_audit.json": "6db2f2d007b9621a84b1660ae8995e1504a359c533e4cd8e51a3ba224ad9db18",
+    "data/expert_recognition/evaluation_manifest.jsonl": "c4eb5654b713927c2924195bb2cd98435306214b32d98c402d0d42ff8e251fe6",
+    "experiments/expert_construction.py": "ac1c07e0606e12697ce201e1db3bc4d0b75491998c812086a45b242d40b2c8bd",
+    "experiments/expert_granularity.py": "abef3af16b8bdeb59692fb28f9d07c31cd0bdfb5bf878c45496f188879922a57",
+    "experiments/expert_granularity_evaluation.py": "baf3dfa92dd163acaca37b5660a0e6b40556847063fb70f339b26d9214f18c49",
+    "requirements-photonic.txt": "04a5dea06fe08160345f720d6aa5bca8b9411b01af56c82ace7965471e3deb02",
+    "scripts/prepare_granularity_data.py": "fe797d4af6629c77766d6212baf049fae01008eb44c1ec4aec7286f358606783",
+    "scripts/run_expert_granularity.ps1": "b28b9622b4cbfcc0574a90295c60c58cf2023566a6b27bce3e3feaba8a9e7912",
+    "src/depth_router/expert_audit_data.py": "c02127bec992be9ec1732a7fc7e0efb7da4b33f343c4afd76fb68be7a13cd963",
+    "src/depth_router/expert_audit_metrics.py": "03b0d1d241074ab7235645d47a22c50941e60842c04700290031d65fc664fdfe",
+    "src/depth_router/expert_granularity.py": "48c87e99c434acab9eea4a5da94908756b3c647977051c9647562247e4cb98d1",
+    "src/depth_router/expert_partitions.py": "c21597beaa87e0c5018435efb4db1dd68d23142f7281d491789559970ce8cc86",
+    "src/depth_router/expert_recognition.py": "958d48c302b367f2e771f2151e148470a7f6abdae2caeba2b6ba86281daf5899",
+    "src/depth_router/granularity_data.py": "bec5bf8ec761cdf4292a8eb2bafa731c9aba101b19ae7ec7e7dfc1c1ae14cd59",
+    "src/depth_router/output_gap.py": "8bcb3f6abb9ffd26ade8323549b35c14d0fabb5d66cc48ec54b45d239e236c65",
+    "src/depth_router/output_gap_data.py": "1d4420aecb1d0b6d9bb419848e3104273342f4adacbff0df58b775885e600e21",
+    "src/depth_router/recognition_data.py": "f5dd6358e122fa0bc4b278d83582e897c0986ee7cad16b7ffc2d05139c670c44"
+  },
+  "utc": "2026-10-15T05:06:06.516867+00:00"
+}

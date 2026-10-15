@@ -1,0 +1,177 @@
+{
+  "confirmation_policy": "equal matched/OOD category strata; never fit on confirmation",
+  "confirmation_task_counts": {
+    "matched": {
+      "brainstorming": 12,
+      "classification": 12,
+      "closed_qa": 11,
+      "general_qa": 10,
+      "information_extraction": 9,
+      "open_qa": 10
+    },
+    "ood": {
+      "creative_writing": 36,
+      "summarization": 28
+    }
+  },
+  "cross_split_pairs_checked": 1032192,
+  "enterprise_fraction": 0.125,
+  "enterprise_instruction_keywords": [
+    "business",
+    "customer",
+    "company",
+    "employee",
+    "manager",
+    "meeting",
+    "office",
+    "project",
+    "sales",
+    "invoice",
+    "budget",
+    "marketing",
+    "client",
+    "product",
+    "software",
+    "database",
+    "security",
+    "workflow",
+    "contract",
+    "email",
+    "work",
+    "leadership",
+    "interview",
+    "team",
+    "data",
+    "program",
+    "service"
+  ],
+  "enterprise_scope": "instruction-keyword topic screen; not a production benchmark",
+  "exclusion_sources": [
+    {
+      "path": "artifacts/predictive_working_set/20261013-validated-final/evaluation_manifest.jsonl",
+      "rows": 896,
+      "sha256": "552efc03e4caa86f95ef52a66e4563bdce70f394d0f60536cec36fdec6a0d6c4",
+      "unique_prompts": 896
+    },
+    {
+      "path": "artifacts/fused_sparse_swiglu/20261013-validated-final-v2/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "9325a76ac0476f94abfad1a4a4895aef9542bb3897894d763fd743d53a9d5264",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "artifacts/output_gap_completion/20261014-controlled-v1/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "e2d809957993bb24b8376812ad4ad72332eac0e199171a6c5be2f6cd45dba0ab",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "data/photonic_parallel_manifest.jsonl",
+      "rows": 24,
+      "sha256": "8a9f29b1f4f98226e23086557f7a1684bf465d7d64636a662661bfb96d058ad1",
+      "unique_prompts": 24
+    },
+    {
+      "path": "data/expert_audit/historical_alpaca_prompts.jsonl",
+      "rows": 2200,
+      "sha256": "8de9ac8e65f79b7242e924c217e2adcbf966fc998139ecdc10d48f3a0dcc08c4",
+      "unique_prompts": 2171
+    },
+    {
+      "canonical_sha256": "8cdf9914d7f1c5880849439a7dbac34f44f99bdf2c61c249496eebeeec1fb586",
+      "path": "data/expert_audit/evaluation_manifest.jsonl",
+      "rows": 2304,
+      "sha256": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+      "unique_prompts": 2304
+    }
+  ],
+  "historical_prompt_count": 6163,
+  "historical_unique_token_sets": 2679,
+  "independence_scope": "lexical exclusion; semantic family/article independence not established",
+  "license": "CC-BY-SA-3.0",
+  "manifest_file_sha256": "c4eb5654b713927c2924195bb2cd98435306214b32d98c402d0d42ff8e251fe6",
+  "manifest_sha256": "5567188a5c6a98365edd4677289e5e89c48fd1640435d66dc581e987fed18e1b",
+  "maximum_prompt_characters": 1100,
+  "minimum_prompt_words": 6,
+  "ood_definition": "creative_writing/summarization excluded from calibration and development",
+  "prior_expert_context_count": 2304,
+  "prior_expert_source_document_instruction_and_prompt_exclusion": true,
+  "prompt_and_instruction_token_jaccard_rejection_threshold": 0.72,
+  "rows": 1728,
+  "selection_salt": "DepthRouter-fixed-partition-recognition-data-v1-20261014",
+  "source": "databricks/databricks-dolly-15k",
+  "source_document_and_exact_instruction_family_globally_unique": true,
+  "source_document_five_token_shingle_jaccard_rejection_threshold": 0.5,
+  "source_responses_used": false,
+  "source_revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+  "source_sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+  "split_sizes": {
+    "calibration": 768,
+    "confirmation": 128,
+    "development": 128,
+    "heldout_matched": 512,
+    "heldout_ood": 192
+  },
+  "stratum_counts": {
+    "calibration": {
+      "enterprise_related": 96,
+      "general_natural_language": 672
+    },
+    "confirmation": {
+      "enterprise_related": 16,
+      "general_natural_language": 112
+    },
+    "development": {
+      "enterprise_related": 16,
+      "general_natural_language": 112
+    },
+    "heldout_matched": {
+      "enterprise_related": 64,
+      "general_natural_language": 448
+    },
+    "heldout_ood": {
+      "enterprise_related": 24,
+      "general_natural_language": 168
+    }
+  },
+  "task_counts": {
+    "calibration": {
+      "brainstorming": 135,
+      "classification": 135,
+      "closed_qa": 116,
+      "general_qa": 135,
+      "information_extraction": 112,
+      "open_qa": 135
+    },
+    "confirmation": {
+      "brainstorming": 12,
+      "classification": 12,
+      "closed_qa": 11,
+      "creative_writing": 36,
+      "general_qa": 10,
+      "information_extraction": 9,
+      "open_qa": 10,
+      "summarization": 28
+    },
+    "development": {
+      "brainstorming": 25,
+      "classification": 19,
+      "closed_qa": 19,
+      "general_qa": 24,
+      "information_extraction": 18,
+      "open_qa": 23
+    },
+    "heldout_matched": {
+      "brainstorming": 79,
+      "classification": 75,
+      "closed_qa": 75,
+      "general_qa": 105,
+      "information_extraction": 74,
+      "open_qa": 104
+    },
+    "heldout_ood": {
+      "creative_writing": 108,
+      "summarization": 84
+    }
+  }
+}

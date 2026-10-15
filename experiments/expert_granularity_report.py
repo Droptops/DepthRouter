@@ -60,6 +60,8 @@ def build_report(run_dir, *, repo=ROOT):
         raise ValueError("report requires a terminal completed or explicitly incomplete run")
     if decision is not None and decision.get("status") != "completed":
         raise ValueError("terminal granularity decision does not attest completion")
+    metrics = _json(run / "metrics.json") if decision is not None else None
+    paired = _json(run / "paired.json") if decision is not None else None
     try:
         relative = run.relative_to(repo).as_posix()
     except ValueError:
@@ -79,6 +81,19 @@ def build_report(run_dir, *, repo=ROOT):
         lines += ["**The preregistered equal-budget capability gate did not pass.** Preserve the per-seed and",
                   "paired results below; do not substitute the larger 1,820-choice diagnostic oracle for the",
                   "28-choice comparison. Router recognition and inference economics were not tested.", ""]
+    if decision is not None:
+        original_ood = metrics["original"]["heldout_ood"]["cheap_coverage"]
+        selected_ood = [metrics["selected"][str(seed)]["heldout_ood"]["cheap_coverage"] for seed in SEEDS]
+        gain = paired["heldout_ood"]["aggregate"]["net_coverage"]
+        lines += [(f"On the same fresh OOD states, original-28 coverage was {_percent(original_ood)}; "
+                   f"selected-28 coverage ranged from {_percent(min(selected_ood))} to {_percent(max(selected_ood))}."),
+                  f"Seed-mean paired gain: {_interval(gain['estimate'], gain, unit=' pp')} (95% CI).", "",
+                  "The earlier failed confirmation set is not the comparative baseline. These are paired",
+                  "original-versus-refined measurements on this cycle's same fresh held-out states."]
+        if original_ood >= 0.8:
+            lines += ["The original portfolio itself also exceeds 80% OOD coverage on this fresh set."]
+        lines += ["A positive paired gain supports finer-mask headroom; it does not establish granularity as the",
+                  "sole cause of the earlier confirmation failure, or show that OOD generalization is solved.", ""]
     lines += ["The earlier C-29 confirmation failure remains unchanged. All 128 previously inspected confirmation",
               "contexts were quarantined; none was reused in this cycle. No partition winner was selected",
               "from held-out outcomes, no seed was discarded, and no original model weight was fitted.", "",
@@ -132,7 +147,6 @@ def build_report(run_dir, *, repo=ROOT):
         lines += _table(["Captured split", "Requested contexts", "Evaluated contexts", "States", "Zero-state contexts", "Truncated prompts"], captures)
         lines += [""]
     if decision is not None:
-        metrics, paired = _json(run / "metrics.json"), _json(run / "paired.json")
         portfolios, fixed = _json(run / "portfolio_selection.json"), _json(run / "fixed_selection.json")
         lines += ["## Primary equal-budget result", "",
                   "Local acceptability requires exact dense greedy-token agreement AND KL(dense||candidate)<0.01.",
@@ -188,6 +202,18 @@ def build_report(run_dir, *, repo=ROOT):
                   "All 28 selection steps, marginal gains, KL tie-breaks, candidate IDs and seals are retained in",
                   "`portfolio_selection.json` and `fixed_selection.json`. Per-mask arrays are preserved in lossless chunks.", ""]
     lines += ["## Numerical integrity", ""]
+    verification_path = run / "postrun_integrity_verification.json"
+    if verification_path.exists():
+        verification = _json(verification_path)
+        if (verification.get("pass") is not True
+                or verification.get("scope") != "complete_granularity_integrity"):
+            raise ValueError("saved post-run verification does not establish complete integrity")
+        lines += [(f"Independent CPU-only post-run verification passed: "
+                   f"{verification['registered_sources_checked']} registered sources, "
+                   f"{verification['matrix_manifests_checked']} matrix archives and "
+                   f"{verification['candidate_cells_checked']:,} candidate-state cells checked."),
+                  "Saved evidence: `postrun_integrity_verification.json`. Selections, metrics, paired intervals,",
+                  "gates, inherited equality, data exclusions and quarantine were independently recomputed.", ""]
     parity_path = run / "full_model_cached_validation.json"
     if parity_path.exists():
         parity = _json(parity_path)
