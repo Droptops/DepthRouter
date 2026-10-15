@@ -1,0 +1,209 @@
+{"contexts": 16, "event": "capture_progress", "split": "calibration", "states": 62, "utc": "2026-10-15T03:53:10.283527+00:00"}
+{"contexts": 144, "event": "capture_progress", "split": "calibration", "states": 572, "utc": "2026-10-15T03:53:12.700762+00:00"}
+{"contexts": 272, "event": "capture_progress", "split": "calibration", "states": 1080, "utc": "2026-10-15T03:53:15.133495+00:00"}
+{"contexts": 400, "event": "capture_progress", "split": "calibration", "states": 1591, "utc": "2026-10-15T03:53:17.517124+00:00"}
+{"contexts": 528, "event": "capture_progress", "split": "calibration", "states": 2103, "utc": "2026-10-15T03:53:19.997683+00:00"}
+{"contexts": 656, "event": "capture_progress", "split": "calibration", "states": 2614, "utc": "2026-10-15T03:53:22.445177+00:00"}
+{"contexts": 784, "event": "capture_progress", "split": "calibration", "states": 3124, "utc": "2026-10-15T03:53:24.853760+00:00"}
+{"contexts": 912, "event": "capture_progress", "split": "calibration", "states": 3635, "utc": "2026-10-15T03:53:27.337070+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.06310419738292694, "step": 20, "utc": "2026-10-15T03:53:30.989138+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.008941005915403366, "step": 40, "utc": "2026-10-15T03:53:31.240695+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.0157150998711586, "step": 60, "utc": "2026-10-15T03:53:31.507039+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.00935302022844553, "step": 80, "utc": "2026-10-15T03:53:31.762745+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.006956580560654402, "step": 100, "utc": "2026-10-15T03:53:32.020946+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.028432797640562057, "step": 20, "utc": "2026-10-15T03:53:32.481827+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.04209563881158829, "step": 40, "utc": "2026-10-15T03:53:32.830126+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.0300760455429554, "step": 60, "utc": "2026-10-15T03:53:33.210808+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.029024772346019745, "step": 80, "utc": "2026-10-15T03:53:33.586179+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.03850949555635452, "step": 100, "utc": "2026-10-15T03:53:33.940380+00:00"}
+{"elapsed_seconds": 30.881010610999965, "event": "seed_fit_complete", "seed": 17, "utc": "2026-10-15T03:53:33.991255+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.023212425410747528, "step": 120, "utc": "2026-10-15T03:53:34.301713+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.02069742977619171, "step": 140, "utc": "2026-10-15T03:53:34.548733+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.007139821536839008, "step": 160, "utc": "2026-10-15T03:53:34.786978+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.011107603088021278, "step": 180, "utc": "2026-10-15T03:53:35.027851+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.016724325716495514, "step": 200, "utc": "2026-10-15T03:53:35.261787+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.019297795370221138, "step": 120, "utc": "2026-10-15T03:53:35.630901+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.03726273030042648, "step": 140, "utc": "2026-10-15T03:53:35.996318+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.11049826443195343, "step": 160, "utc": "2026-10-15T03:53:36.346194+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.07429812848567963, "step": 180, "utc": "2026-10-15T03:53:36.698405+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.04989757761359215, "step": 200, "utc": "2026-10-15T03:53:37.052592+00:00"}
+{"elapsed_seconds": 33.99481844100001, "event": "seed_fit_complete", "seed": 29, "utc": "2026-10-15T03:53:37.105063+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.008679565042257309, "step": 220, "utc": "2026-10-15T03:53:37.453820+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.009457925334572792, "step": 240, "utc": "2026-10-15T03:53:37.729540+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.016612356528639793, "step": 260, "utc": "2026-10-15T03:53:37.987886+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.009159466251730919, "step": 280, "utc": "2026-10-15T03:53:38.227501+00:00"}
+{"event": "construction_progress", "objective": "hidden", "sampled_loss": 0.007311434485018253, "step": 300, "utc": "2026-10-15T03:53:38.466609+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.013942250981926918, "step": 220, "utc": "2026-10-15T03:53:38.822737+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.021161414682865143, "step": 240, "utc": "2026-10-15T03:53:39.179569+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.025150999426841736, "step": 260, "utc": "2026-10-15T03:53:39.529306+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.021943900734186172, "step": 280, "utc": "2026-10-15T03:53:39.902980+00:00"}
+{"event": "construction_progress", "objective": "output", "sampled_loss": 0.03795665502548218, "step": 300, "utc": "2026-10-15T03:53:40.265805+00:00"}
+{"elapsed_seconds": 37.207347045000006, "event": "seed_fit_complete", "seed": 43, "utc": "2026-10-15T03:53:40.317591+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-A-17.npz", "total_groups": 256, "utc": "2026-10-15T03:53:47.766335+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-A-17.npz", "total_groups": 256, "utc": "2026-10-15T03:53:51.092742+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-A-17.npz", "total_groups": 256, "utc": "2026-10-15T03:53:54.485083+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-A-17.npz", "total_groups": 256, "utc": "2026-10-15T03:53:57.968063+00:00"}
+{"elapsed_seconds": 58.350568587, "event": "matrix_complete", "partition": "A-17", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:54:01.459993+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-B-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:01.527688+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-B-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:04.922802+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-B-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:08.316334+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-B-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:11.655578+00:00"}
+{"elapsed_seconds": 71.94007384299994, "event": "matrix_complete", "partition": "B-17", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:54:15.043949+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-C-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:15.110360+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-C-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:18.475773+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-C-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:21.850130+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-C-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:25.208951+00:00"}
+{"elapsed_seconds": 85.53820401099983, "event": "matrix_complete", "partition": "C-17", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:54:28.642077+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-D-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:28.710146+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-D-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:32.093563+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-D-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:35.459801+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-D-17.npz", "total_groups": 256, "utc": "2026-10-15T03:54:38.821818+00:00"}
+{"elapsed_seconds": 99.25152419899996, "event": "matrix_complete", "partition": "D-17", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:54:42.355397+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-A-29.npz", "total_groups": 256, "utc": "2026-10-15T03:54:42.431853+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-A-29.npz", "total_groups": 256, "utc": "2026-10-15T03:54:45.971894+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-A-29.npz", "total_groups": 256, "utc": "2026-10-15T03:54:49.448237+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-A-29.npz", "total_groups": 256, "utc": "2026-10-15T03:54:52.891820+00:00"}
+{"elapsed_seconds": 113.41397785900017, "event": "matrix_complete", "partition": "A-29", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:54:56.515488+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-B-29.npz", "total_groups": 256, "utc": "2026-10-15T03:54:56.580837+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-B-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:00.045774+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-B-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:03.429474+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-B-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:06.761681+00:00"}
+{"elapsed_seconds": 127.11034251499996, "event": "matrix_complete", "partition": "B-29", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:55:10.211852+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-C-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:10.279198+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-C-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:13.625068+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-C-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:16.980673+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-C-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:20.341936+00:00"}
+{"elapsed_seconds": 140.69341675799978, "event": "matrix_complete", "partition": "C-29", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:55:23.794146+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-D-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:23.861344+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-D-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:27.216688+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-D-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:30.589337+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-D-29.npz", "total_groups": 256, "utc": "2026-10-15T03:55:33.975174+00:00"}
+{"elapsed_seconds": 154.3379397929998, "event": "matrix_complete", "partition": "D-29", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:55:37.438669+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-A-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:37.505796+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-A-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:40.875632+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-A-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:44.248091+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-A-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:47.576828+00:00"}
+{"elapsed_seconds": 167.8888415319998, "event": "matrix_complete", "partition": "A-43", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:55:50.988381+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-B-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:51.056626+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-B-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:54.417547+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-B-43.npz", "total_groups": 256, "utc": "2026-10-15T03:55:57.810077+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-B-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:01.190708+00:00"}
+{"elapsed_seconds": 181.5488872689998, "event": "matrix_complete", "partition": "B-43", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:56:04.648426+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-C-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:04.713331+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-C-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:08.077524+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-C-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:11.415836+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-C-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:14.801631+00:00"}
+{"elapsed_seconds": 195.35226038600013, "event": "matrix_complete", "partition": "C-43", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:56:18.450760+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-calibration-D-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:18.520412+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-calibration-D-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:21.951861+00:00"}
+{"event": "candidate_progress", "groups": 129, "matrix": "matrix-calibration-D-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:25.386822+00:00"}
+{"event": "candidate_progress", "groups": 193, "matrix": "matrix-calibration-D-43.npz", "total_groups": 256, "utc": "2026-10-15T03:56:28.836852+00:00"}
+{"elapsed_seconds": 209.25980277500003, "event": "matrix_complete", "partition": "D-43", "split": "calibration", "states": 4079, "utc": "2026-10-15T03:56:32.358302+00:00"}
+{"contexts": 16, "event": "capture_progress", "split": "development", "states": 64, "utc": "2026-10-15T03:56:32.675348+00:00"}
+{"contexts": 144, "event": "capture_progress", "split": "development", "states": 573, "utc": "2026-10-15T03:56:35.150827+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-A-17.npz", "total_groups": 64, "utc": "2026-10-15T03:56:37.674738+00:00"}
+{"elapsed_seconds": 218.0261342859999, "event": "matrix_complete", "partition": "A-17", "split": "development", "states": 1018, "utc": "2026-10-15T03:56:41.124633+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-B-17.npz", "total_groups": 64, "utc": "2026-10-15T03:56:41.194981+00:00"}
+{"elapsed_seconds": 221.51881592500013, "event": "matrix_complete", "partition": "B-17", "split": "development", "states": 1018, "utc": "2026-10-15T03:56:44.615881+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-C-17.npz", "total_groups": 64, "utc": "2026-10-15T03:56:44.682851+00:00"}
+{"elapsed_seconds": 225.02827707100005, "event": "matrix_complete", "partition": "C-17", "split": "development", "states": 1018, "utc": "2026-10-15T03:56:48.125342+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-D-17.npz", "total_groups": 64, "utc": "2026-10-15T03:56:48.193053+00:00"}
+{"elapsed_seconds": 228.58872092499996, "event": "matrix_complete", "partition": "D-17", "split": "development", "states": 1018, "utc": "2026-10-15T03:56:51.685787+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-A-29.npz", "total_groups": 64, "utc": "2026-10-15T03:56:51.770283+00:00"}
+{"elapsed_seconds": 232.17681943099979, "event": "matrix_complete", "partition": "A-29", "split": "development", "states": 1018, "utc": "2026-10-15T03:56:55.273886+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-B-29.npz", "total_groups": 64, "utc": "2026-10-15T03:56:55.341674+00:00"}
+{"elapsed_seconds": 235.69859259199984, "event": "matrix_complete", "partition": "B-29", "split": "development", "states": 1018, "utc": "2026-10-15T03:56:58.795657+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-C-29.npz", "total_groups": 64, "utc": "2026-10-15T03:56:58.865141+00:00"}
+{"elapsed_seconds": 239.18670604999988, "event": "matrix_complete", "partition": "C-29", "split": "development", "states": 1018, "utc": "2026-10-15T03:57:02.283770+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-D-29.npz", "total_groups": 64, "utc": "2026-10-15T03:57:02.352064+00:00"}
+{"elapsed_seconds": 242.70024030100012, "event": "matrix_complete", "partition": "D-29", "split": "development", "states": 1018, "utc": "2026-10-15T03:57:05.797305+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-A-43.npz", "total_groups": 64, "utc": "2026-10-15T03:57:05.864016+00:00"}
+{"elapsed_seconds": 246.20984041500014, "event": "matrix_complete", "partition": "A-43", "split": "development", "states": 1018, "utc": "2026-10-15T03:57:09.306906+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-B-43.npz", "total_groups": 64, "utc": "2026-10-15T03:57:09.375464+00:00"}
+{"elapsed_seconds": 249.68696241099997, "event": "matrix_complete", "partition": "B-43", "split": "development", "states": 1018, "utc": "2026-10-15T03:57:12.784028+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-C-43.npz", "total_groups": 64, "utc": "2026-10-15T03:57:12.852204+00:00"}
+{"elapsed_seconds": 253.21210795100023, "event": "matrix_complete", "partition": "C-43", "split": "development", "states": 1018, "utc": "2026-10-15T03:57:16.306408+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-development-D-43.npz", "total_groups": 64, "utc": "2026-10-15T03:57:16.376138+00:00"}
+{"elapsed_seconds": 256.768901896, "event": "matrix_complete", "partition": "D-43", "split": "development", "states": 1018, "utc": "2026-10-15T03:57:19.863202+00:00"}
+{"event": "heldout_sealed", "seal": {"family_selection.json": "14a28d11476ee0e256abe452c9bc58a7b43b886e05ae49a5d2d8a0a9fca7f1ed", "fixed_selection.json": "bf089bf3f9554c78a18e33d264bbcb99d468f7bf19b5caf24be3cc8a40b46766", "partition-A-17.json": "a58ebf6984422ff8896d7c54cc985cf75a7777bc29c84b6fe2b33468de75f54d", "partition-A-29.json": "e59fd78f7024e03c7a0505d3c6ef4cc0b74f68826062e0ffe688651ad2f79f5e", "partition-A-43.json": "42309d2d170253a238c19f5dbe3040a91efa05766b2ea7ba37edf4d9c1b2bc07", "partition-B-17.json": "6018a80843665597afbef354eacc26821809e73ad8b3a25085b4f0815e034b41", "partition-B-29.json": "e8309fdd64aced2a9efedf7c2508261faf8471f59b5c26fbff88323fc54f5711", "partition-B-43.json": "306615bcd9156d40a26c967b0f7cf15250fdefc88b2bb0719a8dc3a6a4fc0bc9", "partition-C-17.json": "76ba817b88f07e1e7b9ee52af71a854f1de7cbcbde6c5d3721c14d4bdbf5f364", "partition-C-29.json": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d", "partition-C-43.json": "2c60ddda164da3458174b1bbe08c88395da271834f5fd0a30b1897f4d8a1fb92", "partition-D-17.json": "8f0dd1c2e753e8267486346053f5d41dc379b2d6793c1c84f41fd46690e32fd2", "partition-D-29.json": "a5b29e6820af7c789ae1cea7e8626a9bcffa935f9618e250f60d8d5ac785f601", "partition-D-43.json": "c5b0b4c5bef6eb9cf96a9583620d74deb38cd50ae0dd6bbc85f9aeecdd85660e", "preregistration.json": "c338200bda77c7f3bc202cc6d90ce28462459c9eef902dc0846cf745fa9a9401"}, "selected_family": "C", "utc": "2026-10-15T03:57:19.918682+00:00"}
+{"contexts": 16, "event": "capture_progress", "split": "heldout_matched", "states": 64, "utc": "2026-10-15T03:57:20.268046+00:00"}
+{"contexts": 144, "event": "capture_progress", "split": "heldout_matched", "states": 573, "utc": "2026-10-15T03:57:22.832435+00:00"}
+{"contexts": 272, "event": "capture_progress", "split": "heldout_matched", "states": 1081, "utc": "2026-10-15T03:57:25.310032+00:00"}
+{"contexts": 400, "event": "capture_progress", "split": "heldout_matched", "states": 1592, "utc": "2026-10-15T03:57:27.925658+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-A-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:30.676613+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-A-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:34.157905+00:00"}
+{"elapsed_seconds": 274.59958746600023, "event": "matrix_complete", "partition": "A-17", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:57:37.693888+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-B-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:37.768555+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-B-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:41.197817+00:00"}
+{"elapsed_seconds": 281.632067043, "event": "matrix_complete", "partition": "B-17", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:57:44.725729+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-C-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:44.800459+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-C-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:48.273805+00:00"}
+{"elapsed_seconds": 288.7201237190002, "event": "matrix_complete", "partition": "C-17", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:57:51.813786+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-D-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:51.886764+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-D-17.npz", "total_groups": 128, "utc": "2026-10-15T03:57:55.360075+00:00"}
+{"elapsed_seconds": 295.75052381700016, "event": "matrix_complete", "partition": "D-17", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:57:58.844185+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-A-29.npz", "total_groups": 128, "utc": "2026-10-15T03:57:58.913206+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-A-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:02.306919+00:00"}
+{"elapsed_seconds": 302.7066577549999, "event": "matrix_complete", "partition": "A-29", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:05.800318+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-B-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:05.867448+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-B-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:09.268742+00:00"}
+{"elapsed_seconds": 309.6775876840002, "event": "matrix_complete", "partition": "B-29", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:12.771248+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-C-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:12.838176+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-C-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:16.275588+00:00"}
+{"elapsed_seconds": 316.70277530600015, "event": "matrix_complete", "partition": "C-29", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:19.795434+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-D-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:19.862019+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-D-29.npz", "total_groups": 128, "utc": "2026-10-15T03:58:23.296444+00:00"}
+{"elapsed_seconds": 323.64198216700015, "event": "matrix_complete", "partition": "D-29", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:26.734641+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-A-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:26.803878+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-A-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:30.237582+00:00"}
+{"elapsed_seconds": 330.614207608, "event": "matrix_complete", "partition": "A-43", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:33.706866+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-B-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:33.772195+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-B-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:37.163772+00:00"}
+{"elapsed_seconds": 337.74405526600003, "event": "matrix_complete", "partition": "B-43", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:40.836714+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-C-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:40.908220+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-C-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:44.419161+00:00"}
+{"elapsed_seconds": 344.941132078, "event": "matrix_complete", "partition": "C-43", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:48.032970+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_matched-D-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:48.102388+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_matched-D-43.npz", "total_groups": 128, "utc": "2026-10-15T03:58:51.581438+00:00"}
+{"elapsed_seconds": 352.2249920690001, "event": "matrix_complete", "partition": "D-43", "split": "heldout_matched", "states": 2037, "utc": "2026-10-15T03:58:55.316830+00:00"}
+{"contexts": 16, "event": "capture_progress", "split": "heldout_ood", "states": 64, "utc": "2026-10-15T03:58:55.676198+00:00"}
+{"contexts": 144, "event": "capture_progress", "split": "heldout_ood", "states": 576, "utc": "2026-10-15T03:58:58.212970+00:00"}
+{"contexts": 272, "event": "capture_progress", "split": "heldout_ood", "states": 1087, "utc": "2026-10-15T03:59:00.737540+00:00"}
+{"contexts": 400, "event": "capture_progress", "split": "heldout_ood", "states": 1599, "utc": "2026-10-15T03:59:03.244876+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-A-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:06.001310+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-A-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:09.433884+00:00"}
+{"elapsed_seconds": 369.85375548699994, "event": "matrix_complete", "partition": "A-17", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:12.945593+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-B-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:13.013686+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-B-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:16.450828+00:00"}
+{"elapsed_seconds": 376.92313798299983, "event": "matrix_complete", "partition": "B-17", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:20.013651+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-C-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:20.082574+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-C-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:23.508910+00:00"}
+{"elapsed_seconds": 383.9139377460001, "event": "matrix_complete", "partition": "C-17", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:27.004451+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-D-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:27.071968+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-D-17.npz", "total_groups": 128, "utc": "2026-10-15T03:59:30.529496+00:00"}
+{"elapsed_seconds": 390.9308543679999, "event": "matrix_complete", "partition": "D-17", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:34.021367+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-A-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:34.089091+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-A-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:37.566667+00:00"}
+{"elapsed_seconds": 398.040563817, "event": "matrix_complete", "partition": "A-29", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:41.131077+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-B-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:41.199518+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-B-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:44.639334+00:00"}
+{"elapsed_seconds": 405.0691154850001, "event": "matrix_complete", "partition": "B-29", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:48.158906+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-C-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:48.226160+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-C-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:51.694854+00:00"}
+{"elapsed_seconds": 412.1375607250002, "event": "matrix_complete", "partition": "C-29", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T03:59:55.227351+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-D-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:55.296515+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-D-29.npz", "total_groups": 128, "utc": "2026-10-15T03:59:58.758018+00:00"}
+{"elapsed_seconds": 419.254408885, "event": "matrix_complete", "partition": "D-29", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T04:00:02.344199+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-A-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:02.411754+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-A-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:05.854487+00:00"}
+{"elapsed_seconds": 426.26049983099983, "event": "matrix_complete", "partition": "A-43", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T04:00:09.350290+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-B-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:09.418138+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-B-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:12.867694+00:00"}
+{"elapsed_seconds": 433.3172749229998, "event": "matrix_complete", "partition": "B-43", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T04:00:16.406079+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-C-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:16.472778+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-C-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:19.937479+00:00"}
+{"elapsed_seconds": 440.3285695929999, "event": "matrix_complete", "partition": "C-43", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T04:00:23.417374+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-heldout_ood-D-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:23.486068+00:00"}
+{"event": "candidate_progress", "groups": 65, "matrix": "matrix-heldout_ood-D-43.npz", "total_groups": 128, "utc": "2026-10-15T04:00:26.947405+00:00"}
+{"elapsed_seconds": 447.4078174330002, "event": "matrix_complete", "partition": "D-43", "split": "heldout_ood", "states": 2044, "utc": "2026-10-15T04:00:30.496621+00:00"}
+{"elapsed_seconds": 449.74278365400005, "event": "phase1_complete", "selected_family_eligible": false, "utc": "2026-10-15T04:00:32.831589+00:00"}

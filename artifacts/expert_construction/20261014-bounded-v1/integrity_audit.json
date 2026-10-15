@@ -1,0 +1,283 @@
+{
+  "config_and_assignment_recipe_match": true,
+  "current_newline_only_differences_explicitly_allowed": false,
+  "current_source_hashes_match_exactly": true,
+  "current_source_newline_only_differences": [],
+  "full_model_parity_checks": 348,
+  "heldout_artifacts_opened": true,
+  "heldout_seal_entries_checked": 15,
+  "manifest_sha256": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+  "matrices": {
+    "matrix-calibration-A-17.npz": {
+      "candidates": 28,
+      "sha256": "b4f327a4572ef4c7b32791a0a9c0a9cabab029cbd4258b1d6fc9ee6fbea01a29",
+      "states": 4079
+    },
+    "matrix-calibration-A-29.npz": {
+      "candidates": 28,
+      "sha256": "83fa457ec29c20208156abccdfbb9d1a50daf05b27f1de6d347f6a734fcb6d50",
+      "states": 4079
+    },
+    "matrix-calibration-A-43.npz": {
+      "candidates": 28,
+      "sha256": "b2660e0463745b557fe044552a0ac68937e124d5888c0b16ecbe72225b91e57e",
+      "states": 4079
+    },
+    "matrix-calibration-B-17.npz": {
+      "candidates": 28,
+      "sha256": "a41f25dbcdcdcbd70b0129850b4fbe2fa376d392cb4b78c790d4e1c60ba253cc",
+      "states": 4079
+    },
+    "matrix-calibration-B-29.npz": {
+      "candidates": 28,
+      "sha256": "5b590611659ade6c390e7e062f723b969590e73b0d7c04b85d16588eb46b5897",
+      "states": 4079
+    },
+    "matrix-calibration-B-43.npz": {
+      "candidates": 28,
+      "sha256": "62f72f53504e92ea76520e587ec2f7a0defb6c86b46552bc5a45140a2778c982",
+      "states": 4079
+    },
+    "matrix-calibration-C-17.npz": {
+      "candidates": 28,
+      "sha256": "c26a575aae2709a092b2545bb3a388e8f59f8692f039ed500ae91e5e8ea3418f",
+      "states": 4079
+    },
+    "matrix-calibration-C-29.npz": {
+      "candidates": 28,
+      "sha256": "ecb35148cbb6a223321144d83d66bcf5a8aab5c1fff20762e1e4db986e20c0f6",
+      "states": 4079
+    },
+    "matrix-calibration-C-43.npz": {
+      "candidates": 28,
+      "sha256": "fd918805d3cb4624cc5440229a840a043f9f14530a77f5017589dfe95574fd48",
+      "states": 4079
+    },
+    "matrix-calibration-D-17.npz": {
+      "candidates": 28,
+      "sha256": "0d25f0b8c4cef3bdd4937eba4e8e3d65d9fcf777dae2f38f600552b1ee701ac3",
+      "states": 4079
+    },
+    "matrix-calibration-D-29.npz": {
+      "candidates": 28,
+      "sha256": "356a92c93c8c944f4d165b0ea6a9c4f41188b0de0a05558359267403851fda8b",
+      "states": 4079
+    },
+    "matrix-calibration-D-43.npz": {
+      "candidates": 28,
+      "sha256": "47993e7357e248b5f3047e43ad76d1a0e84416e831722f584aa43cdd6ed6c412",
+      "states": 4079
+    },
+    "matrix-development-A-17.npz": {
+      "candidates": 28,
+      "sha256": "6740724c3b3d55c5bf9750656b636c56d2527e77175a06eabd05ed0a4debd2f3",
+      "states": 1018
+    },
+    "matrix-development-A-29.npz": {
+      "candidates": 28,
+      "sha256": "36718266b67be72c4a0bc03f34ba518751cc7287902c855beb31e9af287bd709",
+      "states": 1018
+    },
+    "matrix-development-A-43.npz": {
+      "candidates": 28,
+      "sha256": "5be2e554ea35e16ccacc0cc9032d249349b4de9bfef517841b822734928123b2",
+      "states": 1018
+    },
+    "matrix-development-B-17.npz": {
+      "candidates": 28,
+      "sha256": "a5189a7ecdcf93bf914628ebb284f812f8f450c6db6afa97fe39859693d0bfa5",
+      "states": 1018
+    },
+    "matrix-development-B-29.npz": {
+      "candidates": 28,
+      "sha256": "770e25b9f955673a0aa6c9e4665503202b553044b004bb4d174433058a0770d0",
+      "states": 1018
+    },
+    "matrix-development-B-43.npz": {
+      "candidates": 28,
+      "sha256": "0cbd2bc42b819eaacf4805fd1af8fe2f6eefc5fe29d48e4a96b4c6494ea08bae",
+      "states": 1018
+    },
+    "matrix-development-C-17.npz": {
+      "candidates": 28,
+      "sha256": "3f9dd6f4dd126eecf08e2476928878f10e17fbb67d07059bc1a032a47eb20c54",
+      "states": 1018
+    },
+    "matrix-development-C-29.npz": {
+      "candidates": 28,
+      "sha256": "2cb54a9ee3e5533024db4e309f0eb9cc4806ee3e0e69dd0711cd836b76efd634",
+      "states": 1018
+    },
+    "matrix-development-C-43.npz": {
+      "candidates": 28,
+      "sha256": "51c64906da01f000ce172353fa3fe61efb57ef23fcb23cdcdd7cd400f2c27706",
+      "states": 1018
+    },
+    "matrix-development-D-17.npz": {
+      "candidates": 28,
+      "sha256": "8dde20856ae108e1d3a9e51346677130ca8d4332752e6e69acbc2c74d301d22c",
+      "states": 1018
+    },
+    "matrix-development-D-29.npz": {
+      "candidates": 28,
+      "sha256": "e535eb29890d151fbea9dd8e0f08884b83d7d3af0b5976822c2e700acacbf1a9",
+      "states": 1018
+    },
+    "matrix-development-D-43.npz": {
+      "candidates": 28,
+      "sha256": "417889f54daed4fa482d7e6a8d744cb0b11c9aad962542affc0da6fa74dc62d5",
+      "states": 1018
+    },
+    "matrix-heldout_matched-A-17.npz": {
+      "candidates": 28,
+      "sha256": "2d96925730d9276b676f9bb9ca0cf1fc6b5943158de8c17463e09fd3027bdb84",
+      "states": 2037
+    },
+    "matrix-heldout_matched-A-29.npz": {
+      "candidates": 28,
+      "sha256": "3dceb3481df57d02dd823ae6ac1938112c707fcb996205d5f8e94daf70b516fb",
+      "states": 2037
+    },
+    "matrix-heldout_matched-A-43.npz": {
+      "candidates": 28,
+      "sha256": "ee2f169f7c675d49103c46c4f6566934a33f06ce161b5ac74a97e3c1731f6c40",
+      "states": 2037
+    },
+    "matrix-heldout_matched-B-17.npz": {
+      "candidates": 28,
+      "sha256": "8dcb66f46c9620ffeee502a1df82e8d9cc56ec56b954dde520186af0f8d521b0",
+      "states": 2037
+    },
+    "matrix-heldout_matched-B-29.npz": {
+      "candidates": 28,
+      "sha256": "6a9f2fede1e7785fb2e8f161b43fb45193d31823aaedfba30ca751faa37e5456",
+      "states": 2037
+    },
+    "matrix-heldout_matched-B-43.npz": {
+      "candidates": 28,
+      "sha256": "051b06aa9ee5d1913312f2a1be8af7d634520460c866cb82dec8fe8026b9a1bc",
+      "states": 2037
+    },
+    "matrix-heldout_matched-C-17.npz": {
+      "candidates": 28,
+      "sha256": "ddbe2d278cff21b0e19f517dabdfd9e34656b04f857f3c0817c1f90694b807b0",
+      "states": 2037
+    },
+    "matrix-heldout_matched-C-29.npz": {
+      "candidates": 28,
+      "sha256": "be8ddba3e6db6b0afc1b2b9122e85d9158318671ed026f7e1a82c8fb7da1ee92",
+      "states": 2037
+    },
+    "matrix-heldout_matched-C-43.npz": {
+      "candidates": 28,
+      "sha256": "0bf241ee5604e290f9ebbb323867ca8c5ddacedbd8c1266bac84668143e5fc37",
+      "states": 2037
+    },
+    "matrix-heldout_matched-D-17.npz": {
+      "candidates": 28,
+      "sha256": "0f3079f4b2170f440faf396972d9f1997481e86d7e421e7ba3458c5b374c4580",
+      "states": 2037
+    },
+    "matrix-heldout_matched-D-29.npz": {
+      "candidates": 28,
+      "sha256": "eff70315a57c35e1ee99393a0477c9b34cc0339698b34beab3abd0b7a6f444cd",
+      "states": 2037
+    },
+    "matrix-heldout_matched-D-43.npz": {
+      "candidates": 28,
+      "sha256": "afdb0dfddfd903ac65514886948406b9a212beacf261881ef77c0c0dc230279f",
+      "states": 2037
+    },
+    "matrix-heldout_ood-A-17.npz": {
+      "candidates": 28,
+      "sha256": "dc817ea15883184d00c38a058f1b27914da442a09e51b571adabd26d8e408466",
+      "states": 2044
+    },
+    "matrix-heldout_ood-A-29.npz": {
+      "candidates": 28,
+      "sha256": "f171b3097da2d91cf6ee2eb16d4a631b85ed3df2f8d41b17a4e719831d2ff741",
+      "states": 2044
+    },
+    "matrix-heldout_ood-A-43.npz": {
+      "candidates": 28,
+      "sha256": "0c1077dd6d00ffcc09c595f96cbb08f83339ce60c9f45d9a7354e35e469498a0",
+      "states": 2044
+    },
+    "matrix-heldout_ood-B-17.npz": {
+      "candidates": 28,
+      "sha256": "70dc81099446b891059ec0c03d8e9a02ddb406efd4790d9fc876c738c7e07d96",
+      "states": 2044
+    },
+    "matrix-heldout_ood-B-29.npz": {
+      "candidates": 28,
+      "sha256": "47578c496a52c5dccd12736b9740e74982bbed525a77cf535f819612a8f579a0",
+      "states": 2044
+    },
+    "matrix-heldout_ood-B-43.npz": {
+      "candidates": 28,
+      "sha256": "d791daafe2a489aba7788b18207b9e3644da588022a5f165129d7eac20a22fc2",
+      "states": 2044
+    },
+    "matrix-heldout_ood-C-17.npz": {
+      "candidates": 28,
+      "sha256": "8a1ada9e5cea49c76d791465fe68de1813aab035c0dc9000bd9b73be59a91964",
+      "states": 2044
+    },
+    "matrix-heldout_ood-C-29.npz": {
+      "candidates": 28,
+      "sha256": "52cb76b6d1dcbc7950833b091a4019ddd16e441b25959b7d54338dfa7b73d0bb",
+      "states": 2044
+    },
+    "matrix-heldout_ood-C-43.npz": {
+      "candidates": 28,
+      "sha256": "76cc034c2a52b07347c472ecc80295c84e30d731486249cd9cc450b841e5e576",
+      "states": 2044
+    },
+    "matrix-heldout_ood-D-17.npz": {
+      "candidates": 28,
+      "sha256": "394e81b69f99a518aa43e727865c3e0a24cf798fae43fa3f35284b16824c5ed9",
+      "states": 2044
+    },
+    "matrix-heldout_ood-D-29.npz": {
+      "candidates": 28,
+      "sha256": "8350514c49fd9f2d647cd1f3d14c7531b3affd9b5c4d0e762fac88465f8125d9",
+      "states": 2044
+    },
+    "matrix-heldout_ood-D-43.npz": {
+      "candidates": 28,
+      "sha256": "ba5f9b40275253f05e1a4e125764ce6694057534cd58f1908431bd8a36600995",
+      "states": 2044
+    }
+  },
+  "matrix_files_checked": 48,
+  "model_loaded": false,
+  "neurons_per_expert": 608,
+  "original_weights_unchanged_from_execution_record": true,
+  "paired_construction": {
+    "17": {
+      "losses_and_gradient_norms_finite": true,
+      "paired_hashes_match": true,
+      "steps_per_objective": 100
+    },
+    "29": {
+      "losses_and_gradient_norms_finite": true,
+      "paired_hashes_match": true,
+      "steps_per_objective": 100
+    },
+    "43": {
+      "losses_and_gradient_norms_finite": true,
+      "paired_hashes_match": true,
+      "steps_per_objective": 100
+    }
+  },
+  "partitions_checked": 12,
+  "pass": true,
+  "quality_or_economic_promotion_inferred": false,
+  "registered_files_checked": 17,
+  "registered_utc": "2026-10-15T03:53:01.113674+00:00",
+  "report_or_verifier_files_part_of_scientific_seal": false,
+  "run_dir": "C:\\Users\\m4vil\\OneDrive\\Documents\\Review\\DepthRouter-expert-audit\\artifacts\\expert_construction\\20261014-bounded-v1",
+  "scope": "complete_phase1_integrity",
+  "snapshot_source_hashes_match": true,
+  "weight_claim_scope": "verifies saved execution assertion; no model weights are reloaded"
+}

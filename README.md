@@ -84,3 +84,9 @@ The RTX 4070 SUPER fused-kernel follow-up is documented in
 Triton kernel beats dense execution only as a non-deployable upper bound; no
 sub-full policy passes the quality gate, while graph-captured full-width dense
 execution remains the fastest exact implementation.
+
+The separate final-MLP expert-construction diagnostic is preregistered in
+[`EXPERT_CONSTRUCTION_PREREGISTRATION.md`](EXPERT_CONSTRUCTION_PREREGISTRATION.md).
+Its capability, conditional selection, and execution findings are separated in
+[`EXPERT_CONSTRUCTION_REPORT.md`](EXPERT_CONSTRUCTION_REPORT.md). Exhaustive subset
+oracles are diagnostic only, not deployment routers or measured savings.

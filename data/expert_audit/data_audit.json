@@ -1,0 +1,137 @@
+{
+  "cross_split_pairs_checked": 1835008,
+  "enterprise_fraction": 0.125,
+  "enterprise_instruction_keywords": [
+    "business",
+    "customer",
+    "company",
+    "employee",
+    "manager",
+    "meeting",
+    "office",
+    "project",
+    "sales",
+    "invoice",
+    "budget",
+    "marketing",
+    "client",
+    "product",
+    "software",
+    "database",
+    "security",
+    "workflow",
+    "contract",
+    "email",
+    "work",
+    "leadership",
+    "interview",
+    "team",
+    "data",
+    "program",
+    "service"
+  ],
+  "enterprise_scope": "instruction-keyword topic screen; not a production benchmark",
+  "historical_prompt_count": 6163,
+  "historical_sources": [
+    {
+      "path": "artifacts/predictive_working_set/20261013-validated-final/evaluation_manifest.jsonl",
+      "rows": 896,
+      "sha256": "552efc03e4caa86f95ef52a66e4563bdce70f394d0f60536cec36fdec6a0d6c4",
+      "unique_prompts": 896
+    },
+    {
+      "path": "artifacts/fused_sparse_swiglu/20261013-validated-final-v2/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "9325a76ac0476f94abfad1a4a4895aef9542bb3897894d763fd743d53a9d5264",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "artifacts/output_gap_completion/20261014-controlled-v1/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "e2d809957993bb24b8376812ad4ad72332eac0e199171a6c5be2f6cd45dba0ab",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "data/photonic_parallel_manifest.jsonl",
+      "rows": 24,
+      "sha256": "8a9f29b1f4f98226e23086557f7a1684bf465d7d64636a662661bfb96d058ad1",
+      "unique_prompts": 24
+    },
+    {
+      "path": "data/expert_audit/historical_alpaca_prompts.jsonl",
+      "rows": 2200,
+      "sha256": "8de9ac8e65f79b7242e924c217e2adcbf966fc998139ecdc10d48f3a0dcc08c4",
+      "unique_prompts": 2171
+    }
+  ],
+  "historical_unique_token_sets": 2679,
+  "independence_scope": "lexical exclusion; semantic family independence is not established",
+  "license": "CC-BY-SA-3.0",
+  "manifest_file_sha256": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+  "manifest_sha256": "8cdf9914d7f1c5880849439a7dbac34f44f99bdf2c61c249496eebeeec1fb586",
+  "maximum_prompt_characters": 1100,
+  "ood_definition": "creative_writing and summarization categories excluded from fitting",
+  "prompt_and_instruction_token_jaccard_rejection_threshold": 0.72,
+  "rows": 2304,
+  "selection_salt": "DepthRouter-expert-audit-data-v1-20261014",
+  "source": "databricks/databricks-dolly-15k",
+  "source_document_and_exact_instruction_family_globally_unique": true,
+  "source_document_five_token_shingle_jaccard_rejection_threshold": 0.5,
+  "source_responses_used": false,
+  "source_revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+  "source_sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+  "split_sizes": {
+    "calibration": 1024,
+    "development": 256,
+    "heldout_matched": 512,
+    "heldout_ood": 512
+  },
+  "stratum_counts": {
+    "calibration": {
+      "enterprise_related": 128,
+      "general_natural_language": 896
+    },
+    "development": {
+      "enterprise_related": 32,
+      "general_natural_language": 224
+    },
+    "heldout_matched": {
+      "enterprise_related": 64,
+      "general_natural_language": 448
+    },
+    "heldout_ood": {
+      "enterprise_related": 64,
+      "general_natural_language": 448
+    }
+  },
+  "task_counts": {
+    "calibration": {
+      "brainstorming": 172,
+      "classification": 172,
+      "closed_qa": 171,
+      "general_qa": 171,
+      "information_extraction": 168,
+      "open_qa": 170
+    },
+    "development": {
+      "brainstorming": 45,
+      "classification": 45,
+      "closed_qa": 43,
+      "general_qa": 43,
+      "information_extraction": 37,
+      "open_qa": 43
+    },
+    "heldout_matched": {
+      "brainstorming": 88,
+      "classification": 88,
+      "closed_qa": 88,
+      "general_qa": 88,
+      "information_extraction": 74,
+      "open_qa": 86
+    },
+    "heldout_ood": {
+      "creative_writing": 262,
+      "summarization": 250
+    }
+  }
+}

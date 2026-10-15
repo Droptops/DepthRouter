@@ -1,0 +1,19 @@
+{
+  "scope": "post-run implementation validation; not an inference benchmark",
+  "docker_image": "depthrouter-photonic:local",
+  "docker_image_id": "sha256:da418ab718f638781995c7077193006b6deed2dfb9a589e4b34f4e477f35df08",
+  "repository_wide_ruff": "passed",
+  "pytest": {"passed": 157, "failed": 0, "elapsed_seconds": 14.16},
+  "commands_inside_existing_container": ["python -m ruff check .", "python -m pytest"],
+  "integrity_audit": "integrity_audit.json",
+  "independent_review": [
+    "Data provenance and source-family exclusions reviewed; historical Alpaca prompt hashes reconstructed and verified.",
+    "C/D shared initialization, state draws, candidate draws, constraints, optimizer and step counts verified.",
+    "Full-model versus cached candidate parity checked on every candidate and partition in the calibration replay batch."
+  ],
+  "prior_prs": {
+    "15": {"state": "OPEN", "head": "36cf7e025c3a809b922bdfa7b044abac47a426ff", "modified": false},
+    "16": {"state": "OPEN", "head": "ec696fddabc59c51292ba1e8f500c9000a50c79b", "modified": false}
+  },
+  "merge_performed": false
+}
