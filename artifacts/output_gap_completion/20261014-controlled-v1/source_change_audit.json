@@ -1,0 +1,9 @@
+{
+  "post_run_change": "experiments/output_gap_timing.py: replaced assigned lambda with equivalent named function for Ruff 0.14 E731",
+  "timing_executed_in_canonical_run": false,
+  "affects_training_or_evaluation": false,
+  "preregistration_unchanged": true,
+  "original_timing_source_snapshot": "executed_sources/output_gap_timing.py.txt",
+  "original_hash_location": "preregistration.json source_sha256 experiments/output_gap_timing.py",
+  "source_snapshots": "Other registered sources are in executed_sources/<original-path>.txt; snapshots preserve exact bytes via .gitattributes, including Windows CRLF in inherited files."
+}

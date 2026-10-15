@@ -1,0 +1,9 @@
+{
+  "checkpoint_roundtrip_exact": true,
+  "checkpoint_unchanged_after_heldout": true,
+  "deployed_input": "state only; no labels, candidates, or dense activations stored in correction",
+  "full_width_control_max_logit_error": 0.0,
+  "full_width_control_mismatches": 0,
+  "gap_identity_max_abs_error": 3.5762786865234375e-07,
+  "no_heldout_during_fit": true
+}

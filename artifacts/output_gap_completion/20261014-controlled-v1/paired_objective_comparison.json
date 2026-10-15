@@ -1,0 +1,296 @@
+[
+  {
+    "ci95": [
+      -0.29296875,
+      -0.18359375
+    ],
+    "gap_minus_hidden_agreement": -0.23828125,
+    "gap_wins": 1,
+    "hidden_wins": 62,
+    "rank": 8,
+    "seed": 17,
+    "split": "development"
+  },
+  {
+    "ci95": [
+      0.0390625,
+      0.18359375
+    ],
+    "gap_minus_hidden_agreement": 0.11328125,
+    "gap_wins": 61,
+    "hidden_wins": 32,
+    "rank": 8,
+    "seed": 29,
+    "split": "development"
+  },
+  {
+    "ci95": [
+      -0.23046875,
+      -0.1328125
+    ],
+    "gap_minus_hidden_agreement": -0.1796875,
+    "gap_wins": 0,
+    "hidden_wins": 46,
+    "rank": 8,
+    "seed": 43,
+    "split": "development"
+  },
+  {
+    "ci95": [
+      -0.15234375,
+      -0.05208333333333333
+    ],
+    "direction_positive_all_seeds": false,
+    "established": false,
+    "gap_minus_hidden_agreement": -0.1015625,
+    "rank": 8,
+    "resampling_unit": "prompt, with all seeds kept together",
+    "seed": "paired_seed_mean",
+    "split": "development"
+  },
+  {
+    "ci95": [
+      -0.01171875,
+      0.02734375
+    ],
+    "gap_minus_hidden_agreement": 0.0078125,
+    "gap_wins": 4,
+    "hidden_wins": 2,
+    "rank": 16,
+    "seed": 17,
+    "split": "development"
+  },
+  {
+    "ci95": [
+      -0.15234375,
+      -0.0390625
+    ],
+    "gap_minus_hidden_agreement": -0.09375,
+    "gap_wins": 17,
+    "hidden_wins": 41,
+    "rank": 16,
+    "seed": 29,
+    "split": "development"
+  },
+  {
+    "ci95": [
+      -0.07421875,
+      -0.0234375
+    ],
+    "gap_minus_hidden_agreement": -0.046875,
+    "gap_wins": 0,
+    "hidden_wins": 12,
+    "rank": 16,
+    "seed": 43,
+    "split": "development"
+  },
+  {
+    "ci95": [
+      -0.06770833333333333,
+      -0.020833333333333336
+    ],
+    "direction_positive_all_seeds": false,
+    "established": false,
+    "gap_minus_hidden_agreement": -0.044270833333333336,
+    "rank": 16,
+    "resampling_unit": "prompt, with all seeds kept together",
+    "seed": "paired_seed_mean",
+    "split": "development"
+  },
+  {
+    "ci95": [
+      0.01171875,
+      0.056640625
+    ],
+    "gap_minus_hidden_agreement": 0.033203125,
+    "gap_wins": 26,
+    "hidden_wins": 9,
+    "rank": 8,
+    "seed": 17,
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.052734375,
+      -0.009765625
+    ],
+    "gap_minus_hidden_agreement": -0.03125,
+    "gap_wins": 8,
+    "hidden_wins": 24,
+    "rank": 8,
+    "seed": 29,
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.041015625,
+      -0.005859375
+    ],
+    "gap_minus_hidden_agreement": -0.0234375,
+    "gap_wins": 5,
+    "hidden_wins": 17,
+    "rank": 8,
+    "seed": 43,
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.01497395833333333,
+      2.168404344971009e-19
+    ],
+    "direction_positive_all_seeds": false,
+    "established": false,
+    "gap_minus_hidden_agreement": -0.007161458333333333,
+    "rank": 8,
+    "resampling_unit": "prompt, with all seeds kept together",
+    "seed": "paired_seed_mean",
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.048828125,
+      0.001953125
+    ],
+    "gap_minus_hidden_agreement": -0.0234375,
+    "gap_wins": 15,
+    "hidden_wins": 27,
+    "rank": 16,
+    "seed": 17,
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      0.005859375,
+      0.0546875
+    ],
+    "gap_minus_hidden_agreement": 0.029296875,
+    "gap_wins": 28,
+    "hidden_wins": 13,
+    "rank": 16,
+    "seed": 29,
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.111328125,
+      -0.044921875
+    ],
+    "gap_minus_hidden_agreement": -0.078125,
+    "gap_wins": 20,
+    "hidden_wins": 60,
+    "rank": 16,
+    "seed": 43,
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.045572916666666664,
+      -0.0026041666666666665
+    ],
+    "direction_positive_all_seeds": false,
+    "established": false,
+    "gap_minus_hidden_agreement": -0.024088541666666668,
+    "rank": 16,
+    "resampling_unit": "prompt, with all seeds kept together",
+    "seed": "paired_seed_mean",
+    "split": "heldout_matched"
+  },
+  {
+    "ci95": [
+      -0.009765625,
+      0.009765625
+    ],
+    "gap_minus_hidden_agreement": 0.0,
+    "gap_wins": 3,
+    "hidden_wins": 3,
+    "rank": 8,
+    "seed": 17,
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      0.001953125,
+      0.015625
+    ],
+    "gap_minus_hidden_agreement": 0.0078125,
+    "gap_wins": 4,
+    "hidden_wins": 0,
+    "rank": 8,
+    "seed": 29,
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      0.10546875,
+      0.16796875
+    ],
+    "gap_minus_hidden_agreement": 0.13671875,
+    "gap_wins": 73,
+    "hidden_wins": 3,
+    "rank": 8,
+    "seed": 43,
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      0.037109375,
+      0.059244791666666664
+    ],
+    "direction_positive_all_seeds": false,
+    "established": false,
+    "gap_minus_hidden_agreement": 0.04817708333333333,
+    "rank": 8,
+    "resampling_unit": "prompt, with all seeds kept together",
+    "seed": "paired_seed_mean",
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      -0.154296875,
+      -0.091796875
+    ],
+    "gap_minus_hidden_agreement": -0.123046875,
+    "gap_wins": 5,
+    "hidden_wins": 68,
+    "rank": 16,
+    "seed": 17,
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      -0.017578125,
+      0.005859375
+    ],
+    "gap_minus_hidden_agreement": -0.005859375,
+    "gap_wins": 3,
+    "hidden_wins": 6,
+    "rank": 16,
+    "seed": 29,
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      -0.021484375,
+      0.0
+    ],
+    "gap_minus_hidden_agreement": -0.009765625,
+    "gap_wins": 1,
+    "hidden_wins": 6,
+    "rank": 16,
+    "seed": 43,
+    "split": "heldout_ood"
+  },
+  {
+    "ci95": [
+      -0.060546875,
+      -0.033203125
+    ],
+    "direction_positive_all_seeds": false,
+    "established": false,
+    "gap_minus_hidden_agreement": -0.046223958333333336,
+    "rank": 16,
+    "resampling_unit": "prompt, with all seeds kept together",
+    "seed": "paired_seed_mean",
+    "split": "heldout_ood"
+  }
+]
