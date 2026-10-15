@@ -31,3 +31,7 @@
 /src/depth_router/fused_swiglu.py text eol=crlf
 /src/depth_router/output_gap.py text eol=crlf
 /src/depth_router/output_gap_data.py text eol=crlf
+# Historical exclusion provenance also seals the original Windows raw bytes.
+/artifacts/predictive_working_set/20261013-validated-final/evaluation_manifest.jsonl text eol=crlf
+/artifacts/fused_sparse_swiglu/20261013-validated-final-v2/evaluation_manifest.jsonl text eol=crlf
+/data/photonic_parallel_manifest.jsonl text eol=crlf
