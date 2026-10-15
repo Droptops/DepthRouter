@@ -1,0 +1,39 @@
+{
+  "count_scope": "eligible source rows before new inter-split selection; not model outcomes",
+  "decision": "Reduce split sizes before model use; keep source, filters and quota unchanged",
+  "frozen_split_sizes": {
+    "calibration": 768,
+    "confirmation": 128,
+    "development": 128,
+    "heldout_matched": 512,
+    "heldout_ood": 192
+  },
+  "length_filtered_enterprise_rows": {
+    "brainstorming": 79,
+    "classification": 69,
+    "closed_qa": 49,
+    "creative_writing": 79,
+    "general_qa": 119,
+    "information_extraction": 19,
+    "open_qa": 111,
+    "summarization": 27
+  },
+  "model_outputs_accessed": false,
+  "original_matched_enterprise_required": 256,
+  "original_ood_enterprise_required": 96,
+  "original_proposed_split_sizes": {
+    "calibration": 1024,
+    "confirmation": 512,
+    "development": 256,
+    "heldout_matched": 512,
+    "heldout_ood": 512
+  },
+  "strict_fresh_enterprise_rows": {
+    "brainstorming": 35,
+    "classification": 25,
+    "closed_qa": 6,
+    "creative_writing": 41,
+    "general_qa": 76,
+    "open_qa": 70
+  }
+}

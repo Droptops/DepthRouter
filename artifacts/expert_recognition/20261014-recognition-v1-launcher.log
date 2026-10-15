@@ -1,0 +1,26 @@
+Obtaining file:///workspace
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: depth-router
+  Building editable for depth-router (pyproject.toml): started
+  Building editable for depth-router (pyproject.toml): finished with status 'done'
+  Created wheel for depth-router: filename=depth_router-0.1.0-0.editable-py3-none-any.whl size=3126 sha256=458dd5dba26a8750b03174e52b7c476cd2e4ebfd3ce67d28805d14321e68d76c
+  Stored in directory: /tmp/pip-ephem-wheel-cache-bl9raosz/wheels/e2/2c/68/4c4a53c0aec7bc75cfaa7bb42a2542d1390caa1e3199ccef70
+Successfully built depth-router
+Installing collected packages: depth-router
+  Attempting uninstall: depth-router
+    Found existing installation: depth-router 0.1.0
+    Can't uninstall 'depth-router'. No files were found to uninstall.
+Successfully installed depth-router-0.1.0
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+`torch_dtype` is deprecated! Use `dtype` instead!
+{"contexts": 16, "event": "capture_progress", "split": "confirmation", "states": 63, "utc": "2026-10-15T04:41:10.588580+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-confirmation.npz", "total_groups": 32, "utc": "2026-10-15T04:41:13.008354+00:00"}
+{"elapsed_seconds": 11.960776219000763, "event": "confirmation_complete", "point_pass": false, "utc": "2026-10-15T04:41:15.347981+00:00"}
+{"elapsed_seconds": 13.42898187800074, "event": "cycle_complete", "promote": false, "utc": "2026-10-15T04:41:16.816186+00:00"}

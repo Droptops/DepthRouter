@@ -1,0 +1,124 @@
+{
+  "before_model_load_fit_and_fresh_outputs": true,
+  "config": {
+    "attention": "sdpa",
+    "base_commit": "a803bf8a967e9437344e897a9bc8677f9f21ffea",
+    "batch_size": 16,
+    "bootstrap_repetitions": 2000,
+    "bootstrap_seed": 17,
+    "confirmation_gates": {
+      "coverage": 0.8,
+      "each_stratum": true,
+      "portfolio_advantage": 0.05
+    },
+    "continuation_positions": [
+      1,
+      3,
+      7,
+      11
+    ],
+    "dtype": "bfloat16",
+    "fixed_candidate_index": 8,
+    "frozen_partition": "artifacts/expert_construction/20261014-bounded-v1/partition-C-29.json",
+    "frozen_partition_sha256": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d",
+    "gpu_wall_budget_seconds": 14400,
+    "manifest": "data/expert_recognition/evaluation_manifest.jsonl",
+    "max_prompt_tokens": 512,
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "old_fixed_selection": "artifacts/expert_construction/20261014-bounded-v1/fixed_selection.json",
+    "old_fixed_selection_sha256": "bf089bf3f9554c78a18e33d264bbcb99d468f7bf19b5caf24be3cc8a40b46766",
+    "partition_name": "C-29",
+    "primary_runtime_seed": 17,
+    "recognition_gates": {
+      "advantage_splits": [
+        "heldout_matched",
+        "heldout_ood"
+      ],
+      "agreement": 0.99,
+      "all_three_seeds": true,
+      "mean_kl": 0.01,
+      "portfolio_minus_binary_cheap_fraction_ci_lower_strictly_above": 0.0,
+      "positive_cheap_fraction_each_split": true
+    },
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "runtime": {
+      "batch_size": 1,
+      "blocks": 20,
+      "bootstrap_resamples": 2000,
+      "fresh_batch1_dense_prefix_capture": true,
+      "fullmodel_states": 8,
+      "quality_splits": [
+        "development",
+        "heldout_matched",
+        "heldout_ood"
+      ],
+      "repetitions": 2,
+      "seed": 17,
+      "states": 64,
+      "timing_split": "heldout_matched",
+      "warmup": 2
+    },
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "selector": {
+      "architectures": [
+        "linear",
+        "mlp_64"
+      ],
+      "batch_size": 64,
+      "learning_rate": 0.001,
+      "steps": 200,
+      "thresholds": [
+        0.5,
+        0.7,
+        0.8,
+        0.9,
+        0.95,
+        0.98,
+        0.99,
+        0.995,
+        1.0
+      ]
+    },
+    "split_sizes": {
+      "calibration": 768,
+      "confirmation": 128,
+      "development": 128,
+      "heldout_matched": 512,
+      "heldout_ood": 192
+    }
+  },
+  "prior_construction_negative_result_unchanged": true,
+  "source_sha256": {
+    "Dockerfile.photonic": "f9a23c57acc4229fc62ae7b4b5711b2441ceb8d9246b11287a816cd780ad7703",
+    "EXPERT_RECOGNITION_PREREGISTRATION.md": "ddd4a77dd254074f31cc79f3ca37e4a521fbe03d74dbeb7e3cf64421663d00d0",
+    "artifacts/expert_construction/20261014-bounded-v1/fixed_selection.json": "bf089bf3f9554c78a18e33d264bbcb99d468f7bf19b5caf24be3cc8a40b46766",
+    "artifacts/expert_construction/20261014-bounded-v1/partition-C-29.json": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d",
+    "configs/expert_recognition.json": "0da15e3641f765818629ec514be837dae698df0dc5c9671a3857f74962f2dccf",
+    "data/expert_audit/evaluation_manifest.jsonl": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+    "data/expert_audit/historical_alpaca_prompts.jsonl": "8de9ac8e65f79b7242e924c217e2adcbf966fc998139ecdc10d48f3a0dcc08c4",
+    "data/expert_audit/historical_alpaca_provenance.json": "030b0d7a2b896c97999389ebae00a9960cb1d38a0bb29b6968e700e0d1e631bd",
+    "data/expert_recognition/data_audit.json": "6db2f2d007b9621a84b1660ae8995e1504a359c533e4cd8e51a3ba224ad9db18",
+    "data/expert_recognition/evaluation_manifest.jsonl": "c4eb5654b713927c2924195bb2cd98435306214b32d98c402d0d42ff8e251fe6",
+    "data/expert_recognition/source_capacity_audit.json": "fb97eb07ae746faa432a7b6315b221fad3fb1dace67ea5b36834e3d3606a32f6",
+    "data/expert_recognition/source_provenance.json": "7af04fdd76546738be49bf83f301cfd71a4d6f45e0fded8d33826c319304b002",
+    "experiments/expert_construction.py": "ac1c07e0606e12697ce201e1db3bc4d0b75491998c812086a45b242d40b2c8bd",
+    "experiments/expert_recognition.py": "4b83212dd786ff34aa9812b2b3d8f564338fc7fee841491dd2608cf205a01633",
+    "experiments/expert_recognition_timing.py": "2d7156ab51183c5eed1ebd17db10993307d1d83c103b3ffd72ad9730198454f4",
+    "requirements-photonic.txt": "04a5dea06fe08160345f720d6aa5bca8b9411b01af56c82ace7965471e3deb02",
+    "scripts/prepare_recognition_data.py": "d56d23ce5d3e87897488836b0b5551d07f3aac06166beaf806874949771e6e1e",
+    "scripts/run_expert_recognition.ps1": "4cf98215de3ccb3885147f4a4e9d61b6b810effe9bb955f6b6483fb8bec0628c",
+    "src/depth_router/expert_audit_data.py": "c02127bec992be9ec1732a7fc7e0efb7da4b33f343c4afd76fb68be7a13cd963",
+    "src/depth_router/expert_audit_metrics.py": "03b0d1d241074ab7235645d47a22c50941e60842c04700290031d65fc664fdfe",
+    "src/depth_router/expert_partitions.py": "c21597beaa87e0c5018435efb4db1dd68d23142f7281d491789559970ce8cc86",
+    "src/depth_router/expert_recognition.py": "958d48c302b367f2e771f2151e148470a7f6abdae2caeba2b6ba86281daf5899",
+    "src/depth_router/fused_swiglu.py": "fd17cf407462c4608ba250e5a72d1e1276e0aca506d90127c5219b22f10f8f1b",
+    "src/depth_router/output_gap.py": "8bcb3f6abb9ffd26ade8323549b35c14d0fabb5d66cc48ec54b45d239e236c65",
+    "src/depth_router/output_gap_data.py": "1d4420aecb1d0b6d9bb419848e3104273342f4adacbff0df58b775885e600e21",
+    "src/depth_router/recognition_data.py": "f5dd6358e122fa0bc4b278d83582e897c0986ee7cad16b7ffc2d05139c670c44"
+  },
+  "utc": "2026-10-15T04:41:00.925796+00:00"
+}

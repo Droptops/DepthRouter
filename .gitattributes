@@ -2,3 +2,12 @@
 /artifacts/output_gap_completion/** -text whitespace=cr-at-eol
 /artifacts/expert_construction/** -text whitespace=cr-at-eol
 /data/expert_audit/** -text whitespace=cr-at-eol
+/artifacts/expert_recognition/** -text whitespace=cr-at-eol
+/data/expert_recognition/** -text whitespace=cr-at-eol
+/EXPERT_RECOGNITION_PREREGISTRATION.md text eol=lf
+/configs/expert_recognition.json text eol=lf
+/experiments/expert_recognition*.py text eol=lf
+/src/depth_router/expert_recognition.py text eol=lf
+/src/depth_router/recognition_data.py text eol=lf
+/scripts/prepare_recognition_data.py text eol=lf
+/scripts/run_expert_recognition.ps1 text eol=lf

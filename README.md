@@ -90,3 +90,11 @@ The separate final-MLP expert-construction diagnostic is preregistered in
 Its capability, conditional selection, and execution findings are separated in
 [`EXPERT_CONSTRUCTION_REPORT.md`](EXPERT_CONSTRUCTION_REPORT.md). Exhaustive subset
 oracles are diagnostic only, not deployment routers or measured savings.
+
+The separate frozen-C-29 recognition follow-up is documented in
+[`EXPERT_RECOGNITION_REPORT.md`](EXPERT_RECOGNITION_REPORT.md) and its
+[`prospective protocol`](EXPERT_RECOGNITION_PREREGISTRATION.md). Fresh OOD
+confirmation coverage was 75.78%, below the 80% engineering gate (95% context
+interval 70.69%-81.25%). It stopped before selector training or timing; the
+interval spans the threshold, so this is not a resolved population-level failure.
+Prior negative findings and the project's hardware-counter gate remain unchanged.

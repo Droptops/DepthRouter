@@ -1,0 +1,18 @@
+{
+  "attribution": "Copyright (2023) Databricks, Inc.; Wikipedia editors and contributors",
+  "dataset": "databricks/databricks-dolly-15k",
+  "dataset_card": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/blob/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/README.md",
+  "frozen_split_sizes": {
+    "calibration": 768,
+    "confirmation": 128,
+    "development": 128,
+    "heldout_matched": 512,
+    "heldout_ood": 192
+  },
+  "license": "CC-BY-SA-3.0",
+  "model_outputs_accessed": false,
+  "revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+  "sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+  "transformations": "Select human-written instruction/context; omit responses; exclude all earlier experiment contexts and lexical families; freeze new disjoint splits with length, task-category, source-document, lexical and enterprise-keyword constraints.",
+  "url": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/databricks-dolly-15k.jsonl"
+}

@@ -1,0 +1,17 @@
+{
+  "candidate_schema_sha256": "2f1b7397ed3ff59e49e5b137480dd0b4d890afaea4718ef0aff6d9e093ab3374",
+  "development_coverage": 0.5736738703339882,
+  "development_mean_kl": 0.09577746881317817,
+  "development_states": 1018,
+  "experts": [
+    0,
+    1,
+    2,
+    4,
+    6,
+    7
+  ],
+  "index": 8,
+  "selected_on": "development",
+  "selection_rule": "maximum_acceptable_coverage_then_minimum_mean_kl_then_index"
+}

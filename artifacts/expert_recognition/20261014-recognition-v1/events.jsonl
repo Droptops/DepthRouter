@@ -1,0 +1,4 @@
+{"contexts": 16, "event": "capture_progress", "split": "confirmation", "states": 63, "utc": "2026-10-15T04:41:10.588580+00:00"}
+{"event": "candidate_progress", "groups": 1, "matrix": "matrix-confirmation.npz", "total_groups": 32, "utc": "2026-10-15T04:41:13.008354+00:00"}
+{"elapsed_seconds": 11.960776219000763, "event": "confirmation_complete", "point_pass": false, "utc": "2026-10-15T04:41:15.347981+00:00"}
+{"elapsed_seconds": 13.42898187800074, "event": "cycle_complete", "promote": false, "utc": "2026-10-15T04:41:16.816186+00:00"}
