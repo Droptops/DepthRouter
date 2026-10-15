@@ -1,0 +1,105 @@
+{
+  "beta_omitted": 240.2324967699396,
+  "bf16_certificate": "unestablished: no conservative end-to-end floating-point error bound",
+  "interpretation": "diagnostic bound looseness on BF16 captures; exact real sparse u_S would also need rounding accounting",
+  "nonacceptance_test": "R >= ||u_S+correction|| implies even a score-spread upper bound cannot pass",
+  "real_arithmetic_bound": "R=beta*||x||^2+||correction(x)||; epsilon=max_i||E_i*gamma||*R",
+  "rows": [
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11840.085942905507,
+      "method": "hidden_r8_s17",
+      "min_radius_over_approximate_state_norm": 9614.799312630503
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11187.501268676164,
+      "method": "gap_r8_s17",
+      "min_radius_over_approximate_state_norm": 9346.1911870394
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11836.411231631857,
+      "method": "hidden_r8_s29",
+      "min_radius_over_approximate_state_norm": 9584.958305001857
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11103.908176512183,
+      "method": "gap_r8_s29",
+      "min_radius_over_approximate_state_norm": 9201.761353522463
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11848.312266990752,
+      "method": "hidden_r8_s43",
+      "min_radius_over_approximate_state_norm": 9612.062282851133
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11192.442200574093,
+      "method": "gap_r8_s43",
+      "min_radius_over_approximate_state_norm": 9263.898677335188
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11830.764984191428,
+      "method": "hidden_r16_s17",
+      "min_radius_over_approximate_state_norm": 9615.22086569171
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 10983.901769742208,
+      "method": "gap_r16_s17",
+      "min_radius_over_approximate_state_norm": 9352.119904745678
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11817.250290312539,
+      "method": "hidden_r16_s29",
+      "min_radius_over_approximate_state_norm": 9603.845304874652
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11012.168943153916,
+      "method": "gap_r16_s29",
+      "min_radius_over_approximate_state_norm": 9224.890079580206
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11822.060325023083,
+      "method": "hidden_r16_s43",
+      "min_radius_over_approximate_state_norm": 9606.79966926481
+    },
+    {
+      "calibration_examples": 256,
+      "certain_nonacceptance_count": 256,
+      "certified_examples": 0,
+      "median_radius_over_approximate_state_norm": 11068.927450444695,
+      "method": "gap_r16_s43",
+      "min_radius_over_approximate_state_norm": 9080.863108700936
+    }
+  ]
+}

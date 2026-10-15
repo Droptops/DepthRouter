@@ -1,0 +1,19 @@
+{
+  "host_timezone": "America/Phoenix",
+  "host_experiment_date": "2026-10-14",
+  "base_commit": "36cf7e025c3a809b922bdfa7b044abac47a426ff",
+  "branch": "research/output-gap-completion",
+  "docker_image": "depthrouter-photonic:local",
+  "docker_image_id": "sha256:da418ab718f638781995c7077193006b6deed2dfb9a589e4b34f4e477f35df08",
+  "notebook_sha256": "9fcff3db938668e777f38a578fcd35a6525ab6232cfb330a5090392c1b9b9767",
+  "notebook_role": "mathematical rationale only; notebook synthetic results are not Qwen evidence",
+  "canonical_run": "20261014-controlled-v1",
+  "prior_launch_attempt": "20261014-controlled failed before starting Docker or creating an experiment run because PowerShell resolved docker to two executable paths; launcher fixed to select docker.exe",
+  "docker_startup_error": "starting services: initializing Inference manager: listening on unix://C:/Users/m4vil/AppData/Local/Docker/run/dockerInference: remove C:/Users/m4vil/AppData/Local/Docker/run/dockerInference: The file cannot be accessed by the system. (listener: The filename, directory name, or volume label syntax is incorrect.)",
+  "docker_recovery": "Stopped only Docker executable processes, terminated only docker-desktop WSL, and renamed two transient IPC directories after validating their exact absolute paths; persistent images/volumes retained.",
+  "recovery_backup": "C:/Users/m4vil/AppData/Local/DockerRepairBackup-20261014-200255",
+  "recovery_quarantines": [
+    "C:/Users/m4vil/AppData/Local/Docker/run.stale-20261014-200255",
+    "C:/Users/m4vil/AppData/Local/docker-secrets-engine.stale-20261014-200255"
+  ]
+}

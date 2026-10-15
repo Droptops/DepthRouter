@@ -1,0 +1,62 @@
+{
+  "candidate_ties": "argmax first index anchor, remaining seven via torch.topk after excluding anchor",
+  "config": {
+    "bootstrap_draws": 10000,
+    "correction_batch_size": 64,
+    "correction_learning_rate": 0.003,
+    "correction_steps": 300,
+    "correction_weight_decay": 0.0001,
+    "dtype": "bfloat16",
+    "improvement_rule": "paired prompt bootstrap lower bound above zero and positive direction for every seed in both heldout splits",
+    "low_margin_weight": 4.0,
+    "max_prompt_tokens": 96,
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "primary_comparison": "development-selected gap rank, all three paired seeds, separately matched and OOD",
+    "quality_batch_size": 16,
+    "quality_gate_kl": 0.01,
+    "quality_gate_top1": 0.99,
+    "ranks": [
+      8,
+      16
+    ],
+    "retention_fraction": 0.75,
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "seed": 20261014,
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "selection_rule": "lowest development top1 error, then lowest KL, then lower rank; seed numeric tie-break only",
+    "target_layer": 23,
+    "timing": {
+      "batches": [
+        1,
+        8,
+        32
+      ],
+      "blocks": 20,
+      "bootstrap_resamples": 10000,
+      "context_tokens": 64,
+      "generation_examples_per_split": 24,
+      "generation_max_new_tokens": 16,
+      "generation_max_prompt_tokens": 96,
+      "repetitions_per_block": 20,
+      "warmup": 10
+    }
+  },
+  "deployment": "x only -> FP32 low-rank tanh correction -> BF16 MLP add -> original model head once",
+  "gating": "no timing or generation unless objective improvement and dev+both heldout quality pass",
+  "heldout_model_access": false,
+  "source_sha256": {
+    "configs/output_gap_completion.json": "fdabb0280bdafffb7530ca0a071b231f41ea740fa85314449550b958eb2dba98",
+    "experiments/fused_sparse_swiglu.py": "578bc6b044e0da1e699f3c794f4f081c93de694766011672551e4f5ee1230f73",
+    "experiments/output_gap_completion.py": "ff0482a20b8005775d00f992990a8a1f4f985c703dedb2cabdc3f34b9e0033c5",
+    "experiments/output_gap_timing.py": "fe4dc28d933a8672fd3edc5b6d9f41677f6ea3a36b04b115b9d3d9d96d94f9cc",
+    "src/depth_router/fused_swiglu.py": "fd17cf407462c4608ba250e5a72d1e1276e0aca506d90127c5219b22f10f8f1b",
+    "src/depth_router/output_gap.py": "b4335cc8fc08e572744cfa0f56fafd2d1cd2d5a4a98e24288dfd526c005b40a6",
+    "src/depth_router/output_gap_data.py": "0b4d68a89a210b3ac73d64dcd2d70fbdd9ec3d12472e470a2f5a52bf95ef9368"
+  },
+  "target": "actual dense BF16 MLP output minus actual prepacked sparse BF16 MLP output",
+  "training_budget_source": "configs/fused_sparse_swiglu_full.json"
+}

@@ -1,0 +1,181 @@
+{
+  "historical_sources": [
+    {
+      "path": "artifacts/predictive_working_set/20261013-validated-final/evaluation_manifest.jsonl",
+      "rows": 896,
+      "sha256": "552efc03e4caa86f95ef52a66e4563bdce70f394d0f60536cec36fdec6a0d6c4",
+      "unique_prompts": 896
+    },
+    {
+      "path": "artifacts/fused_sparse_swiglu/20261013-validated-final-v2/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "9325a76ac0476f94abfad1a4a4895aef9542bb3897894d763fd743d53a9d5264",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "data/photonic_parallel_manifest.jsonl",
+      "rows": 24,
+      "sha256": "8a9f29b1f4f98226e23086557f7a1684bf465d7d64636a662661bfb96d058ad1",
+      "unique_prompts": 24
+    }
+  ],
+  "manifest_sha256": "e2d809957993bb24b8376812ad4ad72332eac0e199171a6c5be2f6cd45dba0ab",
+  "validation": {
+    "comparisons": [
+      {
+        "comparison": "calibration vs development",
+        "fingerprint_pairs": 4489,
+        "max_jaccard": 0.1724137931034483,
+        "witness_ids": [
+          "og-calibration-classification-0000",
+          "og-development-extraction-0000"
+        ]
+      },
+      {
+        "comparison": "calibration vs heldout_matched",
+        "fingerprint_pairs": 8777,
+        "max_jaccard": 0.12121212121212122,
+        "witness_ids": [
+          "og-calibration-generation-0000",
+          "og-heldout_matched-generation-0000"
+        ]
+      },
+      {
+        "comparison": "calibration vs heldout_ood",
+        "fingerprint_pairs": 8777,
+        "max_jaccard": 0.16,
+        "witness_ids": [
+          "og-calibration-numerical-0000",
+          "og-heldout_ood-unit_conversion-0000"
+        ]
+      },
+      {
+        "comparison": "calibration vs historical",
+        "fingerprint_pairs": 7772,
+        "max_jaccard": 0.23809523809523808,
+        "witness_ids": [
+          "og-calibration-numerical-0000",
+          "historical-2452"
+        ]
+      },
+      {
+        "comparison": "development vs heldout_matched",
+        "fingerprint_pairs": 8777,
+        "max_jaccard": 0.18518518518518517,
+        "witness_ids": [
+          "og-development-extraction-0000",
+          "og-heldout_matched-numerical-0000"
+        ]
+      },
+      {
+        "comparison": "development vs heldout_ood",
+        "fingerprint_pairs": 8777,
+        "max_jaccard": 0.25,
+        "witness_ids": [
+          "og-development-extraction-0000",
+          "og-heldout_ood-unit_conversion-0000"
+        ]
+      },
+      {
+        "comparison": "development vs historical",
+        "fingerprint_pairs": 7772,
+        "max_jaccard": 0.16129032258064516,
+        "witness_ids": [
+          "og-development-numerical-0000",
+          "historical-2437"
+        ]
+      },
+      {
+        "comparison": "heldout_matched vs heldout_ood",
+        "fingerprint_pairs": 17161,
+        "max_jaccard": 0.15625,
+        "witness_ids": [
+          "og-heldout_matched-numerical-0000",
+          "og-heldout_ood-ordinal_lookup-0000"
+        ]
+      },
+      {
+        "comparison": "heldout_matched vs historical",
+        "fingerprint_pairs": 15196,
+        "max_jaccard": 0.14814814814814814,
+        "witness_ids": [
+          "og-heldout_matched-numerical-0000",
+          "historical-888"
+        ]
+      },
+      {
+        "comparison": "heldout_ood vs historical",
+        "fingerprint_pairs": 15196,
+        "max_jaccard": 0.16,
+        "witness_ids": [
+          "og-heldout_ood-unit_conversion-0000",
+          "historical-1912"
+        ]
+      }
+    ],
+    "historical_prompts": 2456,
+    "historical_unique_fingerprints": 116,
+    "independence_scope": "lexical exclusion; no claim of semantic independence",
+    "manifest_sha256": "ca60a7908eead3c591f031bddaf4f810c4aac39acf76f7de1a66d6b488e5cd51",
+    "near_duplicate_metric": "casefolded numeric-normalized lexical token-set Jaccard",
+    "near_duplicate_threshold": 0.72,
+    "rows": 1536,
+    "split_sizes": {
+      "calibration": 256,
+      "development": 256,
+      "heldout_matched": 512,
+      "heldout_ood": 512
+    },
+    "task_counts": {
+      "calibration": {
+        "classification": 64,
+        "extraction": 64,
+        "generation": 64,
+        "numerical": 64
+      },
+      "development": {
+        "classification": 64,
+        "extraction": 64,
+        "generation": 64,
+        "numerical": 64
+      },
+      "heldout_matched": {
+        "classification": 128,
+        "extraction": 128,
+        "generation": 128,
+        "numerical": 128
+      },
+      "heldout_ood": {
+        "finite_state": 128,
+        "ordinal_lookup": 128,
+        "substitution": 128,
+        "unit_conversion": 128
+      }
+    },
+    "template_families": [
+      "book_page",
+      "cargo_quantity",
+      "departure_time",
+      "duration_conversion",
+      "fence_perimeter",
+      "fourth_inventory_entry",
+      "letter_cipher",
+      "median_reading",
+      "nature_analogy",
+      "nature_caption",
+      "pressure_band",
+      "price_discount",
+      "quarter_turn_dial",
+      "shipping_threshold",
+      "thermostat_rule",
+      "visitor_question"
+    ],
+    "unique_normalized_fingerprints": {
+      "calibration": 67,
+      "development": 67,
+      "heldout_matched": 131,
+      "heldout_ood": 131
+    },
+    "within_family_numeric_variants_allowed": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "canonical_gpu_run_exit_code": 0,
+  "windows_tests_passed": 93,
+  "container_tests_passed": 93,
+  "repository_wide_ruff_windows": "passed",
+  "repository_wide_ruff_container_0_14": "passed after unexecuted timing helper style correction",
+  "independent_audit": {
+    "raw_metric_rows": 19200,
+    "quality_summaries_recomputed": 45,
+    "paired_comparisons_recomputed": 24,
+    "full_width_exact_control_rows": 1280,
+    "checkpoint_weight_hashes_verified": 12,
+    "paired_initialization_minibatch_budget_audits_verified": 6,
+    "manifest_and_split_ids_verified": true,
+    "freeze_precedes_heldout_access": true,
+    "source_hashes_verified": true,
+    "source_exception": "Unexecuted timing source has a post-run style-only change; original snapshot matches its preregistered hash.",
+    "status": "passed"
+  }
+}

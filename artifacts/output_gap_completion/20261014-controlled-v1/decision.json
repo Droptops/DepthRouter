@@ -1,0 +1,17 @@
+{
+  "absolute_quality_pass": false,
+  "bandwidth_status": "unknown; no fresh counters measured because quality prerequisite failed",
+  "certification_status": "unestablished for BF16; analytic norm bound audit recorded",
+  "manifest_sha256": "e2d809957993bb24b8376812ad4ad72332eac0e199171a6c5be2f6cd45dba0ab",
+  "measured_bandwidth": null,
+  "measured_speedup": null,
+  "objective_improvement": {
+    "established": false,
+    "primary_rank": 16,
+    "rule": "paired prompt bootstrap lower bound above zero and positive direction for every seed in both heldout splits"
+  },
+  "selected_arm": "gap_r16_s17",
+  "selection_sha256": "04a592caa17c111f812d3263c3c837bcb6353b59d7925a64a6dae596231c0a5d",
+  "status": "NEGATIVE_STOP",
+  "timing_status": "not run: objective improvement and absolute quality are prerequisites"
+}

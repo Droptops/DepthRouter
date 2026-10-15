@@ -1,0 +1,1633 @@
+"""Quality-gated fused sparse SwiGLU experiment on Qwen2.5-0.5B.
+
+Development chooses a fixed, physically prepacked final-layer neuron set.  The
+matched and out-of-distribution held-out splits remain unopened until that
+choice is serialized.  Oracle masks are always labeled non-deployable.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import csv
+import hashlib
+import json
+import math
+import platform
+import random
+import shutil
+import subprocess
+import time
+from collections.abc import Callable, Iterator, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+from torch import Tensor, nn
+
+from depth_router.fused_sparse_evaluation import (
+    answer_success,
+    make_fused_sparse_manifest,
+    validate_fused_sparse_manifest,
+)
+from depth_router.fused_swiglu import (
+    CUDAGraphCallable,
+    DynamicGatheredSwiGLU,
+    PrepackedSwiGLU,
+    TritonPrepackedSwiGLU,
+)
+from depth_router.predictive_working_set import LowRankWorkingSetPredictor
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="configs/fused_sparse_swiglu_full.json")
+    parser.add_argument("--output-dir", default="artifacts/fused_sparse_swiglu/manual")
+    parser.add_argument(
+        "--stage",
+        choices=("all", "kernels", "quality"),
+        default="all",
+        help="Kernel-only is useful for tuning; all is the preregistered decision run.",
+    )
+    return parser.parse_args()
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def write_csv(path: Path, rows: Sequence[dict[str, Any]]) -> None:
+    if not rows:
+        path.write_text("", encoding="utf-8")
+        return
+    fields = sorted({key for row in rows for key in row})
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+class RunLog:
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def write(self, event: str, **fields: Any) -> None:
+        payload = {"time": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "event": event, **fields}
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, sort_keys=True) + "\n")
+        print(json.dumps(payload, sort_keys=True), flush=True)
+
+
+def command_output(command: list[str]) -> str:
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        return (completed.stdout or completed.stderr).strip()
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return f"unavailable: {exc}"
+
+
+def environment_snapshot() -> dict[str, Any]:
+    import transformers
+    import triton
+
+    properties = torch.cuda.get_device_properties(0)
+    return {
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "torch": torch.__version__,
+        "transformers": transformers.__version__,
+        "triton": triton.__version__,
+        "cuda_runtime": torch.version.cuda,
+        "cudnn": torch.backends.cudnn.version(),
+        "gpu": properties.name,
+        "gpu_total_memory_bytes": properties.total_memory,
+        "gpu_compute_capability": [properties.major, properties.minor],
+        "nvidia_smi": command_output(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,memory.total,memory.free,driver_version,temperature.gpu,power.limit",
+                "--format=csv,noheader,nounits",
+            ]
+        ),
+        "ncu_path": shutil.which("ncu"),
+        "ncu_version": command_output(["ncu", "--version"]) if shutil.which("ncu") else None,
+        "git_commit": command_output(["git", "rev-parse", "HEAD"]),
+        "git_branch": command_output(["git", "branch", "--show-current"]),
+        "git_status": command_output(["git", "status", "--short"]),
+    }
+
+
+def seed_everything(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cuda.matmul.allow_tf32 = True
+
+
+def resolve_layers(model: nn.Module) -> list[nn.Module]:
+    layers = getattr(getattr(model, "model", None), "layers", None)
+    if layers is None or not len(layers):
+        raise ValueError("could not resolve decoder layers")
+    return list(layers)
+
+
+def resolve_mlp(layer: nn.Module) -> nn.Module:
+    mlp = getattr(layer, "mlp", None)
+    if mlp is None or not all(
+        isinstance(getattr(mlp, name, None), nn.Linear)
+        for name in ("gate_proj", "up_proj", "down_proj")
+    ):
+        raise TypeError("expected a gate/up/down SwiGLU MLP")
+    return mlp
+
+
+def prompt_text(tokenizer: Any, prompt: str) -> str:
+    return tokenizer.apply_chat_template(
+        [{"role": "user", "content": prompt}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+
+def encode_prompts(
+    tokenizer: Any,
+    prompts: Sequence[str],
+    device: torch.device,
+    max_length: int,
+) -> dict[str, Tensor]:
+    encoded = tokenizer(
+        [prompt_text(tokenizer, prompt) for prompt in prompts],
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=max_length,
+        add_special_tokens=False,
+    )
+    return {key: value.to(device) for key, value in encoded.items() if isinstance(value, Tensor)}
+
+
+@dataclass
+class Capture:
+    ids: list[str]
+    tasks: list[str]
+    state: Tensor
+    activation: Tensor
+    residual: Tensor
+    dense_output: Tensor
+    logits: Tensor
+
+    def save(self, path: Path) -> None:
+        torch.save(
+            {
+                "ids": self.ids,
+                "tasks": self.tasks,
+                "state": self.state,
+                "activation": self.activation,
+                "residual": self.residual,
+                "dense_output": self.dense_output,
+                "logits": self.logits,
+            },
+            path,
+        )
+
+
+@torch.inference_mode()
+def capture_split(
+    model: nn.Module,
+    tokenizer: Any,
+    examples: Sequence[dict[str, str]],
+    layer: nn.Module,
+    *,
+    device: torch.device,
+    batch_size: int,
+    max_length: int,
+    log: RunLog,
+) -> Capture:
+    mlp = resolve_mlp(layer)
+    post_norm = layer.post_attention_layernorm
+    captured: dict[str, Tensor] = {}
+    states: list[Tensor] = []
+    activations: list[Tensor] = []
+    residuals: list[Tensor] = []
+    dense_outputs: list[Tensor] = []
+    logits: list[Tensor] = []
+
+    def residual_hook(_module: nn.Module, args: tuple[Tensor, ...]) -> None:
+        captured["residual"] = args[0][:, -1, :].detach()
+
+    def state_hook(_module: nn.Module, args: tuple[Tensor, ...]) -> None:
+        captured["state"] = args[0][:, -1, :].detach()
+
+    def activation_hook(_module: nn.Module, args: tuple[Tensor, ...]) -> None:
+        captured["activation"] = args[0][:, -1, :].detach()
+
+    def output_hook(_module: nn.Module, _args: tuple[Tensor, ...], output: Tensor) -> None:
+        captured["dense_output"] = output[:, -1, :].detach()
+
+    handles = (
+        post_norm.register_forward_pre_hook(residual_hook),
+        mlp.register_forward_pre_hook(state_hook),
+        mlp.down_proj.register_forward_pre_hook(activation_hook),
+        mlp.register_forward_hook(output_hook),
+    )
+    try:
+        for start in range(0, len(examples), batch_size):
+            batch = examples[start : start + batch_size]
+            encoded = encode_prompts(
+                tokenizer,
+                [row["prompt"] for row in batch],
+                device,
+                max_length,
+            )
+            output = model(**encoded, use_cache=False, logits_to_keep=1)
+            states.append(captured["state"].cpu())
+            activations.append(captured["activation"].cpu())
+            residuals.append(captured["residual"].cpu())
+            dense_outputs.append(captured["dense_output"].cpu())
+            # Keep reference logits in FP32.  BF16 serialization can change the
+            # argmax of deliberately low-margin examples and would make even a
+            # full-width control appear to disagree with itself.
+            logits.append(output.logits[:, -1, :].detach().float().cpu())
+            log.write(
+                "capture_progress",
+                split=examples[0]["split"],
+                captured=min(start + batch_size, len(examples)),
+                total=len(examples),
+            )
+    finally:
+        for handle in handles:
+            handle.remove()
+    return Capture(
+        ids=[row["id"] for row in examples],
+        tasks=[row["task"] for row in examples],
+        state=torch.cat(states),
+        activation=torch.cat(activations),
+        residual=torch.cat(residuals),
+        dense_output=torch.cat(dense_outputs),
+        logits=torch.cat(logits),
+    )
+
+
+def retained_count(width: int, fraction: float) -> int:
+    return max(1, min(width, math.floor(width * fraction + 0.5)))
+
+
+def static_contribution_masks(capture: Capture, down_weight: Tensor, fractions: Sequence[float]) -> dict[float, Tensor]:
+    norms = down_weight.detach().float().cpu().norm(dim=0)
+    score = capture.activation.float().abs().mean(dim=0) * norms
+    return {
+        fraction: score.topk(retained_count(score.numel(), fraction)).indices.sort().values
+        for fraction in fractions
+    }
+
+
+def rms_margin_gradient(
+    final_hidden: Tensor,
+    logits: Tensor,
+    norm: nn.Module,
+    lm_head: nn.Linear,
+) -> tuple[Tensor, Tensor]:
+    top = logits.float().topk(2, dim=-1)
+    margin = top.values[:, 0] - top.values[:, 1]
+    head = lm_head.weight.detach().float().cpu()
+    norm_weight = norm.weight.detach().float().cpu()
+    direction = (head[top.indices[:, 0]] - head[top.indices[:, 1]]) * norm_weight
+    h = final_hidden.float()
+    epsilon = float(getattr(norm, "variance_epsilon", getattr(norm, "eps", 1e-6)))
+    radius = torch.sqrt(h.square().mean(dim=-1) + epsilon)
+    dot = (direction * h).sum(dim=-1)
+    gradient = direction / radius[:, None] - (
+        dot[:, None] * h / (float(h.shape[1]) * radius[:, None].pow(3))
+    )
+    return gradient, margin
+
+
+def output_sensitive_masks(
+    capture: Capture,
+    down_weight: Tensor,
+    norm: nn.Module,
+    lm_head: nn.Linear,
+    fractions: Sequence[float],
+    low_margin_weight: float,
+) -> tuple[dict[float, Tensor], dict[str, float], Tensor]:
+    final_hidden = (capture.residual + capture.dense_output).to(torch.bfloat16)
+    gradient, margin = rms_margin_gradient(final_hidden, capture.logits, norm, lm_head)
+    down = down_weight.detach().float().cpu()
+    projected = gradient @ down
+    effects = capture.activation.float() * projected
+    threshold = torch.quantile(margin, 0.25)
+    weights = torch.where(margin <= threshold, low_margin_weight, 1.0)
+    score = (effects.abs() * weights[:, None]).mean(dim=0)
+    masks = {
+        fraction: score.topk(retained_count(score.numel(), fraction)).indices.sort().values
+        for fraction in fractions
+    }
+    cancellation = effects.sum(dim=1).abs() / effects.abs().sum(dim=1).clamp_min(1e-12)
+    return masks, {
+        "low_margin_threshold": float(threshold),
+        "mean_margin": float(margin.mean()),
+        "mean_logit_effect_cancellation_ratio": float(cancellation.mean()),
+        "p05_logit_effect_cancellation_ratio": float(torch.quantile(cancellation, 0.05)),
+    }, score
+
+
+def structured_page_masks(
+    score: Tensor,
+    fractions: Sequence[float],
+    *,
+    page_width: int,
+) -> dict[float, Tensor]:
+    """Select whole contiguous neuron pages using calibration-only utility."""
+
+    if score.numel() % page_width:
+        raise ValueError("intermediate width must be divisible by structured page width")
+    pages = score.reshape(-1, page_width)
+    page_score = pages.sum(dim=1)
+    result: dict[float, Tensor] = {}
+    for fraction in fractions:
+        keep_pages = min(
+            pages.shape[0], max(1, math.ceil(pages.shape[0] * fraction))
+        )
+        selected_pages = page_score.topk(keep_pages).indices.sort().values
+        offsets = torch.arange(page_width)
+        result[fraction] = (
+            selected_pages[:, None] * page_width + offsets[None, :]
+        ).reshape(-1).sort().values
+    return result
+
+
+class ResidualCorrection(nn.Module):
+    def __init__(self, hidden: int, rank: int) -> None:
+        super().__init__()
+        self.in_proj = nn.Linear(hidden, rank, bias=False)
+        self.out_proj = nn.Linear(rank, hidden, bias=True)
+
+    def forward(self, state: Tensor) -> Tensor:
+        return self.out_proj(torch.tanh(self.in_proj(state.float())))
+
+
+class FloatDownPrepackedSwiGLU(PrepackedSwiGLU):
+    """Packed BF16 gate/up with an explicit FP32 down-projection reduction."""
+
+    def forward(self, state: Tensor) -> Tensor:
+        hidden = F.silu(F.linear(state, self.gate_weight)) * F.linear(
+            state, self.up_weight
+        )
+        return F.linear(hidden.float(), self.down_weight.float()).to(torch.bfloat16)
+
+
+class CorrectedSwiGLU(nn.Module):
+    def __init__(self, sparse: nn.Module, residual: nn.Module) -> None:
+        super().__init__()
+        self.sparse = sparse
+        self.residual = residual
+
+    def forward(self, state: Tensor) -> Tensor:
+        return (self.sparse(state).float() + self.residual(state)).to(torch.bfloat16)
+
+
+def train_residual_correction(
+    capture: Capture,
+    down_weight: Tensor,
+    selection: Tensor,
+    *,
+    rank: int,
+    steps: int,
+    batch_size: int,
+    learning_rate: float,
+    seed: int,
+    device: torch.device,
+) -> ResidualCorrection:
+    torch.manual_seed(seed)
+    state = capture.state.float().to(device)
+    activation = capture.activation.to(device)
+    index = selection.to(device)
+    sparse = F.linear(
+        activation.index_select(1, index),
+        down_weight.to(device).index_select(1, index),
+    ).float()
+    target = (capture.dense_output.float().to(device) - sparse).detach()
+    module = ResidualCorrection(state.shape[1], rank).to(device)
+    optimizer = torch.optim.AdamW(module.parameters(), lr=learning_rate, weight_decay=1e-4)
+    generator = torch.Generator(device="cpu").manual_seed(seed + 1)
+    scale = target.square().mean().sqrt().clamp_min(1e-8)
+    for _ in range(steps):
+        batch = torch.randint(
+            state.shape[0],
+            (min(batch_size, state.shape[0]),),
+            generator=generator,
+        ).to(device)
+        prediction = module(state[batch])
+        loss = F.mse_loss(prediction / scale, target[batch] / scale)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
+    return module.eval()
+
+
+def bootstrap_ci(values: Sequence[float], *, seed: int, draws: int) -> list[float]:
+    array = np.asarray(values, dtype=np.float64)
+    generator = np.random.default_rng(seed)
+    indices = generator.integers(0, array.size, size=(draws, array.size))
+    means = array[indices].mean(axis=1)
+    return [float(np.quantile(means, 0.025)), float(np.quantile(means, 0.975))]
+
+
+@torch.inference_mode()
+def evaluate_quality(
+    name: str,
+    capture: Capture,
+    examples: Sequence[dict[str, str]],
+    selection: Tensor,
+    down_weight: Tensor,
+    norm: nn.Module,
+    lm_head: nn.Linear,
+    *,
+    model: nn.Module,
+    tokenizer: Any,
+    layer: nn.Module,
+    device: torch.device,
+    batch_size: int,
+    max_length: int,
+    seed: int,
+    bootstrap_draws: int,
+    quality_gate_kl: float,
+    quality_gate_top1: float,
+    deployable: bool,
+    selection_kind: str,
+    precision: str = "bfloat16",
+    correction: nn.Module | None = None,
+    operator: nn.Module | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    mlp = resolve_mlp(layer)
+    down = down_weight.to(device)
+    static_index = selection.to(device) if selection.ndim == 1 else None
+    if correction is not None:
+        correction = correction.to(device)
+    candidate_module: nn.Module | None = operator
+    if static_index is not None and candidate_module is None:
+        packed_type = (
+            FloatDownPrepackedSwiGLU
+            if precision == "float32_accumulation"
+            else PrepackedSwiGLU
+        )
+        candidate_module = packed_type(
+            mlp.gate_proj,
+            mlp.up_proj,
+            mlp.down_proj,
+            static_index,
+        ).to(device)
+        if correction is not None:
+            candidate_module = CorrectedSwiGLU(candidate_module, correction).to(device)
+
+    active_selection: Tensor | None = None
+
+    def oracle_hook(_module: nn.Module, args: tuple[Tensor, ...], output: Tensor) -> Tensor:
+        if active_selection is None:
+            raise RuntimeError("oracle selection was not set")
+        state = args[0]
+        activation = F.silu(mlp.gate_proj(state)) * mlp.up_proj(state)
+        mask = torch.zeros_like(activation[:, -1, :])
+        mask.scatter_(1, active_selection, 1)
+        replacement = mlp.down_proj(activation[:, -1, :] * mask)[:, None, :]
+        result = output.clone()
+        result[:, -1:, :] = replacement
+        return result
+
+    rows: list[dict[str, Any]] = []
+    hook = mlp.register_forward_hook(oracle_hook) if static_index is None else None
+    replacement_context = (
+        replaced_mlp(layer, candidate_module)
+        if candidate_module is not None
+        else contextlib.nullcontext()
+    )
+    try:
+        with replacement_context:
+            for start in range(0, len(examples), batch_size):
+                end = min(start + batch_size, len(examples))
+                reference = capture.logits[start:end].float().to(device)
+                if static_index is None:
+                    active_selection = selection[start:end].to(device)
+                encoded = encode_prompts(
+                    tokenizer,
+                    [row["prompt"] for row in examples[start:end]],
+                    device,
+                    max_length,
+                )
+                candidate = model(
+                    **encoded, use_cache=False, logits_to_keep=1
+                ).logits[:, -1, :].float()
+                ref_logp = F.log_softmax(reference, dim=-1)
+                cand_logp = F.log_softmax(candidate, dim=-1)
+                divergence = (
+                    ref_logp.exp() * (ref_logp - cand_logp)
+                ).sum(dim=-1).clamp_min(0)
+                ref_top = reference.topk(2, dim=-1)
+                reference_top = reference.argmax(dim=-1)
+                candidate_top = candidate.argmax(dim=-1)
+                agreement = reference_top == candidate_top
+
+                activation = capture.activation[start:end].to(device)
+                if static_index is None:
+                    diagnostic_mask = torch.zeros_like(activation)
+                    diagnostic_mask.scatter_(1, active_selection, 1)
+                    diagnostic_sparse = F.linear(activation * diagnostic_mask, down)
+                else:
+                    diagnostic_sparse = F.linear(
+                        activation.index_select(1, static_index),
+                        down.index_select(1, static_index),
+                    )
+                omitted = (
+                    capture.dense_output[start:end].to(device).float()
+                    - diagnostic_sparse.float()
+                )
+                omitted_norm = omitted.norm(dim=-1)
+                for offset in range(end - start):
+                    example = examples[start + offset]
+                    rows.append(
+                        {
+                            "method": name,
+                            "id": example["id"],
+                            "split": example["split"],
+                            "task": example["task"],
+                            "kl": float(divergence[offset]),
+                            "top1_agreement": float(agreement[offset]),
+                            "reference_top1_id": int(reference_top[offset]),
+                            "candidate_top1_id": int(candidate_top[offset]),
+                            "max_abs_logit_error": float(
+                                (reference[offset] - candidate[offset]).abs().max()
+                            ),
+                            "reference_margin": float(
+                                ref_top.values[offset, 0] - ref_top.values[offset, 1]
+                            ),
+                            "omitted_output_l2": float(omitted_norm[offset]),
+                        }
+                    )
+    finally:
+        if hook is not None:
+            hook.remove()
+    kl = [float(row["kl"]) for row in rows]
+    agreements = [float(row["top1_agreement"]) for row in rows]
+    mean_kl = float(np.mean(kl))
+    top1 = float(np.mean(agreements))
+    summary: dict[str, Any] = {
+        "method": name,
+        "examples": len(rows),
+        "deployable": deployable,
+        "selection_kind": selection_kind,
+        "precision": precision,
+        "retained_neurons": int(selection.shape[-1]),
+        "retained_fraction": float(selection.shape[-1] / down_weight.shape[1]),
+        "mean_kl": mean_kl,
+        "mean_kl_ci95": bootstrap_ci(kl, seed=seed, draws=bootstrap_draws),
+        "top1_agreement": top1,
+        "top1_agreement_ci95": bootstrap_ci(
+            agreements, seed=seed + 1, draws=bootstrap_draws
+        ),
+        "passes_quality_gate": bool(mean_kl < quality_gate_kl and top1 >= quality_gate_top1),
+        "by_split": {},
+        "by_task": {},
+    }
+    for split in sorted({row["split"] for row in rows}):
+        subset = [row for row in rows if row["split"] == split]
+        summary["by_split"][split] = {
+            "examples": len(subset),
+            "mean_kl": float(np.mean([row["kl"] for row in subset])),
+            "top1_agreement": float(np.mean([row["top1_agreement"] for row in subset])),
+        }
+    for task in sorted({row["task"] for row in rows}):
+        subset = [row for row in rows if row["task"] == task]
+        summary["by_task"][task] = {
+            "examples": len(subset),
+            "mean_kl": float(np.mean([row["kl"] for row in subset])),
+            "top1_agreement": float(np.mean([row["top1_agreement"] for row in subset])),
+        }
+    return summary, rows
+
+
+def timing_summary(samples: Sequence[float], batch: int) -> dict[str, Any]:
+    array = np.asarray(samples, dtype=np.float64)
+    return {
+        "samples": len(samples),
+        "median_ms": float(np.median(array)),
+        "mean_ms": float(array.mean()),
+        "std_ms": float(array.std(ddof=1)),
+        "p05_ms": float(np.quantile(array, 0.05)),
+        "p95_ms": float(np.quantile(array, 0.95)),
+        "mean_ci95_ms": bootstrap_ci(samples, seed=1984 + batch, draws=2000),
+        "tokens_per_second_at_median": float(batch / (np.median(array) / 1000.0)),
+        "samples_ms": list(samples),
+    }
+
+
+@torch.inference_mode()
+def benchmark_callable(
+    function: Callable[[], Tensor],
+    *,
+    device: torch.device,
+    batch: int,
+    warmup: int,
+    repetitions: int,
+) -> tuple[dict[str, Any], int]:
+    for _ in range(warmup):
+        function()
+    torch.cuda.synchronize(device)
+    torch.cuda.reset_peak_memory_stats(device)
+    baseline = torch.cuda.memory_allocated(device)
+    samples: list[float] = []
+    for _ in range(repetitions):
+        started = torch.cuda.Event(enable_timing=True)
+        finished = torch.cuda.Event(enable_timing=True)
+        started.record()
+        function()
+        finished.record()
+        finished.synchronize()
+        samples.append(float(started.elapsed_time(finished)))
+    peak = max(0, torch.cuda.max_memory_allocated(device) - baseline)
+    return timing_summary(samples, batch), int(peak)
+
+
+def analytic_operator_cost(module: PrepackedSwiGLU, rows: int) -> dict[str, int]:
+    h = module.input_width
+    n = module.intermediate_width
+    output = module.output_width
+    elements = rows * h + n * h * 2 + output * n + rows * n + rows * output
+    return {
+        "analytic_minimum_bytes": int(elements * module.gate_weight.element_size()),
+        "analytic_mac_count": int(rows * (2 * h * n + n * output)),
+    }
+
+
+def load_dynamic_predictor(path: Path, device: torch.device) -> nn.Module | None:
+    if not path.exists():
+        return None
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    state = payload["state_dict"]
+    input_width = int(state["down.weight"].shape[1])
+    rank = int(state["down.weight"].shape[0])
+    output_width = int(state["up.weight"].shape[0])
+    predictor = LowRankWorkingSetPredictor(input_width, rank, output_width)
+    predictor.load_state_dict(state)
+    predictor = predictor.to(device=device, dtype=torch.bfloat16).eval()
+
+    class Adapter(nn.Module):
+        def __init__(self, base: nn.Module, expected: int) -> None:
+            super().__init__()
+            self.base = base
+            self.expected = expected
+
+        def forward(self, state: Tensor) -> Tensor:
+            value = state.to(torch.bfloat16)
+            if value.shape[-1] * 2 == self.expected:
+                value = torch.cat((value, torch.zeros_like(value)), dim=-1)
+            return self.base(value)
+
+    return Adapter(predictor, input_width)
+
+
+def profiler_trace(
+    name: str,
+    function: Callable[[], Tensor],
+    output_dir: Path,
+    device: torch.device,
+) -> dict[str, Any]:
+    from torch.profiler import ProfilerActivity, profile, record_function
+
+    path = output_dir / "profiler" / f"{name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
+        for _ in range(8):
+            with record_function(name):
+                function()
+    torch.cuda.synchronize(device)
+    prof.export_chrome_trace(str(path))
+    trace = json.loads(path.read_text(encoding="utf-8"))
+    events = trace.get("traceEvents", [])
+    kernels = [event for event in events if event.get("cat") == "kernel"]
+    return {
+        "trace": str(path.relative_to(output_dir)),
+        "cuda_kernel_launches": len(kernels),
+        "cuda_kernel_time_us": float(sum(float(event.get("dur", 0)) for event in kernels)),
+        "kernel_names": sorted({str(event.get("name")) for event in kernels}),
+    }
+
+
+@torch.inference_mode()
+def benchmark_kernels(
+    mlp: nn.Module,
+    config: dict[str, Any],
+    device: torch.device,
+    output_dir: Path,
+    log: RunLog,
+) -> dict[str, Any]:
+    gate = mlp.gate_proj
+    up = mlp.up_proj
+    down = mlp.down_proj
+    width = gate.out_features
+    rows: list[dict[str, Any]] = []
+    modules_for_trace: dict[str, tuple[nn.Module, Tensor]] = {}
+    dynamic_score = load_dynamic_predictor(
+        ROOT / config["historical_predictor_checkpoint"], device
+    )
+    for batch in config["kernel_batches"]:
+        x = torch.randn(int(batch), gate.in_features, device=device, dtype=gate.weight.dtype)
+        implementations: list[tuple[str, float, nn.Module]] = [("dense_eager", 1.0, mlp)]
+        try:
+            compiled = torch.compile(mlp, fullgraph=True, mode="max-autotune")
+            compiled(x)
+            torch.cuda.synchronize(device)
+            implementations.append(("dense_compiled", 1.0, compiled))
+        except Exception as exc:  # noqa: BLE001
+            log.write("dense_compile_failed", batch=batch, error=repr(exc))
+        for fraction in config["retention_fractions"]:
+            count = retained_count(width, float(fraction))
+            index = torch.arange(count, device=device)
+            packed = PrepackedSwiGLU(gate, up, down, index).to(device)
+            implementations.append(("prepacked_eager", float(fraction), packed))
+            for triton_config in config["triton_configs"]:
+                fused = TritonPrepackedSwiGLU(
+                    gate,
+                    up,
+                    down,
+                    index,
+                    block_m=int(triton_config["block_m"]),
+                    block_n=int(triton_config["block_n"]),
+                    block_k=int(triton_config["block_k"]),
+                    num_warps=int(triton_config["num_warps"]),
+                ).to(device)
+                label = (
+                    f"triton_partial_m{triton_config['block_m']}_"
+                    f"n{triton_config['block_n']}_w{triton_config['num_warps']}"
+                )
+                implementations.append((label, float(fraction), fused))
+        if dynamic_score is not None:
+            retained = retained_count(width, 0.75)
+            dynamic = DynamicGatheredSwiGLU(
+                gate, up, down, dynamic_score, retained
+            ).to(device)
+            implementations.append(("dynamic_predict_topk_gather", 0.75, dynamic))
+
+        eager_records: list[tuple[str, float, nn.Module]] = []
+        for name, fraction, module in implementations:
+            try:
+                stats, peak = benchmark_callable(
+                    lambda module=module, x=x: module(x),
+                    device=device,
+                    batch=int(batch),
+                    warmup=int(config["kernel_warmup"]),
+                    repetitions=int(config["kernel_repetitions"]),
+                )
+            except Exception as exc:  # noqa: BLE001
+                log.write("kernel_arm_failed", method=name, batch=batch, error=repr(exc))
+                continue
+            if isinstance(module, PrepackedSwiGLU):
+                analytic = analytic_operator_cost(module, int(batch))
+                weight_bytes = module.weight_bytes
+            else:
+                dense_module = PrepackedSwiGLU(
+                    gate, up, down, torch.arange(width, device=device)
+                ).to(device)
+                analytic = analytic_operator_cost(dense_module, int(batch))
+                weight_bytes = dense_module.weight_bytes
+                del dense_module
+            row = {
+                "method": name,
+                "execution": "eager_launch",
+                "batch_size": int(batch),
+                "target_retained_fraction": fraction,
+                "actual_retained_fraction": (
+                    module.intermediate_width / width
+                    if isinstance(module, PrepackedSwiGLU)
+                    else fraction
+                ),
+                "prepacked_no_runtime_gather": isinstance(module, PrepackedSwiGLU),
+                "deployable": "dynamic" in name or fraction == 1.0,
+                "oracle_upper_bound": fraction < 1.0 and "dynamic" not in name,
+                "peak_incremental_vram_bytes": peak,
+                "resident_weight_bytes": weight_bytes,
+                "hardware_hbm_bytes": None,
+                "hardware_occupancy": None,
+                **analytic,
+                **stats,
+            }
+            rows.append(row)
+            eager_records.append((name, fraction, module))
+            log.write(
+                "kernel_arm_complete",
+                method=name,
+                batch=batch,
+                fraction=fraction,
+                median_ms=stats["median_ms"],
+            )
+
+        for name, fraction, module in eager_records:
+            if "compiled" in name:
+                continue
+            try:
+                graph = CUDAGraphCallable(module, x)
+                stats, peak = benchmark_callable(
+                    graph,
+                    device=device,
+                    batch=int(batch),
+                    warmup=int(config["kernel_warmup"]),
+                    repetitions=int(config["kernel_repetitions"]),
+                )
+            except Exception as exc:  # noqa: BLE001
+                log.write("cuda_graph_failed", method=name, batch=batch, error=repr(exc))
+                continue
+            packed_like = isinstance(module, PrepackedSwiGLU)
+            if packed_like:
+                analytic = analytic_operator_cost(module, int(batch))
+                weight_bytes = module.weight_bytes
+            else:
+                dense_module = PrepackedSwiGLU(
+                    gate, up, down, torch.arange(width, device=device)
+                ).to(device)
+                analytic = analytic_operator_cost(dense_module, int(batch))
+                weight_bytes = dense_module.weight_bytes
+                del dense_module
+            row = {
+                "method": name,
+                "execution": "cuda_graph",
+                "batch_size": int(batch),
+                "target_retained_fraction": fraction,
+                "actual_retained_fraction": (
+                    module.intermediate_width / width if packed_like else fraction
+                ),
+                "prepacked_no_runtime_gather": packed_like,
+                "deployable": "dynamic" in name or fraction == 1.0,
+                "oracle_upper_bound": fraction < 1.0 and "dynamic" not in name,
+                "peak_incremental_vram_bytes": peak,
+                "resident_weight_bytes": weight_bytes,
+                "hardware_hbm_bytes": None,
+                "hardware_occupancy": None,
+                **analytic,
+                **stats,
+            }
+            rows.append(row)
+            if int(batch) == 1 and (
+                name == "dense_eager"
+                or name == "dynamic_predict_topk_gather"
+                or (name.startswith("triton_partial") and fraction in (0.75, 1.0))
+            ):
+                modules_for_trace[f"{name}_f{fraction:g}_b{batch}_graph"] = (module, x)
+
+    comparisons: list[dict[str, Any]] = []
+    for batch in config["kernel_batches"]:
+        batch_rows = [row for row in rows if row["batch_size"] == int(batch)]
+        dense = min(
+            (row for row in batch_rows if row["target_retained_fraction"] == 1.0),
+            key=lambda row: row["median_ms"],
+        )
+        for row in batch_rows:
+            row["speedup_vs_strongest_dense"] = dense["median_ms"] / row["median_ms"]
+            dense_low = dense["mean_ci95_ms"][0]
+            candidate_high = row["mean_ci95_ms"][1]
+            row["conservative_ci95_speedup"] = dense_low / candidate_high
+        best_sparse = min(
+            (row for row in batch_rows if row["target_retained_fraction"] < 1.0),
+            key=lambda row: row["median_ms"],
+        )
+        comparisons.append(
+            {
+                "batch_size": int(batch),
+                "strongest_dense_method": dense["method"],
+                "strongest_dense_execution": dense["execution"],
+                "strongest_dense_median_ms": dense["median_ms"],
+                "best_sparse_method": best_sparse["method"],
+                "best_sparse_execution": best_sparse["execution"],
+                "best_sparse_fraction": best_sparse["actual_retained_fraction"],
+                "best_sparse_median_ms": best_sparse["median_ms"],
+                "best_sparse_speedup": best_sparse["speedup_vs_strongest_dense"],
+                "best_sparse_conservative_ci95_speedup": best_sparse[
+                    "conservative_ci95_speedup"
+                ],
+            }
+        )
+    traces = {}
+    for name, (module, x) in modules_for_trace.items():
+        graph = CUDAGraphCallable(module, x)
+        traces[name] = profiler_trace(name, graph, output_dir, device)
+    return {
+        "scope": "isolated final-layer SwiGLU; one row equals one decode-position token",
+        "rows": rows,
+        "comparisons": comparisons,
+        "profiler": {
+            "torch_traces": traces,
+            "ncu_available": bool(shutil.which("ncu")),
+            "hardware_hbm_bytes_available": False,
+            "hardware_occupancy_available": False,
+            "note": (
+                "Torch traces provide launches and kernel durations. HBM traffic and achieved "
+                "occupancy remain null unless an Nsight Compute pass succeeds."
+            ),
+        },
+    }
+
+
+@contextlib.contextmanager
+def replaced_mlp(layer: nn.Module, replacement: nn.Module) -> Iterator[None]:
+    original = layer.mlp
+    layer.mlp = replacement
+    try:
+        yield
+    finally:
+        layer.mlp = original
+
+
+def normalized_generation(tokenizer: Any, tokens: Tensor, prompt_length: int) -> list[str]:
+    return [
+        tokenizer.decode(row[prompt_length:], skip_special_tokens=True).strip()
+        for row in tokens
+    ]
+
+
+@torch.inference_mode()
+def free_running_validation(
+    model: nn.Module,
+    tokenizer: Any,
+    layer: nn.Module,
+    candidate: nn.Module,
+    examples: Sequence[dict[str, str]],
+    *,
+    device: torch.device,
+    max_length: int,
+    max_new_tokens: int,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    rows: list[dict[str, Any]] = []
+    for example in examples:
+        encoded = encode_prompts(tokenizer, [example["prompt"]], device, max_length)
+        prompt_length = encoded["input_ids"].shape[1]
+        dense_tokens = model.generate(
+            **encoded,
+            do_sample=False,
+            max_new_tokens=max_new_tokens,
+            pad_token_id=tokenizer.pad_token_id,
+        )
+        with replaced_mlp(layer, candidate):
+            candidate_tokens = model.generate(
+                **encoded,
+                do_sample=False,
+                max_new_tokens=max_new_tokens,
+                pad_token_id=tokenizer.pad_token_id,
+            )
+        dense_text = normalized_generation(tokenizer, dense_tokens, prompt_length)[0]
+        candidate_text = normalized_generation(tokenizer, candidate_tokens, prompt_length)[0]
+        rows.append(
+            {
+                "id": example["id"],
+                "split": example["split"],
+                "task": example["task"],
+                "dense_text": dense_text,
+                "candidate_text": candidate_text,
+                "exact_generation_match": dense_text == candidate_text,
+                "dense_task_success": answer_success(dense_text, example),
+                "candidate_task_success": answer_success(candidate_text, example),
+            }
+        )
+    dense_success = float(np.mean([row["dense_task_success"] for row in rows]))
+    candidate_success = float(np.mean([row["candidate_task_success"] for row in rows]))
+    return {
+        "examples": len(rows),
+        "exact_generation_match": float(np.mean([row["exact_generation_match"] for row in rows])),
+        "dense_task_success": dense_success,
+        "candidate_task_success": candidate_success,
+        "task_success_delta": candidate_success - dense_success,
+        "no_unacceptable_task_degradation": candidate_success >= dense_success - 0.01,
+        "by_split": {
+            split: {
+                "examples": sum(row["split"] == split for row in rows),
+                "exact_generation_match": float(
+                    np.mean(
+                        [row["exact_generation_match"] for row in rows if row["split"] == split]
+                    )
+                ),
+                "dense_task_success": float(
+                    np.mean([row["dense_task_success"] for row in rows if row["split"] == split])
+                ),
+                "candidate_task_success": float(
+                    np.mean(
+                        [row["candidate_task_success"] for row in rows if row["split"] == split]
+                    )
+                ),
+            }
+            for split in sorted({row["split"] for row in rows})
+        },
+    }, rows
+
+
+def choose_development_policy(rows: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+    passing = [
+        row
+        for row in rows
+        if row["deployable"]
+        and row["passes_quality_gate"]
+        and row["retained_fraction"] < 1.0
+    ]
+    if not passing:
+        return None
+    return min(
+        passing,
+        key=lambda row: (
+            row["retained_fraction"],
+            row.get("correction_rank", 0),
+            row["precision"] != "bfloat16",
+            row["mean_kl"],
+        ),
+    )
+
+
+def report_markdown(summary: dict[str, Any]) -> str:
+    decision = summary["decision"]
+    lines = [
+        "# Fused sparse SwiGLU result",
+        "",
+        f"**Decision:** `{decision}`",
+        "",
+        "## Claim boundary",
+        "",
+        (
+            "Prepacked oracle masks are performance upper bounds because they do not include a "
+            "deployable mask predictor. Fixed masks and explicitly timed correction modules are "
+            "deployable. All latency values are measured CUDA execution on the RTX 4070 SUPER; "
+            "no photonic simulation is used as evidence of GPU acceleration."
+        ),
+        "",
+        "## Quality",
+        "",
+    ]
+    development = summary.get("development", {})
+    policy = development.get("selected_policy")
+    if policy is None:
+        lines.append("No sub-full-width deployable development policy passed the preregistered gate.")
+    else:
+        lines.append(
+            f"Development selected `{policy['method']}` at {policy['retained_fraction']:.3%}: "
+            f"KL {policy['mean_kl']:.6f}, top-1 {policy['top1_agreement']:.3%}."
+        )
+    heldout = summary.get("heldout")
+    if heldout:
+        candidate = heldout["candidate"]
+        lines.extend(
+            [
+                "",
+                (
+                    f"On 1,024 new held-out prompts (512 matched-task, 512 OOD), the actual "
+                    f"candidate kernel produced KL {candidate['mean_kl']:.6f} and top-1 "
+                    f"agreement {candidate['top1_agreement']:.3%}."
+                ),
+            ]
+        )
+    lines.extend(["", "## Isolated operator", ""])
+    for row in summary["kernels"]["comparisons"]:
+        lines.append(
+            f"- Batch {row['batch_size']}: best sparse upper bound "
+            f"{row['best_sparse_speedup']:.3f}x vs strongest dense; conservative CI speedup "
+            f"{row['best_sparse_conservative_ci95_speedup']:.3f}x."
+        )
+    if summary.get("end_to_end"):
+        lines.extend(["", "## End to end", ""])
+        for row in summary["end_to_end"]:
+            lines.append(
+                f"- {row['scope']}, batch {row['batch_size']}: {row['median_speedup']:.4f}x "
+                f"(conservative CI {row['conservative_ci95_speedup']:.4f}x)."
+            )
+    lines.extend(
+        [
+            "",
+            "## Nsight limitation",
+            "",
+            summary["kernels"]["profiler"]["note"],
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def main() -> None:
+    args = parse_args()
+    config = json.loads((ROOT / args.config).read_text(encoding="utf-8"))
+    output_dir = ROOT / args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    log = RunLog(output_dir / "research_log.jsonl")
+    if not torch.cuda.is_available():
+        raise SystemExit("CUDA is required")
+    seed_everything(int(config["seed"]))
+    device = torch.device("cuda")
+    dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16}[config["dtype"]]
+    write_json(output_dir / "resolved_config.json", config)
+    write_json(output_dir / "environment.json", environment_snapshot())
+
+    manifest = make_fused_sparse_manifest()
+    historical_path = ROOT / config["historical_manifest"]
+    historical_prompts: list[str] = []
+    if historical_path.exists():
+        historical_prompts = [
+            json.loads(line)["prompt"]
+            for line in historical_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    validate_fused_sparse_manifest(manifest, historical_prompts=historical_prompts)
+    manifest_text = "".join(json.dumps(row, sort_keys=True) + "\n" for row in manifest)
+    (output_dir / "evaluation_manifest.jsonl").write_text(manifest_text, encoding="utf-8")
+    manifest_hash = hashlib.sha256(manifest_text.encode()).hexdigest()
+    log.write("run_started", stage=args.stage, manifest_sha256=manifest_hash)
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        config["model"], revision=config["revision"], local_files_only=True
+    )
+    tokenizer.padding_side = "left"
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(
+        config["model"],
+        revision=config["revision"],
+        dtype=dtype,
+        low_cpu_mem_usage=True,
+        local_files_only=True,
+    ).to(device).eval()
+    layer = resolve_layers(model)[int(config["target_layer"])]
+    mlp = resolve_mlp(layer)
+
+    if args.stage == "quality":
+        kernel_source = ROOT / config["kernel_results_source"]
+        kernels = json.loads((kernel_source / "kernel_benchmarks.json").read_text(encoding="utf-8"))
+        source_profiler = kernel_source / "profiler"
+        if source_profiler.exists():
+            shutil.copytree(source_profiler, output_dir / "profiler", dirs_exist_ok=True)
+        log.write("kernel_results_reused", source=str(kernel_source))
+    else:
+        kernels = benchmark_kernels(mlp, config, device, output_dir, log)
+    write_json(output_dir / "kernel_benchmarks.json", kernels)
+    write_csv(output_dir / "kernel_benchmarks.csv", kernels["rows"])
+    if args.stage == "kernels":
+        summary = {"decision": "KERNEL_TUNING_ONLY", "kernels": kernels}
+        write_json(output_dir / "summary.json", summary)
+        (output_dir / "FUSED_SPARSE_SWIGLU_REPORT.md").write_text(
+            report_markdown(summary), encoding="utf-8"
+        )
+        return
+
+    by_split = {
+        split: [row for row in manifest if row["split"] == split]
+        for split in ("calibration", "development", "heldout_matched", "heldout_ood")
+    }
+    calibration = capture_split(
+        model,
+        tokenizer,
+        by_split["calibration"],
+        layer,
+        device=device,
+        batch_size=int(config["capture_batch_size"]),
+        max_length=int(config["max_prompt_tokens"]),
+        log=log,
+    )
+    development = capture_split(
+        model,
+        tokenizer,
+        by_split["development"],
+        layer,
+        device=device,
+        batch_size=int(config["capture_batch_size"]),
+        max_length=int(config["max_prompt_tokens"]),
+        log=log,
+    )
+    calibration.save(output_dir / "calibration_capture.pt")
+    development.save(output_dir / "development_capture.pt")
+
+    fractions = [float(value) for value in config["retention_fractions"]]
+    contribution_masks = static_contribution_masks(
+        calibration, mlp.down_proj.weight, fractions
+    )
+    output_masks, cancellation, output_score = output_sensitive_masks(
+        calibration,
+        mlp.down_proj.weight,
+        model.model.norm,
+        model.lm_head,
+        fractions,
+        float(config["low_margin_weight"]),
+    )
+    structured_masks = structured_page_masks(
+        output_score,
+        fractions,
+        page_width=int(config["structured_page_width"]),
+    )
+    write_json(output_dir / "cancellation_analysis.json", cancellation)
+    torch.save(
+        {
+            "contribution_norm": contribution_masks,
+            "output_sensitive_low_margin": output_masks,
+            "structured_output_pages": structured_masks,
+        },
+        output_dir / "development_candidate_masks.pt",
+    )
+
+    development_summaries: list[dict[str, Any]] = []
+    development_rows: list[dict[str, Any]] = []
+    correction_modules: dict[str, ResidualCorrection] = {}
+    for fraction in fractions:
+        oracle_count = retained_count(calibration.activation.shape[1], fraction)
+        down_norm = mlp.down_proj.weight.detach().float().cpu().norm(dim=0)
+        oracle_score = development.activation.float().abs() * down_norm
+        oracle = oracle_score.topk(oracle_count, dim=1).indices
+        arms: list[tuple[str, Tensor, bool, str, str, nn.Module | None]] = [
+            (
+                f"oracle_contribution_f{fraction:g}",
+                oracle,
+                False,
+                "per_example_oracle",
+                "bfloat16",
+                None,
+            ),
+            (
+                f"static_contribution_f{fraction:g}",
+                contribution_masks[fraction],
+                True,
+                "fixed_prepacked",
+                "bfloat16",
+                None,
+            ),
+            (
+                f"static_output_sensitive_f{fraction:g}",
+                output_masks[fraction],
+                True,
+                "fixed_prepacked",
+                "bfloat16",
+                None,
+            ),
+            (
+                f"static_output_sensitive_fp32_f{fraction:g}",
+                output_masks[fraction],
+                True,
+                "fixed_prepacked",
+                "float32_accumulation",
+                None,
+            ),
+            (
+                f"structured_output_pages_f{fraction:g}",
+                structured_masks[fraction],
+                True,
+                "fixed_contiguous_operator_pages",
+                "bfloat16",
+                None,
+            ),
+        ]
+        if fraction in [float(value) for value in config["correction_fractions"]]:
+            for rank in config["correction_ranks"]:
+                key = f"output_sensitive_f{fraction:g}_rank{rank}"
+                correction = train_residual_correction(
+                    calibration,
+                    mlp.down_proj.weight,
+                    output_masks[fraction],
+                    rank=int(rank),
+                    steps=int(config["correction_steps"]),
+                    batch_size=int(config["correction_batch_size"]),
+                    learning_rate=float(config["correction_learning_rate"]),
+                    seed=int(config["seed"]) + int(rank) + round(100 * fraction),
+                    device=device,
+                )
+                correction_modules[key] = correction.cpu()
+                arms.append(
+                    (
+                        f"static_output_sensitive_residual_r{rank}_f{fraction:g}",
+                        output_masks[fraction],
+                        True,
+                        "fixed_prepacked_plus_residual",
+                        "bfloat16",
+                        correction_modules[key],
+                    )
+                )
+        for name, selection, deployable, kind, precision, correction in arms:
+            summary, rows = evaluate_quality(
+                name,
+                development,
+                by_split["development"],
+                selection,
+                mlp.down_proj.weight,
+                model.model.norm,
+                model.lm_head,
+                model=model,
+                tokenizer=tokenizer,
+                layer=layer,
+                device=device,
+                batch_size=int(config["quality_batch_size"]),
+                max_length=int(config["max_prompt_tokens"]),
+                seed=int(config["seed"]) + round(fraction * 1000),
+                bootstrap_draws=int(config["bootstrap_draws"]),
+                quality_gate_kl=float(config["quality_gate_kl"]),
+                quality_gate_top1=float(config["quality_gate_top1"]),
+                deployable=deployable,
+                selection_kind=kind,
+                precision=precision,
+                correction=correction,
+            )
+            if correction is not None:
+                summary["correction_rank"] = int(
+                    name.split("residual_r")[1].split("_")[0]
+                )
+                summary["correction_parameter_count"] = sum(
+                    parameter.numel() for parameter in correction.parameters()
+                )
+            development_summaries.append(summary)
+            development_rows.extend(rows)
+            log.write("development_arm_complete", **summary)
+
+    selected = choose_development_policy(development_summaries)
+    selection_payload: dict[str, Any] = {
+        "manifest_sha256": manifest_hash,
+        "gate": {
+            "mean_kl_strictly_below": config["quality_gate_kl"],
+            "top1_agreement_at_least": config["quality_gate_top1"],
+        },
+        "selected_policy": selected,
+        "heldout_opened": False,
+    }
+    write_json(output_dir / "development_selection.json", selection_payload)
+    write_json(output_dir / "development_quality.json", development_summaries)
+    write_csv(output_dir / "development_quality_rows.csv", development_rows)
+    torch.save(correction_modules, output_dir / "residual_corrections.pt")
+
+    development_gate_passed = selected is not None
+    negative_audit_policy: dict[str, Any] | None = None
+    if selected is None:
+        candidates = [
+            row
+            for row in development_summaries
+            if row["deployable"] and row["retained_fraction"] < 1.0
+        ]
+        negative_audit_policy = max(
+            candidates,
+            key=lambda row: (
+                row["top1_agreement"],
+                -row["mean_kl"],
+                -row["retained_fraction"],
+            ),
+        )
+        selected = negative_audit_policy
+        selection_payload["negative_audit_policy"] = negative_audit_policy
+        write_json(output_dir / "development_selection.json", selection_payload)
+        log.write(
+            "negative_audit_policy_frozen",
+            method=selected["method"],
+            reason="no sub-full-width development arm passed",
+        )
+
+    # Policy is now frozen.  Only at this point are held-out tensors captured.
+    selection_payload["heldout_opened"] = True
+    write_json(output_dir / "development_selection.json", selection_payload)
+    log.write("heldout_opened", selected_method=selected["method"])
+    matched = capture_split(
+        model,
+        tokenizer,
+        by_split["heldout_matched"],
+        layer,
+        device=device,
+        batch_size=int(config["capture_batch_size"]),
+        max_length=int(config["max_prompt_tokens"]),
+        log=log,
+    )
+    ood = capture_split(
+        model,
+        tokenizer,
+        by_split["heldout_ood"],
+        layer,
+        device=device,
+        batch_size=int(config["capture_batch_size"]),
+        max_length=int(config["max_prompt_tokens"]),
+        log=log,
+    )
+    heldout = Capture(
+        ids=matched.ids + ood.ids,
+        tasks=matched.tasks + ood.tasks,
+        state=torch.cat((matched.state, ood.state)),
+        activation=torch.cat((matched.activation, ood.activation)),
+        residual=torch.cat((matched.residual, ood.residual)),
+        dense_output=torch.cat((matched.dense_output, ood.dense_output)),
+        logits=torch.cat((matched.logits, ood.logits)),
+    )
+    heldout_examples = by_split["heldout_matched"] + by_split["heldout_ood"]
+    heldout.save(output_dir / "heldout_capture.pt")
+
+    fraction = float(selected["retained_fraction"])
+    closest_fraction = min(fractions, key=lambda item: abs(item - fraction))
+    if "structured_output_pages" in selected["method"]:
+        chosen_index = structured_masks[closest_fraction]
+    elif "contribution" in selected["method"]:
+        chosen_index = contribution_masks[closest_fraction]
+    else:
+        chosen_index = output_masks[closest_fraction]
+    correction: nn.Module | None = None
+    if "residual_r" in selected["method"]:
+        rank = int(selected["method"].split("residual_r")[1].split("_")[0])
+        key = f"output_sensitive_f{closest_fraction:g}_rank{rank}"
+        correction = correction_modules[key]
+
+    triton_config = config["selected_triton_config"]
+    candidate_module: nn.Module = TritonPrepackedSwiGLU(
+        mlp.gate_proj,
+        mlp.up_proj,
+        mlp.down_proj,
+        chosen_index.to(device),
+        block_m=int(triton_config["block_m"]),
+        block_n=int(triton_config["block_n"]),
+        block_k=int(triton_config["block_k"]),
+        num_warps=int(triton_config["num_warps"]),
+    ).to(device)
+
+    if correction is not None:
+        candidate_module = CorrectedSwiGLU(candidate_module, correction.to(device)).to(device)
+
+    width = mlp.gate_proj.out_features
+    oracle75_score = heldout.activation.float().abs() * mlp.down_proj.weight.detach().float().cpu().norm(dim=0)
+    oracle75 = oracle75_score.topk(retained_count(width, 0.75), dim=1).indices
+    full_width = torch.arange(width)
+    heldout_summaries: dict[str, Any] = {}
+    heldout_rows: list[dict[str, Any]] = []
+    for name, selection, deployable, kind, operator in (
+        ("full_width_repacked_control", full_width, True, "fixed_prepacked", None),
+        ("oracle_contribution_f0.75", oracle75, False, "per_example_oracle", None),
+        ("selected_pytorch_prepacked", chosen_index, True, "fixed_prepacked", None),
+        ("selected_actual_triton", chosen_index, True, "fixed_prepacked", candidate_module),
+    ):
+        method_summary, rows = evaluate_quality(
+            name,
+            heldout,
+            heldout_examples,
+            selection,
+            mlp.down_proj.weight,
+            model.model.norm,
+            model.lm_head,
+            model=model,
+            tokenizer=tokenizer,
+            layer=layer,
+            device=device,
+            batch_size=int(config["quality_batch_size"]),
+            max_length=int(config["max_prompt_tokens"]),
+            seed=int(config["seed"]) + 9000,
+            bootstrap_draws=int(config["bootstrap_draws"]),
+            quality_gate_kl=float(config["quality_gate_kl"]),
+            quality_gate_top1=float(config["quality_gate_top1"]),
+            deployable=deployable,
+            selection_kind=kind,
+            precision=selected["precision"] if "selected" in name else "bfloat16",
+            correction=correction if name == "selected_pytorch_prepacked" else None,
+            operator=operator,
+        )
+        heldout_summaries[name] = method_summary
+        heldout_rows.extend(rows)
+        log.write("heldout_arm_complete", **method_summary)
+
+    candidate_quality = heldout_summaries["selected_actual_triton"]
+    actual_quality_pass = bool(candidate_quality["passes_quality_gate"])
+    end_to_end: list[dict[str, Any]] = []
+    generation_summary: dict[str, Any] | None = None
+    generation_rows: list[dict[str, Any]] = []
+    if development_gate_passed and actual_quality_pass:
+        for batch in config["end_to_end_batches"]:
+            prompts = [by_split["heldout_matched"][0]["prompt"]] * int(batch)
+            encoded = encode_prompts(
+                tokenizer, prompts, device, int(config["end_to_end_sequence_length"])
+            )
+            dense_stats, dense_peak = benchmark_callable(
+                lambda encoded=encoded: model(**encoded, use_cache=False, logits_to_keep=1).logits,
+                device=device,
+                batch=int(batch),
+                warmup=int(config["end_to_end_warmup"]),
+                repetitions=int(config["end_to_end_repetitions"]),
+            )
+            with replaced_mlp(layer, candidate_module):
+                candidate_stats, candidate_peak = benchmark_callable(
+                    lambda encoded=encoded: model(
+                        **encoded, use_cache=False, logits_to_keep=1
+                    ).logits,
+                    device=device,
+                    batch=int(batch),
+                    warmup=int(config["end_to_end_warmup"]),
+                    repetitions=int(config["end_to_end_repetitions"]),
+                )
+            end_to_end.append(
+                {
+                    "scope": "complete_model_prefill",
+                    "batch_size": int(batch),
+                    "dense": dense_stats,
+                    "candidate": candidate_stats,
+                    "dense_peak_incremental_vram_bytes": dense_peak,
+                    "candidate_peak_incremental_vram_bytes": candidate_peak,
+                    "median_speedup": dense_stats["median_ms"] / candidate_stats["median_ms"],
+                    "conservative_ci95_speedup": dense_stats["mean_ci95_ms"][0]
+                    / candidate_stats["mean_ci95_ms"][1],
+                }
+            )
+        sample_count = int(config["generation_examples_per_split"])
+        generation_examples = (
+            by_split["heldout_matched"][:sample_count]
+            + by_split["heldout_ood"][:sample_count]
+        )
+        generation_summary, generation_rows = free_running_validation(
+            model,
+            tokenizer,
+            layer,
+            candidate_module,
+            generation_examples,
+            device=device,
+            max_length=int(config["max_prompt_tokens"]),
+            max_new_tokens=int(config["generation_max_new_tokens"]),
+        )
+
+    end_to_end_pass = bool(
+        end_to_end
+        and all(row["conservative_ci95_speedup"] > 1.0 for row in end_to_end)
+    )
+    task_pass = bool(
+        generation_summary and generation_summary["no_unacceptable_task_degradation"]
+    )
+    promoted = development_gate_passed and actual_quality_pass and end_to_end_pass and task_pass
+    if not development_gate_passed:
+        decision = "NO_DEPLOYABLE_SPARSE_POLICY_PASSED_DEVELOPMENT"
+    elif promoted:
+        decision = "SPARSE_POLICY_PROMOTED"
+    elif actual_quality_pass:
+        decision = "QUALITY_PASSED_BUT_NO_CREDIBLE_END_TO_END_WIN"
+    else:
+        decision = "DEVELOPMENT_POLICY_FAILED_NEW_HELDOUT"
+    summary = {
+        "decision": decision,
+        "promotion_conditions_all_passed": promoted,
+        "manifest_sha256": manifest_hash,
+        "historical_512_used_for_tuning": False,
+        "kernels": kernels,
+        "development": {
+            "selected_policy": selected if development_gate_passed else None,
+            "negative_audit_policy": negative_audit_policy,
+            "arms": development_summaries,
+            "cancellation_analysis": cancellation,
+        },
+        "heldout": {
+            "examples": len(heldout_examples),
+            "matched_examples": len(by_split["heldout_matched"]),
+            "ood_examples": len(by_split["heldout_ood"]),
+            "candidate": candidate_quality,
+            "arms": heldout_summaries,
+        },
+        "end_to_end": end_to_end,
+        "free_running_generation": generation_summary,
+        "promotion_conditions": {
+            "development_quality": development_gate_passed,
+            "heldout_quality": actual_quality_pass,
+            "no_task_degradation": task_pass,
+            "credible_end_to_end_speedup_all_measured_batches": end_to_end_pass,
+            "full_overhead_accounting": bool(
+                development_gate_passed and actual_quality_pass and correction is None
+            ),
+        },
+        "full_width_engineering_results": [
+            min(
+                (
+                    row
+                    for row in kernels["rows"]
+                    if row["target_retained_fraction"] == 1.0
+                    and row["batch_size"] == int(batch)
+                ),
+                key=lambda row: row["median_ms"],
+            )
+            for batch in config["kernel_batches"]
+        ],
+    }
+    write_json(output_dir / "heldout_quality.json", heldout_summaries)
+    write_csv(output_dir / "heldout_quality_rows.csv", heldout_rows)
+    failures = sorted(
+        (
+            row
+            for row in heldout_rows
+            if row["method"] == "selected_actual_triton" and not row["top1_agreement"]
+        ),
+        key=lambda row: (row["reference_margin"], -row["kl"]),
+    )
+    write_json(output_dir / "low_margin_failures.json", failures[:100])
+    write_csv(output_dir / "free_running_generation.csv", generation_rows)
+    write_json(output_dir / "summary.json", summary)
+    (output_dir / "FUSED_SPARSE_SWIGLU_REPORT.md").write_text(
+        report_markdown(summary), encoding="utf-8"
+    )
+    log.write("run_complete", decision=decision)
+
+
+if __name__ == "__main__":
+    main()
