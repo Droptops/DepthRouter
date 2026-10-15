@@ -1,0 +1,54 @@
+{
+  "candidate_ids": [
+    0,
+    9,
+    14,
+    55,
+    60,
+    69,
+    182,
+    187,
+    196,
+    209,
+    450,
+    455,
+    464,
+    477,
+    494,
+    935,
+    940,
+    949,
+    962,
+    979,
+    1000,
+    1729,
+    1734,
+    1743,
+    1756,
+    1773,
+    1794,
+    1819
+  ],
+  "candidates": 28,
+  "chunk_size": 256,
+  "chunks": [
+    {
+      "column_start": 0,
+      "column_stop": 28,
+      "file": "matrix-development-original.candidates-000000-000028.npz",
+      "sha256": "8ac2dc4c3144023f7b48098d2159223954c97eb3bd2752b419f2952825f73186"
+    }
+  ],
+  "complete": true,
+  "format": "depthrouter_candidate_matrix_v1",
+  "layout": {
+    "file": "candidate-layout-ff0c15f91ce439826d2a82a40865fe6f111fda096087dee433e4e1b2e4bd53d7.npz",
+    "identity": "ff0c15f91ce439826d2a82a40865fe6f111fda096087dee433e4e1b2e4bd53d7",
+    "sha256": "eee653449b90057b01f3bfe4461c4d3229356321008bc9e67c81b644919f3ad6"
+  },
+  "metadata": {
+    "file": "matrix-development-original.metadata.npz",
+    "sha256": "952e46abeacf6cf2c534ba3264a4060a5ae8469cddc74918f4cd3b21e1f7b514"
+  },
+  "states": 511
+}

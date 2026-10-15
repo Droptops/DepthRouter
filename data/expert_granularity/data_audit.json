@@ -1,0 +1,372 @@
+{
+  "filtered_exclusion_prompt_count": 8595,
+  "filtered_four_split_validation": {
+    "cross_split_pairs_checked": 827392,
+    "enterprise_fraction": 0.125,
+    "enterprise_instruction_keywords": [
+      "business",
+      "customer",
+      "company",
+      "employee",
+      "manager",
+      "meeting",
+      "office",
+      "project",
+      "sales",
+      "invoice",
+      "budget",
+      "marketing",
+      "client",
+      "product",
+      "software",
+      "database",
+      "security",
+      "workflow",
+      "contract",
+      "email",
+      "work",
+      "leadership",
+      "interview",
+      "team",
+      "data",
+      "program",
+      "service"
+    ],
+    "enterprise_scope": "instruction-keyword topic screen; not a production benchmark",
+    "historical_prompt_count": 8595,
+    "historical_unique_token_sets": 5111,
+    "independence_scope": "lexical exclusion; semantic family independence is not established",
+    "license": "CC-BY-SA-3.0",
+    "manifest_sha256": "d176d181ebacaa9ac110802abfa1e3516399b87da9d2037ffe6a8d39d205e30d",
+    "maximum_prompt_characters": 1100,
+    "ood_definition": "creative_writing and summarization categories excluded from fitting",
+    "prompt_and_instruction_token_jaccard_rejection_threshold": 0.72,
+    "rows": 1600,
+    "selection_salt": "DepthRouter-expert-audit-data-v1-20261014",
+    "source": "databricks/databricks-dolly-15k",
+    "source_document_and_exact_instruction_family_globally_unique": true,
+    "source_document_five_token_shingle_jaccard_rejection_threshold": 0.5,
+    "source_responses_used": false,
+    "source_revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+    "source_sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+    "split_sizes": {
+      "calibration": 768,
+      "development": 128,
+      "heldout_matched": 512,
+      "heldout_ood": 192
+    },
+    "stratum_counts": {
+      "calibration": {
+        "enterprise_related": 96,
+        "general_natural_language": 672
+      },
+      "development": {
+        "enterprise_related": 16,
+        "general_natural_language": 112
+      },
+      "heldout_matched": {
+        "enterprise_related": 64,
+        "general_natural_language": 448
+      },
+      "heldout_ood": {
+        "enterprise_related": 24,
+        "general_natural_language": 168
+      }
+    },
+    "task_counts": {
+      "calibration": {
+        "brainstorming": 135,
+        "classification": 135,
+        "closed_qa": 116,
+        "general_qa": 135,
+        "information_extraction": 112,
+        "open_qa": 135
+      },
+      "development": {
+        "brainstorming": 25,
+        "classification": 19,
+        "closed_qa": 19,
+        "general_qa": 24,
+        "information_extraction": 18,
+        "open_qa": 23
+      },
+      "heldout_matched": {
+        "brainstorming": 79,
+        "classification": 75,
+        "closed_qa": 75,
+        "general_qa": 105,
+        "information_extraction": 74,
+        "open_qa": 104
+      },
+      "heldout_ood": {
+        "creative_writing": 108,
+        "summarization": 84
+      }
+    }
+  },
+  "freshness_scope": "no model outputs produced for retained contexts in the pinned prior run",
+  "full_inherited_recognition_validation": {
+    "confirmation_policy": "equal matched/OOD category strata; never fit on confirmation",
+    "confirmation_task_counts": {
+      "matched": {
+        "brainstorming": 12,
+        "classification": 12,
+        "closed_qa": 11,
+        "general_qa": 10,
+        "information_extraction": 9,
+        "open_qa": 10
+      },
+      "ood": {
+        "creative_writing": 36,
+        "summarization": 28
+      }
+    },
+    "cross_split_pairs_checked": 1032192,
+    "enterprise_fraction": 0.125,
+    "enterprise_instruction_keywords": [
+      "business",
+      "customer",
+      "company",
+      "employee",
+      "manager",
+      "meeting",
+      "office",
+      "project",
+      "sales",
+      "invoice",
+      "budget",
+      "marketing",
+      "client",
+      "product",
+      "software",
+      "database",
+      "security",
+      "workflow",
+      "contract",
+      "email",
+      "work",
+      "leadership",
+      "interview",
+      "team",
+      "data",
+      "program",
+      "service"
+    ],
+    "enterprise_scope": "instruction-keyword topic screen; not a production benchmark",
+    "historical_prompt_count": 6163,
+    "historical_unique_token_sets": 2679,
+    "independence_scope": "lexical exclusion; semantic family/article independence not established",
+    "license": "CC-BY-SA-3.0",
+    "manifest_sha256": "5567188a5c6a98365edd4677289e5e89c48fd1640435d66dc581e987fed18e1b",
+    "maximum_prompt_characters": 1100,
+    "minimum_prompt_words": 6,
+    "ood_definition": "creative_writing/summarization excluded from calibration and development",
+    "prior_expert_context_count": 2304,
+    "prior_expert_source_document_instruction_and_prompt_exclusion": true,
+    "prompt_and_instruction_token_jaccard_rejection_threshold": 0.72,
+    "rows": 1728,
+    "selection_salt": "DepthRouter-fixed-partition-recognition-data-v1-20261014",
+    "source": "databricks/databricks-dolly-15k",
+    "source_document_and_exact_instruction_family_globally_unique": true,
+    "source_document_five_token_shingle_jaccard_rejection_threshold": 0.5,
+    "source_responses_used": false,
+    "source_revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+    "source_sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+    "split_sizes": {
+      "calibration": 768,
+      "confirmation": 128,
+      "development": 128,
+      "heldout_matched": 512,
+      "heldout_ood": 192
+    },
+    "stratum_counts": {
+      "calibration": {
+        "enterprise_related": 96,
+        "general_natural_language": 672
+      },
+      "confirmation": {
+        "enterprise_related": 16,
+        "general_natural_language": 112
+      },
+      "development": {
+        "enterprise_related": 16,
+        "general_natural_language": 112
+      },
+      "heldout_matched": {
+        "enterprise_related": 64,
+        "general_natural_language": 448
+      },
+      "heldout_ood": {
+        "enterprise_related": 24,
+        "general_natural_language": 168
+      }
+    },
+    "task_counts": {
+      "calibration": {
+        "brainstorming": 135,
+        "classification": 135,
+        "closed_qa": 116,
+        "general_qa": 135,
+        "information_extraction": 112,
+        "open_qa": 135
+      },
+      "confirmation": {
+        "brainstorming": 12,
+        "classification": 12,
+        "closed_qa": 11,
+        "creative_writing": 36,
+        "general_qa": 10,
+        "information_extraction": 9,
+        "open_qa": 10,
+        "summarization": 28
+      },
+      "development": {
+        "brainstorming": 25,
+        "classification": 19,
+        "closed_qa": 19,
+        "general_qa": 24,
+        "information_extraction": 18,
+        "open_qa": 23
+      },
+      "heldout_matched": {
+        "brainstorming": 79,
+        "classification": 75,
+        "closed_qa": 75,
+        "general_qa": 105,
+        "information_extraction": 74,
+        "open_qa": 104
+      },
+      "heldout_ood": {
+        "creative_writing": 108,
+        "summarization": 84
+      }
+    }
+  },
+  "gpu_used": false,
+  "historical_exclusion_sources": [
+    {
+      "path": "artifacts/predictive_working_set/20261013-validated-final/evaluation_manifest.jsonl",
+      "rows": 896,
+      "sha256": "552efc03e4caa86f95ef52a66e4563bdce70f394d0f60536cec36fdec6a0d6c4",
+      "unique_prompts": 896
+    },
+    {
+      "path": "artifacts/fused_sparse_swiglu/20261013-validated-final-v2/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "9325a76ac0476f94abfad1a4a4895aef9542bb3897894d763fd743d53a9d5264",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "artifacts/output_gap_completion/20261014-controlled-v1/evaluation_manifest.jsonl",
+      "rows": 1536,
+      "sha256": "e2d809957993bb24b8376812ad4ad72332eac0e199171a6c5be2f6cd45dba0ab",
+      "unique_prompts": 1536
+    },
+    {
+      "path": "data/photonic_parallel_manifest.jsonl",
+      "rows": 24,
+      "sha256": "8a9f29b1f4f98226e23086557f7a1684bf465d7d64636a662661bfb96d058ad1",
+      "unique_prompts": 24
+    },
+    {
+      "path": "data/expert_audit/historical_alpaca_prompts.jsonl",
+      "rows": 2200,
+      "sha256": "8de9ac8e65f79b7242e924c217e2adcbf966fc998139ecdc10d48f3a0dcc08c4",
+      "unique_prompts": 2171
+    },
+    {
+      "canonical_sha256": "8cdf9914d7f1c5880849439a7dbac34f44f99bdf2c61c249496eebeeec1fb586",
+      "path": "data/expert_audit/evaluation_manifest.jsonl",
+      "rows": 2304,
+      "sha256": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+      "unique_prompts": 2304
+    }
+  ],
+  "lineage": {
+    "all_inherited_current_and_snapshot_hashes_exact": true,
+    "base_commit": "1be53fefd37c344dbc4cdc44bb708e3e226ae0e9",
+    "claim_limit": "provenance and artifact audit, not semantic independence or proof about unrecorded external runs",
+    "inherited_source_sha256": {
+      "Dockerfile.photonic": "f9a23c57acc4229fc62ae7b4b5711b2441ceb8d9246b11287a816cd780ad7703",
+      "EXPERT_RECOGNITION_PREREGISTRATION.md": "ddd4a77dd254074f31cc79f3ca37e4a521fbe03d74dbeb7e3cf64421663d00d0",
+      "artifacts/expert_construction/20261014-bounded-v1/fixed_selection.json": "bf089bf3f9554c78a18e33d264bbcb99d468f7bf19b5caf24be3cc8a40b46766",
+      "artifacts/expert_construction/20261014-bounded-v1/partition-C-29.json": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d",
+      "configs/expert_recognition.json": "0da15e3641f765818629ec514be837dae698df0dc5c9671a3857f74962f2dccf",
+      "data/expert_audit/evaluation_manifest.jsonl": "ce5d7b1a8126a1ab310d01f4bdf1d887078679f15e64b5a4d00567bda2aed89b",
+      "data/expert_audit/historical_alpaca_prompts.jsonl": "8de9ac8e65f79b7242e924c217e2adcbf966fc998139ecdc10d48f3a0dcc08c4",
+      "data/expert_audit/historical_alpaca_provenance.json": "030b0d7a2b896c97999389ebae00a9960cb1d38a0bb29b6968e700e0d1e631bd",
+      "data/expert_recognition/data_audit.json": "6db2f2d007b9621a84b1660ae8995e1504a359c533e4cd8e51a3ba224ad9db18",
+      "data/expert_recognition/evaluation_manifest.jsonl": "c4eb5654b713927c2924195bb2cd98435306214b32d98c402d0d42ff8e251fe6",
+      "data/expert_recognition/source_capacity_audit.json": "fb97eb07ae746faa432a7b6315b221fad3fb1dace67ea5b36834e3d3606a32f6",
+      "data/expert_recognition/source_provenance.json": "7af04fdd76546738be49bf83f301cfd71a4d6f45e0fded8d33826c319304b002",
+      "experiments/expert_construction.py": "ac1c07e0606e12697ce201e1db3bc4d0b75491998c812086a45b242d40b2c8bd",
+      "experiments/expert_recognition.py": "4b83212dd786ff34aa9812b2b3d8f564338fc7fee841491dd2608cf205a01633",
+      "experiments/expert_recognition_timing.py": "2d7156ab51183c5eed1ebd17db10993307d1d83c103b3ffd72ad9730198454f4",
+      "requirements-photonic.txt": "04a5dea06fe08160345f720d6aa5bca8b9411b01af56c82ace7965471e3deb02",
+      "scripts/prepare_recognition_data.py": "d56d23ce5d3e87897488836b0b5551d07f3aac06166beaf806874949771e6e1e",
+      "scripts/run_expert_recognition.ps1": "4cf98215de3ccb3885147f4a4e9d61b6b810effe9bb955f6b6483fb8bec0628c",
+      "src/depth_router/expert_audit_data.py": "c02127bec992be9ec1732a7fc7e0efb7da4b33f343c4afd76fb68be7a13cd963",
+      "src/depth_router/expert_audit_metrics.py": "03b0d1d241074ab7235645d47a22c50941e60842c04700290031d65fc664fdfe",
+      "src/depth_router/expert_partitions.py": "c21597beaa87e0c5018435efb4db1dd68d23142f7281d491789559970ce8cc86",
+      "src/depth_router/expert_recognition.py": "958d48c302b367f2e771f2151e148470a7f6abdae2caeba2b6ba86281daf5899",
+      "src/depth_router/fused_swiglu.py": "fd17cf407462c4608ba250e5a72d1e1276e0aca506d90127c5219b22f10f8f1b",
+      "src/depth_router/output_gap.py": "8bcb3f6abb9ffd26ade8323549b35c14d0fabb5d66cc48ec54b45d239e236c65",
+      "src/depth_router/output_gap_data.py": "1d4420aecb1d0b6d9bb419848e3104273342f4adacbff0df58b775885e600e21",
+      "src/depth_router/recognition_data.py": "f5dd6358e122fa0bc4b278d83582e897c0986ee7cad16b7ffc2d05139c670c44"
+    },
+    "no_retained_context_model_outputs_in_prior_run": true,
+    "prior_candidate_audit": {
+      "candidate_count": 28,
+      "fixed_candidate_index": 8,
+      "matrix_sha256": "cc635f455e09bf7081bf48d0ede9bde86829652c363d782f1dc933758b355896",
+      "partition": "C-29",
+      "state_metadata_sha256": "7ad1d331656ad18b78adb228e0c0550e1f40c3e4c5247794ca2f14c6462a2fec",
+      "states": 511
+    },
+    "prior_evidence_sha256": {
+      "confirmation_decision.json": "210120aa99579ba5fc4c78a1ca8477a9fe39892e44dd35d82b21fe600e41f397",
+      "events.jsonl": "8924e83ef40dcfde3a98167ff112a5b1b6a826c879f91b44ab4d28144a3529fc",
+      "frozen_fixed_selection.json": "f69e12cdb710bd5f8883218b8b085cc72a50d53d346f2935396ca35cb105e704",
+      "frozen_partition.json": "f827d04b841f1d1997cd700f6ee95e9c5d86423c4d5048fb0bb71c5f103b4a5d",
+      "preregistration.json": "493f8717c4da4176e09c0cdc88e0d9f344bf8fed49f7a42de176730b88f46b54",
+      "promotion_decision.json": "98d6d9ca83136c36c31efa4d8f4d1c00c10d1eac969658f8a86993d3186bba4a"
+    },
+    "prior_output_scope": "confirmation only; exact pinned run directory inspected",
+    "prior_registered_source_count": 26,
+    "prior_run": "artifacts/expert_recognition/20261014-recognition-v1",
+    "prior_run_files_checked": [
+      "DRAFT_PR.md",
+      "capture-confirmation.json",
+      "confirmation_decision.json",
+      "environment.json",
+      "events.jsonl",
+      "frozen_fixed_selection.json",
+      "frozen_partition.json",
+      "full_model_cached_validation.json",
+      "matrix-confirmation.npz",
+      "postrun_integrity_verification.json",
+      "preregistration.json",
+      "promotion_decision.json",
+      "states-confirmation.jsonl"
+    ]
+  },
+  "manifest_file_sha256": "7242e95f04f3b1b991c07b1a5e8a0ad632afe47f2fcf9d7602bbb929d3ca522f",
+  "manifest_sha256": "d176d181ebacaa9ac110802abfa1e3516399b87da9d2037ffe6a8d39d205e30d",
+  "model_loaded": false,
+  "quarantined_context_count": 128,
+  "quarantined_ids_sha256": "72b76ef6591ddb6e79d4f2dc5c77505e644c7bc2475c449c3ca039d35226cd59",
+  "retained_ids_prompts_splits_and_provenance_unchanged": true,
+  "retained_jsonl_lines_byte_identical": true,
+  "rows": 1600,
+  "selection": "filter split != confirmation; no new sampling",
+  "source_manifest": "data/expert_recognition/evaluation_manifest.jsonl",
+  "source_manifest_file_sha256": "c4eb5654b713927c2924195bb2cd98435306214b32d98c402d0d42ff8e251fe6",
+  "source_manifest_rows": 1728,
+  "source_responses_used": false,
+  "split_sizes": {
+    "calibration": 768,
+    "development": 128,
+    "heldout_matched": 512,
+    "heldout_ood": 192
+  }
+}

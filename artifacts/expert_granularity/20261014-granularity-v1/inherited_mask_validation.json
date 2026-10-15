@@ -1,0 +1,70 @@
+{
+  "calibration": {
+    "17": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9560943643512451,
+      "original_coverage": 0.8591087811271297
+    },
+    "29": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9554390563564875,
+      "original_coverage": 0.8591087811271297
+    },
+    "43": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9593709043250328,
+      "original_coverage": 0.8591087811271297
+    }
+  },
+  "development": {
+    "17": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9569471624266145,
+      "original_coverage": 0.837573385518591
+    },
+    "29": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.949119373776908,
+      "original_coverage": 0.837573385518591
+    },
+    "43": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9471624266144814,
+      "original_coverage": 0.837573385518591
+    }
+  },
+  "heldout_matched": {
+    "17": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9459724950884086,
+      "original_coverage": 0.8585461689587426
+    },
+    "29": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9420432220039293,
+      "original_coverage": 0.8585461689587426
+    },
+    "43": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9464636542239686,
+      "original_coverage": 0.8585461689587426
+    }
+  },
+  "heldout_ood": {
+    "17": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9505208333333334,
+      "original_coverage": 0.8489583333333334
+    },
+    "29": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9518229166666666,
+      "original_coverage": 0.8489583333333334
+    },
+    "43": {
+      "exact_masks_and_all_raw_measurements": true,
+      "full_oracle_coverage": 0.9583333333333334,
+      "original_coverage": 0.8489583333333334
+    }
+  }
+}

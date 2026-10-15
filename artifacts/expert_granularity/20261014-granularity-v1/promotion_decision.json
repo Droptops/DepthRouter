@@ -1,0 +1,51 @@
+{
+  "aggregate_ood_net_coverage_ci": {
+    "bootstrap_seed": 17,
+    "confidence": 0.95,
+    "direction": "left_minus_right",
+    "estimate": 0.03298611111111111,
+    "lower": 0.01649305555555556,
+    "method": "percentile_context_bootstrap",
+    "n_contexts": 192,
+    "n_paired_seeds": 3,
+    "n_states": 768,
+    "resamples": 2000,
+    "seed_uncertainty": "conditional_on_the_evaluated_seed_set",
+    "upper": 0.04861111111111111,
+    "weighting": "token_states_with_whole_context_resampling"
+  },
+  "aggregate_ood_resolved_positive_gain": true,
+  "all_seed_all_split_point_pass": true,
+  "all_seed_all_split_statistically_resolved_pass": true,
+  "capability_pass": true,
+  "cost_note": "cycle wall time is not inference latency or measured bandwidth",
+  "free_generation_task_quality": null,
+  "global_bandwidth_solver_promotion": false,
+  "gpu_budget_ceiling_seconds": 14400,
+  "individual_selected_portfolios": {
+    "17": {
+      "point_pass": true,
+      "statistically_resolved_pass": true
+    },
+    "29": {
+      "point_pass": true,
+      "statistically_resolved_pass": true
+    },
+    "43": {
+      "point_pass": true,
+      "statistically_resolved_pass": true
+    }
+  },
+  "measured_dram_bytes": null,
+  "measured_latency": null,
+  "next_recognition_study_requires_separate_authorization": true,
+  "original_weights_unchanged": true,
+  "point_pass": true,
+  "prior_negative_results_unchanged": true,
+  "promote": false,
+  "promotion_scope": "frozen_28_mask_capability_not_router_or_measured_economics",
+  "runtime_timing": "not_run_out_of_scope",
+  "runtime_training": "not_run_out_of_scope",
+  "single_gpu_wall_elapsed_seconds": 2499.683635422,
+  "status": "completed"
+}

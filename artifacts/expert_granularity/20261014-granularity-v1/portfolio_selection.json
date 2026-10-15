@@ -1,0 +1,914 @@
+{
+  "17": {
+    "calibration_coverage": 0.9144823066841415,
+    "calibration_states": 3052,
+    "candidate_ids": [
+      265,
+      494,
+      598,
+      674,
+      704,
+      797,
+      868,
+      897,
+      900,
+      930,
+      1035,
+      1099,
+      1162,
+      1198,
+      1248,
+      1327,
+      1341,
+      1346,
+      1351,
+      1363,
+      1364,
+      1529,
+      1562,
+      1618,
+      1676,
+      1692,
+      1762,
+      1791
+    ],
+    "candidate_schema_sha256": "087b8af5a826b80ceb2c9a2a5a4b7e3e49e4735dbee8ebfb8bb6392598d43f5f",
+    "local_acceptance": {
+      "kl_strictly_less_than": 0.01,
+      "same_greedy_token": true
+    },
+    "matrix_agreement_sha256": "c10087e78a6fc9dfc35d84d6af5f61638831768f4b006f0e1f5ddb6e90ce09e2",
+    "matrix_candidate_ids_sha256": "816573670dec23880ff1c27d4fa2384c2f3cdbeb5f9666cde5107efa452fc4da",
+    "matrix_context_ids_sha256": "f336ce0f7f31d2c4e08f13458fc606e23bd5d70be07eaf05467280c91516fb8b",
+    "matrix_kl_sha256": "d6715836100c74a56d7fb38f74053a8beb2f4e762a7343427251047910e796ed",
+    "partition_sha256": "ce3e0d8de571624d72253cac046823bb054f8884b5eed167c8c3bbb69170d229",
+    "selected_on": "calibration",
+    "selection_order": [
+      1692,
+      1198,
+      1676,
+      930,
+      1327,
+      1618,
+      1562,
+      265,
+      1364,
+      1762,
+      1248,
+      1341,
+      868,
+      704,
+      598,
+      1351,
+      494,
+      1791,
+      1529,
+      900,
+      1363,
+      1035,
+      1099,
+      674,
+      897,
+      1346,
+      797,
+      1162
+    ],
+    "selection_rule": "greedy_marginal_acceptance_then_mean_kl_then_global_lex_index",
+    "selection_sha256": "ad87b2dde2a79c6dbaa7bd76511530a62d87f08f055c0c9b17c377d9180f0be6",
+    "size": 28,
+    "steps": [
+      {
+        "calibration_mean_kl": 0.09039754216943363,
+        "candidate_id": 1692,
+        "cumulative_coverage": 0.5792922673656619,
+        "cumulative_covered_states": 1768,
+        "newly_covered_states": 1768,
+        "step": 1
+      },
+      {
+        "calibration_mean_kl": 0.10392586015299766,
+        "candidate_id": 1198,
+        "cumulative_coverage": 0.6933158584534731,
+        "cumulative_covered_states": 2116,
+        "newly_covered_states": 348,
+        "step": 2
+      },
+      {
+        "calibration_mean_kl": 0.08422129593817056,
+        "candidate_id": 1676,
+        "cumulative_coverage": 0.7408256880733946,
+        "cumulative_covered_states": 2261,
+        "newly_covered_states": 145,
+        "step": 3
+      },
+      {
+        "calibration_mean_kl": 0.09235003826625027,
+        "candidate_id": 930,
+        "cumulative_coverage": 0.77129750982962,
+        "cumulative_covered_states": 2354,
+        "newly_covered_states": 93,
+        "step": 4
+      },
+      {
+        "calibration_mean_kl": 0.10317811301425184,
+        "candidate_id": 1327,
+        "cumulative_coverage": 0.7935779816513762,
+        "cumulative_covered_states": 2422,
+        "newly_covered_states": 68,
+        "step": 5
+      },
+      {
+        "calibration_mean_kl": 0.09929496214193537,
+        "candidate_id": 1618,
+        "cumulative_coverage": 0.812254259501966,
+        "cumulative_covered_states": 2479,
+        "newly_covered_states": 57,
+        "step": 6
+      },
+      {
+        "calibration_mean_kl": 0.1017058644879766,
+        "candidate_id": 1562,
+        "cumulative_coverage": 0.8266710353866317,
+        "cumulative_covered_states": 2523,
+        "newly_covered_states": 44,
+        "step": 7
+      },
+      {
+        "calibration_mean_kl": 0.10518408606945161,
+        "candidate_id": 265,
+        "cumulative_coverage": 0.8384665792922673,
+        "cumulative_covered_states": 2559,
+        "newly_covered_states": 36,
+        "step": 8
+      },
+      {
+        "calibration_mean_kl": 0.0901715996989469,
+        "candidate_id": 1364,
+        "cumulative_coverage": 0.8492791612057667,
+        "cumulative_covered_states": 2592,
+        "newly_covered_states": 33,
+        "step": 9
+      },
+      {
+        "calibration_mean_kl": 0.0883001347076354,
+        "candidate_id": 1762,
+        "cumulative_coverage": 0.8564875491480997,
+        "cumulative_covered_states": 2614,
+        "newly_covered_states": 22,
+        "step": 10
+      },
+      {
+        "calibration_mean_kl": 0.1113956999129144,
+        "candidate_id": 1248,
+        "cumulative_coverage": 0.8636959370904325,
+        "cumulative_covered_states": 2636,
+        "newly_covered_states": 22,
+        "step": 11
+      },
+      {
+        "calibration_mean_kl": 0.1143044567373333,
+        "candidate_id": 1341,
+        "cumulative_coverage": 0.8695937090432503,
+        "cumulative_covered_states": 2654,
+        "newly_covered_states": 18,
+        "step": 12
+      },
+      {
+        "calibration_mean_kl": 0.11068003059111813,
+        "candidate_id": 868,
+        "cumulative_coverage": 0.8745085190039319,
+        "cumulative_covered_states": 2669,
+        "newly_covered_states": 15,
+        "step": 13
+      },
+      {
+        "calibration_mean_kl": 0.10415002208736522,
+        "candidate_id": 704,
+        "cumulative_coverage": 0.8790956749672346,
+        "cumulative_covered_states": 2683,
+        "newly_covered_states": 14,
+        "step": 14
+      },
+      {
+        "calibration_mean_kl": 0.11823160177722594,
+        "candidate_id": 598,
+        "cumulative_coverage": 0.8836828309305373,
+        "cumulative_covered_states": 2697,
+        "newly_covered_states": 14,
+        "step": 15
+      },
+      {
+        "calibration_mean_kl": 0.09053913272092967,
+        "candidate_id": 1351,
+        "cumulative_coverage": 0.8876146788990825,
+        "cumulative_covered_states": 2709,
+        "newly_covered_states": 12,
+        "step": 16
+      },
+      {
+        "calibration_mean_kl": 0.117532600752592,
+        "candidate_id": 494,
+        "cumulative_coverage": 0.8908912188728703,
+        "cumulative_covered_states": 2719,
+        "newly_covered_states": 10,
+        "step": 17
+      },
+      {
+        "calibration_mean_kl": 0.07787545164908885,
+        "candidate_id": 1791,
+        "cumulative_coverage": 0.8938401048492791,
+        "cumulative_covered_states": 2728,
+        "newly_covered_states": 9,
+        "step": 18
+      },
+      {
+        "calibration_mean_kl": 0.11909119903558649,
+        "candidate_id": 1529,
+        "cumulative_coverage": 0.8964613368283093,
+        "cumulative_covered_states": 2736,
+        "newly_covered_states": 8,
+        "step": 19
+      },
+      {
+        "calibration_mean_kl": 0.08163692916417883,
+        "candidate_id": 900,
+        "cumulative_coverage": 0.8987549148099607,
+        "cumulative_covered_states": 2743,
+        "newly_covered_states": 7,
+        "step": 20
+      },
+      {
+        "calibration_mean_kl": 0.10407562348385271,
+        "candidate_id": 1363,
+        "cumulative_coverage": 0.901048492791612,
+        "cumulative_covered_states": 2750,
+        "newly_covered_states": 7,
+        "step": 21
+      },
+      {
+        "calibration_mean_kl": 0.10469235861810106,
+        "candidate_id": 1035,
+        "cumulative_coverage": 0.9033420707732635,
+        "cumulative_covered_states": 2757,
+        "newly_covered_states": 7,
+        "step": 22
+      },
+      {
+        "calibration_mean_kl": 0.11317401057290125,
+        "candidate_id": 1099,
+        "cumulative_coverage": 0.9056356487549148,
+        "cumulative_covered_states": 2764,
+        "newly_covered_states": 7,
+        "step": 23
+      },
+      {
+        "calibration_mean_kl": 0.10303748894796873,
+        "candidate_id": 674,
+        "cumulative_coverage": 0.9076015727391874,
+        "cumulative_covered_states": 2770,
+        "newly_covered_states": 6,
+        "step": 24
+      },
+      {
+        "calibration_mean_kl": 0.10356200992792007,
+        "candidate_id": 897,
+        "cumulative_coverage": 0.90956749672346,
+        "cumulative_covered_states": 2776,
+        "newly_covered_states": 6,
+        "step": 25
+      },
+      {
+        "calibration_mean_kl": 0.08589283818088904,
+        "candidate_id": 1346,
+        "cumulative_coverage": 0.9112057667103539,
+        "cumulative_covered_states": 2781,
+        "newly_covered_states": 5,
+        "step": 26
+      },
+      {
+        "calibration_mean_kl": 0.09362959827761924,
+        "candidate_id": 797,
+        "cumulative_coverage": 0.9128440366972477,
+        "cumulative_covered_states": 2786,
+        "newly_covered_states": 5,
+        "step": 27
+      },
+      {
+        "calibration_mean_kl": 0.1259021705803009,
+        "candidate_id": 1162,
+        "cumulative_coverage": 0.9144823066841415,
+        "cumulative_covered_states": 2791,
+        "newly_covered_states": 5,
+        "step": 28
+      }
+    ]
+  },
+  "29": {
+    "calibration_coverage": 0.9154652686762779,
+    "calibration_states": 3052,
+    "candidate_ids": [
+      196,
+      379,
+      385,
+      448,
+      476,
+      577,
+      604,
+      826,
+      870,
+      875,
+      1118,
+      1185,
+      1189,
+      1209,
+      1271,
+      1273,
+      1301,
+      1351,
+      1352,
+      1463,
+      1505,
+      1570,
+      1625,
+      1689,
+      1711,
+      1728,
+      1761,
+      1789
+    ],
+    "candidate_schema_sha256": "087b8af5a826b80ceb2c9a2a5a4b7e3e49e4735dbee8ebfb8bb6392598d43f5f",
+    "local_acceptance": {
+      "kl_strictly_less_than": 0.01,
+      "same_greedy_token": true
+    },
+    "matrix_agreement_sha256": "c9deda4ac27cb1cfada43ce9e8f924fad2b130c4eccaad21067dee0228c46b36",
+    "matrix_candidate_ids_sha256": "816573670dec23880ff1c27d4fa2384c2f3cdbeb5f9666cde5107efa452fc4da",
+    "matrix_context_ids_sha256": "f336ce0f7f31d2c4e08f13458fc606e23bd5d70be07eaf05467280c91516fb8b",
+    "matrix_kl_sha256": "da380aa79c4372ac4eedb1c76a23495a9eb7eec9a284c927b6aa8672c204acde",
+    "partition_sha256": "af24cdc892f79f451205f775ce0114942f09b252d0b00e5ce4b6bb2764a6a6b9",
+    "selected_on": "calibration",
+    "selection_order": [
+      1118,
+      1711,
+      1273,
+      875,
+      1761,
+      379,
+      1505,
+      1209,
+      1271,
+      826,
+      1185,
+      1463,
+      577,
+      1352,
+      1570,
+      870,
+      604,
+      385,
+      448,
+      1301,
+      1789,
+      1689,
+      1625,
+      1189,
+      196,
+      1351,
+      1728,
+      476
+    ],
+    "selection_rule": "greedy_marginal_acceptance_then_mean_kl_then_global_lex_index",
+    "selection_sha256": "8ea88c0c0513d5cf28c5eb117e496acdb5ec5ddaef473a8e9cedb345bd4e4096",
+    "size": 28,
+    "steps": [
+      {
+        "calibration_mean_kl": 0.10597875071845997,
+        "candidate_id": 1118,
+        "cumulative_coverage": 0.5655307994757536,
+        "cumulative_covered_states": 1726,
+        "newly_covered_states": 1726,
+        "step": 1
+      },
+      {
+        "calibration_mean_kl": 0.10242634608396992,
+        "candidate_id": 1711,
+        "cumulative_coverage": 0.676605504587156,
+        "cumulative_covered_states": 2065,
+        "newly_covered_states": 339,
+        "step": 2
+      },
+      {
+        "calibration_mean_kl": 0.09458909124640266,
+        "candidate_id": 1273,
+        "cumulative_coverage": 0.7404980340760158,
+        "cumulative_covered_states": 2260,
+        "newly_covered_states": 195,
+        "step": 3
+      },
+      {
+        "calibration_mean_kl": 0.10613674456239329,
+        "candidate_id": 875,
+        "cumulative_coverage": 0.772608125819135,
+        "cumulative_covered_states": 2358,
+        "newly_covered_states": 98,
+        "step": 4
+      },
+      {
+        "calibration_mean_kl": 0.10406389993645121,
+        "candidate_id": 1761,
+        "cumulative_coverage": 0.7942332896461337,
+        "cumulative_covered_states": 2424,
+        "newly_covered_states": 66,
+        "step": 5
+      },
+      {
+        "calibration_mean_kl": 0.1068972926076619,
+        "candidate_id": 379,
+        "cumulative_coverage": 0.812254259501966,
+        "cumulative_covered_states": 2479,
+        "newly_covered_states": 55,
+        "step": 6
+      },
+      {
+        "calibration_mean_kl": 0.10070153862349505,
+        "candidate_id": 1505,
+        "cumulative_coverage": 0.8253604193971167,
+        "cumulative_covered_states": 2519,
+        "newly_covered_states": 40,
+        "step": 7
+      },
+      {
+        "calibration_mean_kl": 0.10395867178985847,
+        "candidate_id": 1209,
+        "cumulative_coverage": 0.8368283093053736,
+        "cumulative_covered_states": 2554,
+        "newly_covered_states": 35,
+        "step": 8
+      },
+      {
+        "calibration_mean_kl": 0.09570888420157461,
+        "candidate_id": 1271,
+        "cumulative_coverage": 0.8469855832241153,
+        "cumulative_covered_states": 2585,
+        "newly_covered_states": 31,
+        "step": 9
+      },
+      {
+        "calibration_mean_kl": 0.10259100666480385,
+        "candidate_id": 826,
+        "cumulative_coverage": 0.8548492791612058,
+        "cumulative_covered_states": 2609,
+        "newly_covered_states": 24,
+        "step": 10
+      },
+      {
+        "calibration_mean_kl": 0.08331597920029121,
+        "candidate_id": 1185,
+        "cumulative_coverage": 0.8610747051114024,
+        "cumulative_covered_states": 2628,
+        "newly_covered_states": 19,
+        "step": 11
+      },
+      {
+        "calibration_mean_kl": 0.09935115910318786,
+        "candidate_id": 1463,
+        "cumulative_coverage": 0.867300131061599,
+        "cumulative_covered_states": 2647,
+        "newly_covered_states": 19,
+        "step": 12
+      },
+      {
+        "calibration_mean_kl": 0.13007391000376697,
+        "candidate_id": 577,
+        "cumulative_coverage": 0.872870249017038,
+        "cumulative_covered_states": 2664,
+        "newly_covered_states": 17,
+        "step": 13
+      },
+      {
+        "calibration_mean_kl": 0.09309001700541326,
+        "candidate_id": 1352,
+        "cumulative_coverage": 0.8781127129750983,
+        "cumulative_covered_states": 2680,
+        "newly_covered_states": 16,
+        "step": 14
+      },
+      {
+        "calibration_mean_kl": 0.09813998500921857,
+        "candidate_id": 1570,
+        "cumulative_coverage": 0.882699868938401,
+        "cumulative_covered_states": 2694,
+        "newly_covered_states": 14,
+        "step": 15
+      },
+      {
+        "calibration_mean_kl": 0.11610108463496135,
+        "candidate_id": 870,
+        "cumulative_coverage": 0.8866317169069463,
+        "cumulative_covered_states": 2706,
+        "newly_covered_states": 12,
+        "step": 16
+      },
+      {
+        "calibration_mean_kl": 0.11107140783331947,
+        "candidate_id": 604,
+        "cumulative_coverage": 0.8902359108781127,
+        "cumulative_covered_states": 2717,
+        "newly_covered_states": 11,
+        "step": 17
+      },
+      {
+        "calibration_mean_kl": 0.10481240094837017,
+        "candidate_id": 385,
+        "cumulative_coverage": 0.8935124508519003,
+        "cumulative_covered_states": 2727,
+        "newly_covered_states": 10,
+        "step": 18
+      },
+      {
+        "calibration_mean_kl": 0.10927897575165096,
+        "candidate_id": 448,
+        "cumulative_coverage": 0.8967889908256881,
+        "cumulative_covered_states": 2737,
+        "newly_covered_states": 10,
+        "step": 19
+      },
+      {
+        "calibration_mean_kl": 0.09320772960450255,
+        "candidate_id": 1301,
+        "cumulative_coverage": 0.8994102228047182,
+        "cumulative_covered_states": 2745,
+        "newly_covered_states": 8,
+        "step": 20
+      },
+      {
+        "calibration_mean_kl": 0.0940669903070656,
+        "candidate_id": 1789,
+        "cumulative_coverage": 0.9020314547837484,
+        "cumulative_covered_states": 2753,
+        "newly_covered_states": 8,
+        "step": 21
+      },
+      {
+        "calibration_mean_kl": 0.11692982795246955,
+        "candidate_id": 1689,
+        "cumulative_coverage": 0.9046526867627785,
+        "cumulative_covered_states": 2761,
+        "newly_covered_states": 8,
+        "step": 22
+      },
+      {
+        "calibration_mean_kl": 0.0946651565121923,
+        "candidate_id": 1625,
+        "cumulative_coverage": 0.9066186107470511,
+        "cumulative_covered_states": 2767,
+        "newly_covered_states": 6,
+        "step": 23
+      },
+      {
+        "calibration_mean_kl": 0.1059285312751232,
+        "candidate_id": 1189,
+        "cumulative_coverage": 0.9085845347313237,
+        "cumulative_covered_states": 2773,
+        "newly_covered_states": 6,
+        "step": 24
+      },
+      {
+        "calibration_mean_kl": 0.11321535717095134,
+        "candidate_id": 196,
+        "cumulative_coverage": 0.9105504587155964,
+        "cumulative_covered_states": 2779,
+        "newly_covered_states": 6,
+        "step": 25
+      },
+      {
+        "calibration_mean_kl": 0.09446520211729549,
+        "candidate_id": 1351,
+        "cumulative_coverage": 0.9121887287024901,
+        "cumulative_covered_states": 2784,
+        "newly_covered_states": 5,
+        "step": 26
+      },
+      {
+        "calibration_mean_kl": 0.0971245016109277,
+        "candidate_id": 1728,
+        "cumulative_coverage": 0.913826998689384,
+        "cumulative_covered_states": 2789,
+        "newly_covered_states": 5,
+        "step": 27
+      },
+      {
+        "calibration_mean_kl": 0.10874246818302995,
+        "candidate_id": 476,
+        "cumulative_coverage": 0.9154652686762779,
+        "cumulative_covered_states": 2794,
+        "newly_covered_states": 5,
+        "step": 28
+      }
+    ]
+  },
+  "43": {
+    "calibration_coverage": 0.9157929226736566,
+    "calibration_states": 3052,
+    "candidate_ids": [
+      119,
+      196,
+      383,
+      440,
+      475,
+      598,
+      691,
+      692,
+      749,
+      764,
+      770,
+      867,
+      1160,
+      1180,
+      1218,
+      1248,
+      1255,
+      1328,
+      1440,
+      1511,
+      1565,
+      1650,
+      1691,
+      1719,
+      1778,
+      1781,
+      1791,
+      1815
+    ],
+    "candidate_schema_sha256": "087b8af5a826b80ceb2c9a2a5a4b7e3e49e4735dbee8ebfb8bb6392598d43f5f",
+    "local_acceptance": {
+      "kl_strictly_less_than": 0.01,
+      "same_greedy_token": true
+    },
+    "matrix_agreement_sha256": "7d2d31a9824a3b214f106996faafd1f4206bc74964cc250cb543da69885bd5d7",
+    "matrix_candidate_ids_sha256": "816573670dec23880ff1c27d4fa2384c2f3cdbeb5f9666cde5107efa452fc4da",
+    "matrix_context_ids_sha256": "f336ce0f7f31d2c4e08f13458fc606e23bd5d70be07eaf05467280c91516fb8b",
+    "matrix_kl_sha256": "dd34b8501ff59fdb69ffc63fd979377cc414d22c625e37bb1ad54480b1ae1f26",
+    "partition_sha256": "95394c6ecc2b7a9ebcfc3b0fd2ee4cce92769b0e8792b96f09c559059ccfaa43",
+    "selected_on": "calibration",
+    "selection_order": [
+      1815,
+      475,
+      1778,
+      196,
+      770,
+      692,
+      1328,
+      1248,
+      1180,
+      867,
+      1650,
+      1691,
+      1511,
+      1565,
+      1160,
+      440,
+      764,
+      1440,
+      1255,
+      749,
+      598,
+      383,
+      1781,
+      1218,
+      119,
+      1719,
+      691,
+      1791
+    ],
+    "selection_rule": "greedy_marginal_acceptance_then_mean_kl_then_global_lex_index",
+    "selection_sha256": "e407c7294e7d856de55ed7797f19d0c733e8f592de10bf022d2708dd22d1eb1a",
+    "size": 28,
+    "steps": [
+      {
+        "calibration_mean_kl": 0.10326221586254705,
+        "candidate_id": 1815,
+        "cumulative_coverage": 0.5743774574049804,
+        "cumulative_covered_states": 1753,
+        "newly_covered_states": 1753,
+        "step": 1
+      },
+      {
+        "calibration_mean_kl": 0.09374620294732336,
+        "candidate_id": 475,
+        "cumulative_coverage": 0.6923328964613368,
+        "cumulative_covered_states": 2113,
+        "newly_covered_states": 360,
+        "step": 2
+      },
+      {
+        "calibration_mean_kl": 0.07896398316780982,
+        "candidate_id": 1778,
+        "cumulative_coverage": 0.7395150720838795,
+        "cumulative_covered_states": 2257,
+        "newly_covered_states": 144,
+        "step": 3
+      },
+      {
+        "calibration_mean_kl": 0.11321535717095134,
+        "candidate_id": 196,
+        "cumulative_coverage": 0.7755570117955439,
+        "cumulative_covered_states": 2367,
+        "newly_covered_states": 110,
+        "step": 4
+      },
+      {
+        "calibration_mean_kl": 0.10761302241019587,
+        "candidate_id": 770,
+        "cumulative_coverage": 0.8011140235910879,
+        "cumulative_covered_states": 2445,
+        "newly_covered_states": 78,
+        "step": 5
+      },
+      {
+        "calibration_mean_kl": 0.1091213040920857,
+        "candidate_id": 692,
+        "cumulative_coverage": 0.8181520314547838,
+        "cumulative_covered_states": 2497,
+        "newly_covered_states": 52,
+        "step": 6
+      },
+      {
+        "calibration_mean_kl": 0.10937885250558,
+        "candidate_id": 1328,
+        "cumulative_coverage": 0.8315858453473133,
+        "cumulative_covered_states": 2538,
+        "newly_covered_states": 41,
+        "step": 7
+      },
+      {
+        "calibration_mean_kl": 0.09829004736326341,
+        "candidate_id": 1248,
+        "cumulative_coverage": 0.841743119266055,
+        "cumulative_covered_states": 2569,
+        "newly_covered_states": 31,
+        "step": 8
+      },
+      {
+        "calibration_mean_kl": 0.11208416253736588,
+        "candidate_id": 1180,
+        "cumulative_coverage": 0.8509174311926605,
+        "cumulative_covered_states": 2597,
+        "newly_covered_states": 28,
+        "step": 9
+      },
+      {
+        "calibration_mean_kl": 0.10013340303552366,
+        "candidate_id": 867,
+        "cumulative_coverage": 0.8591087811271297,
+        "cumulative_covered_states": 2622,
+        "newly_covered_states": 25,
+        "step": 10
+      },
+      {
+        "calibration_mean_kl": 0.0885113557549503,
+        "candidate_id": 1650,
+        "cumulative_coverage": 0.8663171690694627,
+        "cumulative_covered_states": 2644,
+        "newly_covered_states": 22,
+        "step": 11
+      },
+      {
+        "calibration_mean_kl": 0.10276391733782056,
+        "candidate_id": 1691,
+        "cumulative_coverage": 0.8718872870249017,
+        "cumulative_covered_states": 2661,
+        "newly_covered_states": 17,
+        "step": 12
+      },
+      {
+        "calibration_mean_kl": 0.08749623654194615,
+        "candidate_id": 1511,
+        "cumulative_coverage": 0.8764744429882044,
+        "cumulative_covered_states": 2675,
+        "newly_covered_states": 14,
+        "step": 13
+      },
+      {
+        "calibration_mean_kl": 0.11622580708021764,
+        "candidate_id": 1565,
+        "cumulative_coverage": 0.8810615989515073,
+        "cumulative_covered_states": 2689,
+        "newly_covered_states": 14,
+        "step": 14
+      },
+      {
+        "calibration_mean_kl": 0.11185562375982598,
+        "candidate_id": 1160,
+        "cumulative_coverage": 0.8849934469200524,
+        "cumulative_covered_states": 2701,
+        "newly_covered_states": 12,
+        "step": 15
+      },
+      {
+        "calibration_mean_kl": 0.11611342585135552,
+        "candidate_id": 440,
+        "cumulative_coverage": 0.8889252948885976,
+        "cumulative_covered_states": 2713,
+        "newly_covered_states": 12,
+        "step": 16
+      },
+      {
+        "calibration_mean_kl": 0.10367654432426203,
+        "candidate_id": 764,
+        "cumulative_coverage": 0.8922018348623854,
+        "cumulative_covered_states": 2723,
+        "newly_covered_states": 10,
+        "step": 17
+      },
+      {
+        "calibration_mean_kl": 0.10628689882067818,
+        "candidate_id": 1440,
+        "cumulative_coverage": 0.8951507208387942,
+        "cumulative_covered_states": 2732,
+        "newly_covered_states": 9,
+        "step": 18
+      },
+      {
+        "calibration_mean_kl": 0.11286381851263694,
+        "candidate_id": 1255,
+        "cumulative_coverage": 0.8980996068152032,
+        "cumulative_covered_states": 2741,
+        "newly_covered_states": 9,
+        "step": 19
+      },
+      {
+        "calibration_mean_kl": 0.11108646384335474,
+        "candidate_id": 749,
+        "cumulative_coverage": 0.9007208387942333,
+        "cumulative_covered_states": 2749,
+        "newly_covered_states": 8,
+        "step": 20
+      },
+      {
+        "calibration_mean_kl": 0.11160240163528046,
+        "candidate_id": 598,
+        "cumulative_coverage": 0.9033420707732635,
+        "cumulative_covered_states": 2757,
+        "newly_covered_states": 8,
+        "step": 21
+      },
+      {
+        "calibration_mean_kl": 0.1144331917762601,
+        "candidate_id": 383,
+        "cumulative_coverage": 0.9056356487549148,
+        "cumulative_covered_states": 2764,
+        "newly_covered_states": 7,
+        "step": 22
+      },
+      {
+        "calibration_mean_kl": 0.0798666429923933,
+        "candidate_id": 1781,
+        "cumulative_coverage": 0.9076015727391874,
+        "cumulative_covered_states": 2770,
+        "newly_covered_states": 6,
+        "step": 23
+      },
+      {
+        "calibration_mean_kl": 0.09198316339027128,
+        "candidate_id": 1218,
+        "cumulative_coverage": 0.90956749672346,
+        "cumulative_covered_states": 2776,
+        "newly_covered_states": 6,
+        "step": 24
+      },
+      {
+        "calibration_mean_kl": 0.11257245801798257,
+        "candidate_id": 119,
+        "cumulative_coverage": 0.9112057667103539,
+        "cumulative_covered_states": 2781,
+        "newly_covered_states": 5,
+        "step": 25
+      },
+      {
+        "calibration_mean_kl": 0.12398140581552904,
+        "candidate_id": 1719,
+        "cumulative_coverage": 0.9128440366972477,
+        "cumulative_covered_states": 2786,
+        "newly_covered_states": 5,
+        "step": 26
+      },
+      {
+        "calibration_mean_kl": 0.13105253258077632,
+        "candidate_id": 691,
+        "cumulative_coverage": 0.9144823066841415,
+        "cumulative_covered_states": 2791,
+        "newly_covered_states": 5,
+        "step": 27
+      },
+      {
+        "calibration_mean_kl": 0.09494961700276588,
+        "candidate_id": 1791,
+        "cumulative_coverage": 0.9157929226736566,
+        "cumulative_covered_states": 2795,
+        "newly_covered_states": 4,
+        "step": 28
+      }
+    ]
+  }
+}

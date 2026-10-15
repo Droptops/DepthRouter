@@ -1,0 +1,208 @@
+{
+  "all_metrics_paired_intervals_and_capability_gate_recomputed": true,
+  "calibration_portfolios_and_development_fixed_choices_recomputed": true,
+  "candidate_cells_checked": 34942096,
+  "capability_pass": true,
+  "captures": {
+    "calibration": {
+      "activation_cache_present_and_hash_checked": true,
+      "capture_metadata_sha256": "c262c7b65303e33722543f6701143df1f96830f61af8b56a0103bd2dc87ab2b0",
+      "contexts_evaluated": 768,
+      "state_metadata_sha256": "d83bed373e20a9e0b96c0cf7653afb2ac77eb40afd784c3c74dbde85e6ca37d7",
+      "states": 3052
+    },
+    "development": {
+      "activation_cache_present_and_hash_checked": true,
+      "capture_metadata_sha256": "3fadff7364bcbe8bc22c665a89cc785368c58b74ba5b31f96a146f121f17e512",
+      "contexts_evaluated": 128,
+      "state_metadata_sha256": "8fd0b56219afb14ec598ced14bf3be1f71d615cd151ee4703bc42c8739fd04ff",
+      "states": 511
+    },
+    "heldout_matched": {
+      "activation_cache_present_and_hash_checked": true,
+      "capture_metadata_sha256": "e43255b763c7afdcc227e3452d39e5209a8ff4e56aecca4228ad1f9971894946",
+      "contexts_evaluated": 512,
+      "state_metadata_sha256": "6dbc0e802cb2fc60fc55969a411746ee5fa6aff4f1a920e365fa4bb293eb0e6a",
+      "states": 2036
+    },
+    "heldout_ood": {
+      "activation_cache_present_and_hash_checked": true,
+      "capture_metadata_sha256": "239c615e0b73c5e4f62bde0329aebdd630d21b13d95af244dfd9f61bd7e49a41",
+      "contexts_evaluated": 192,
+      "state_metadata_sha256": "e898285cfa985cc3d2c0b7216f2594b7502b855b1503d8e1cf851977c6cd5912",
+      "states": 768
+    }
+  },
+  "chronology": {
+    "calibration_seal_precedes_development_events": true,
+    "events_checked": 812,
+    "fixed_seal_precedes_heldout_events": true,
+    "scope": "saved ledger consistency, not cryptographic proof of wall-clock chronology"
+  },
+  "current_newline_only_differences_explicitly_allowed": false,
+  "current_source_hashes_match_exactly": true,
+  "current_source_newline_only_differences": [],
+  "fresh_data_exclusions_and_quarantine_recomputed": true,
+  "full_model_parity_checks": 144,
+  "gpu_used": false,
+  "heldout_artifacts_opened": true,
+  "inherited_all_scalar_fields_masks_and_controls_equal": true,
+  "language_model_loaded": false,
+  "matrices": {
+    "matrix-calibration-original.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "7389c3e3cdc3d313bc223b0c10c9fc0a0a40bd842f357df2c1d2b5605b1c3d3d",
+      "candidates": 28,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 1,
+      "complete": true,
+      "states": 3052
+    },
+    "matrix-calibration-seed-17.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "302904ca7b668e9b5ec6396d444cb535ff930b79903cd171bad73a88773a0c7c",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 3052
+    },
+    "matrix-calibration-seed-29.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "18caf2fa270987b1b9f281088cb3f5b605150698b5e9ffc4d1b12b3f553bc101",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 3052
+    },
+    "matrix-calibration-seed-43.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "54e439aecddd6aaafef7313add7105a2a55cc807d6fdb39341805de76702a38e",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 3052
+    },
+    "matrix-development-original.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "8c9dbfb9ea7c030abb5b5240a2298e6421dfe9b8493b1accdf4766ff7a02d5d4",
+      "candidates": 28,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 1,
+      "complete": true,
+      "states": 511
+    },
+    "matrix-development-seed-17.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "91677b54edc191c45006a30510334d14154f3ebc45b8a64b164586d3918b79b2",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 511
+    },
+    "matrix-development-seed-29.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "1aa7c249e87023547f75912724f675e4cde31cd7e1daaa3621c6dd0d891209ac",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 511
+    },
+    "matrix-development-seed-43.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "fc800e292cf0842d1c4b0d0cc937ebe0d26d5ae3143cd8f174517392092d658a",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 511
+    },
+    "matrix-heldout_matched-original.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "282e1f6cb5333c4c4a559277e302f47e2f4c430fe26ef6d6e31c9c69ec550cdd",
+      "candidates": 28,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 1,
+      "complete": true,
+      "states": 2036
+    },
+    "matrix-heldout_matched-seed-17.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "31b74cb9fa81f06cebdd204a48f444ef43b3c3b4f90a0fcaf8af68f40a1b0d2f",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 2036
+    },
+    "matrix-heldout_matched-seed-29.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "1856fa723d786dbc40801fa42c02c1e569e91c75f3bb4227bb92e80cb6f3703b",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 2036
+    },
+    "matrix-heldout_matched-seed-43.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "e6b4a9b7824fc7e48bc76c32c45d9f07294455e2adcc435498443713fdef4038",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 2036
+    },
+    "matrix-heldout_ood-original.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "9d7c276f60e94994350ed459f523a9d64ec34694e5ba91df94530890d737148b",
+      "candidates": 28,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 1,
+      "complete": true,
+      "states": 768
+    },
+    "matrix-heldout_ood-seed-17.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "419a16672446c2a082107e91cd242bddebf1bd9f5091e2f687d0959d00afe6dd",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 768
+    },
+    "matrix-heldout_ood-seed-29.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "0f26a1265b12b7e50b8a74c14fbf9973462b945f14e78b818fac725901e5c6e5",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 768
+    },
+    "matrix-heldout_ood-seed-43.json": {
+      "all_archive_payload_hashes_checked": true,
+      "archive_manifest_sha256": "e9aec146191156abebb6d7845d7e6455c9af36c8bc3c10d888846c8385680de0",
+      "candidates": 1820,
+      "canonical_neuron_layout_recomputed": true,
+      "chunks_checked": 8,
+      "complete": true,
+      "states": 768
+    }
+  },
+  "matrix_manifests_checked": 16,
+  "no_router_or_economic_promotion": true,
+  "original_weights_before_after_hashes_equal": true,
+  "pass": true,
+  "prospective_partitions_and_parity_ids_recomputed": true,
+  "registered_sources_checked": 29,
+  "registered_utc": "2026-10-15T05:06:06.516867+00:00",
+  "registered_wall_budget_respected": true,
+  "scope": "complete_granularity_integrity",
+  "snapshot_source_hashes_match": true,
+  "weight_claim_scope": "saved complete model tensor hashes; no language-model weight reload"
+}

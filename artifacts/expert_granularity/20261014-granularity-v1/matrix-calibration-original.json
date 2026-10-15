@@ -1,0 +1,54 @@
+{
+  "candidate_ids": [
+    0,
+    9,
+    14,
+    55,
+    60,
+    69,
+    182,
+    187,
+    196,
+    209,
+    450,
+    455,
+    464,
+    477,
+    494,
+    935,
+    940,
+    949,
+    962,
+    979,
+    1000,
+    1729,
+    1734,
+    1743,
+    1756,
+    1773,
+    1794,
+    1819
+  ],
+  "candidates": 28,
+  "chunk_size": 256,
+  "chunks": [
+    {
+      "column_start": 0,
+      "column_stop": 28,
+      "file": "matrix-calibration-original.candidates-000000-000028.npz",
+      "sha256": "c6f5dcf165ea4995f5c7d7888ee551e12dc1c68f50f816bf0ea5fa068417c3f9"
+    }
+  ],
+  "complete": true,
+  "format": "depthrouter_candidate_matrix_v1",
+  "layout": {
+    "file": "candidate-layout-ff0c15f91ce439826d2a82a40865fe6f111fda096087dee433e4e1b2e4bd53d7.npz",
+    "identity": "ff0c15f91ce439826d2a82a40865fe6f111fda096087dee433e4e1b2e4bd53d7",
+    "sha256": "eee653449b90057b01f3bfe4461c4d3229356321008bc9e67c81b644919f3ad6"
+  },
+  "metadata": {
+    "file": "matrix-calibration-original.metadata.npz",
+    "sha256": "1152be45d0e17438dcbc05d91d7b56c98128690be4fd75ff7a06b377bf23b8a2"
+  },
+  "states": 3052
+}

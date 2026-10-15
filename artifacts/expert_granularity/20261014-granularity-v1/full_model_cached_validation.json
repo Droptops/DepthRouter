@@ -1,0 +1,1016 @@
+{
+  "17": [
+    {
+      "candidate_id": 0,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 9,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 14,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 55,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 60,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 68,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 69,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 182,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 187,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 196,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 199,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 209,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 296,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 393,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 450,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 455,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 464,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 477,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 494,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 671,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 704,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 781,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 830,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 935,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 940,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 949,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 962,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 979,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1000,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1014,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1116,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1163,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1337,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1378,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1523,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1658,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1729,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1734,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1743,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1756,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1773,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1794,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1813,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1818,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1819,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": -1,
+      "exact_logits": true,
+      "kind": "control",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": -2,
+      "exact_logits": true,
+      "kind": "permuted_control",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    }
+  ],
+  "29": [
+    {
+      "candidate_id": 0,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 9,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 14,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 40,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 55,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 60,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 69,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 94,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 120,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 182,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 187,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 196,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 209,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 240,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 419,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 450,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 455,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 464,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 477,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 487,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 494,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 696,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 719,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 761,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 916,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 935,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 940,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 942,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 949,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 962,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 979,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1000,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1045,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1088,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1187,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1681,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1682,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1729,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1734,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1743,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1756,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1773,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1794,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1818,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1819,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": -1,
+      "exact_logits": true,
+      "kind": "control",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": -2,
+      "exact_logits": true,
+      "kind": "permuted_control",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    }
+  ],
+  "43": [
+    {
+      "candidate_id": 0,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 9,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 14,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 38,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 55,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 60,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 69,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 83,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 182,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 187,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 196,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 209,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 411,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 450,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 455,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 464,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 477,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 486,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 494,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 508,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 695,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 728,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 844,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 912,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 935,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 940,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 949,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 962,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 979,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1000,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1048,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1069,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1180,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1366,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1518,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1535,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1729,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1734,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1743,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1747,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1756,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1773,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1794,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1818,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": 1819,
+      "exact_logits": true,
+      "kind": "cheap",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": -1,
+      "exact_logits": true,
+      "kind": "control",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    },
+    {
+      "candidate_id": -2,
+      "exact_logits": true,
+      "kind": "permuted_control",
+      "max_abs_logit_error": 0.0,
+      "states": 16
+    }
+  ]
+}

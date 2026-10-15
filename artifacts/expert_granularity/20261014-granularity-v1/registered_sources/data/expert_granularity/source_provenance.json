@@ -1,0 +1,25 @@
+{
+  "attribution": "Copyright (2023) Databricks, Inc.; Wikipedia editors and contributors",
+  "base_commit": "1be53fefd37c344dbc4cdc44bb708e3e226ae0e9",
+  "dataset": "databricks/databricks-dolly-15k",
+  "dataset_card": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/blob/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/README.md",
+  "derived_from_manifest": "data/expert_recognition/evaluation_manifest.jsonl",
+  "freshness_scope": "no model outputs produced for retained contexts in the pinned prior run",
+  "frozen_split_sizes": {
+    "calibration": 768,
+    "development": 128,
+    "heldout_matched": 512,
+    "heldout_ood": 192
+  },
+  "license": "CC-BY-SA-3.0",
+  "limitations": "Category/lexical holdout is not semantic-family or source-article independence; enterprise is a 12.5% instruction-keyword topic screen, not a production benchmark.",
+  "model_output_access_scope": "Read-only prior confirmation stop/identity metadata for lineage; no retained-context outputs accessed and no model inference.",
+  "model_outputs_accessed": true,
+  "prior_execution": "artifacts/expert_recognition/20261014-recognition-v1",
+  "quarantined_confirmation_contexts": 128,
+  "responses_used": false,
+  "revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+  "sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+  "transformations": "Remove all 128 prior confirmation rows; retain all 1600 unopened rows byte-for-byte in inherited order, without new sampling or prompt/provenance changes.",
+  "url": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/databricks-dolly-15k.jsonl"
+}

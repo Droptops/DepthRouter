@@ -11,3 +11,27 @@
 /src/depth_router/recognition_data.py text eol=lf
 /scripts/prepare_recognition_data.py text eol=lf
 /scripts/run_expert_recognition.ps1 text eol=lf
+/artifacts/expert_granularity/** -text whitespace=cr-at-eol
+/data/expert_granularity/** -text whitespace=cr-at-eol
+/EXPERT_GRANULARITY_PREREGISTRATION.md text eol=lf
+/configs/expert_granularity.json text eol=lf
+/experiments/expert_granularity*.py text eol=lf
+/src/depth_router/expert_granularity.py text eol=lf
+/src/depth_router/granularity_data.py text eol=lf
+/scripts/prepare_granularity_data.py text eol=lf
+/scripts/run_expert_granularity.ps1 text eol=lf
+# Reproduce the exact inherited Windows source bytes on Linux checkouts too.
+# These files are already sealed as CRLF in the earlier research runs.
+/Dockerfile.photonic text eol=crlf
+/requirements-photonic.txt text eol=crlf
+/experiments/expert_construction.py text eol=crlf
+/src/depth_router/expert_audit_data.py text eol=crlf
+/src/depth_router/expert_audit_metrics.py text eol=crlf
+/src/depth_router/expert_partitions.py text eol=crlf
+/src/depth_router/fused_swiglu.py text eol=crlf
+/src/depth_router/output_gap.py text eol=crlf
+/src/depth_router/output_gap_data.py text eol=crlf
+# Historical exclusion provenance also seals the original Windows raw bytes.
+/artifacts/predictive_working_set/20261013-validated-final/evaluation_manifest.jsonl text eol=crlf
+/artifacts/fused_sparse_swiglu/20261013-validated-final-v2/evaluation_manifest.jsonl text eol=crlf
+/data/photonic_parallel_manifest.jsonl text eol=crlf

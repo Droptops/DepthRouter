@@ -15,12 +15,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "experiments"))
-
-from verify_expert_audit import (  # noqa: E402
+from verify_expert_audit import (
     COMBINATIONS,
     _child,
     _json,
@@ -30,6 +25,10 @@ from verify_expert_audit import (  # noqa: E402
     _valid_hash,
     _verify_matrix,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "experiments"))
 
 
 def _same(actual, expected, where="result"):
