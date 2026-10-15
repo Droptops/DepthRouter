@@ -1,0 +1,11 @@
+{
+  "attribution": "Copyright (2023) Databricks, Inc.; Wikipedia editors and contributors",
+  "dataset": "databricks/databricks-dolly-15k",
+  "dataset_card": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/blob/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/README.md",
+  "license": "CC-BY-SA-3.0",
+  "model_outputs_accessed": false,
+  "revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+  "sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+  "transformations": "Select human-written instruction/context rows; omit responses; filter length and lexical duplicates; deterministic split and task allocation.",
+  "url": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/databricks-dolly-15k.jsonl"
+}

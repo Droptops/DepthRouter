@@ -1,0 +1,180 @@
+{
+  "cost_note": "audit wall time is not inference latency or measured bandwidth",
+  "development_selected_family": "C",
+  "gpu_budget_ceiling_seconds": 14400,
+  "measured_dram_bytes": null,
+  "measured_latency": null,
+  "original_weights_unchanged": true,
+  "phase1_complete": true,
+  "phase1_gates": {
+    "A-17": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "A-29": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_advantage_over_fixed_subset"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "A-43": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "B-17": {
+      "economic_savings_established": false,
+      "failure_reasons": [],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": true,
+      "router_training_allowed": true,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": true,
+      "stop_before_router_training": false
+    },
+    "B-29": {
+      "economic_savings_established": false,
+      "failure_reasons": [],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": true,
+      "router_training_allowed": true,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": true,
+      "stop_before_router_training": false
+    },
+    "B-43": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "C-17": {
+      "economic_savings_established": false,
+      "failure_reasons": [],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": true,
+      "router_training_allowed": true,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": true,
+      "stop_before_router_training": false
+    },
+    "C-29": {
+      "economic_savings_established": false,
+      "failure_reasons": [],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": true,
+      "router_training_allowed": true,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": true,
+      "stop_before_router_training": false
+    },
+    "C-43": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "D-17": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "D-29": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    },
+    "D-43": {
+      "economic_savings_established": false,
+      "failure_reasons": [
+        "development:insufficient_cheap_candidate_coverage",
+        "heldout:insufficient_cheap_candidate_coverage",
+        "ood:insufficient_cheap_candidate_coverage"
+      ],
+      "oracle_is_deployable": false,
+      "phase": "capability_audit",
+      "point_pass": false,
+      "router_training_allowed": false,
+      "scope": "tested_partitions_candidate_set_data_and_fitting_budget_only",
+      "statistically_resolved_pass": false,
+      "stop_before_router_training": true
+    }
+  },
+  "phase2": "skipped_phase1_gate_failed",
+  "phase3": "not_run_requires_phase2_quality_pass",
+  "physical_counter_attempt": "not_attempted_prerequisite_quality_gate",
+  "promote": false,
+  "selected_family_eligible": false,
+  "single_gpu_wall_elapsed_seconds": 449.735045681
+}

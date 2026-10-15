@@ -1,0 +1,16 @@
+{
+  "cache_sha256": "ac9a2c2b2ae0e826273781ded66d652fca30626ddea3a4df8e8d5a9db0f6652b",
+  "contexts_evaluated": 512,
+  "contexts_requested": 512,
+  "dense_cache_reconstruction_exact": true,
+  "positions": [
+    1,
+    3,
+    7,
+    11
+  ],
+  "prompt_truncations": 0,
+  "states": 2044,
+  "stop_on_eos": true,
+  "zero_state_context_ids": []
+}

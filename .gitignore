@@ -21,3 +21,6 @@ artifacts/fused_sparse_swiglu/20261013-development-negative/
 artifacts/fused_sparse_swiglu/20261013-failed-*/
 artifacts/fused_sparse_swiglu/20261013-kernel-tuning*/
 artifacts/fused_sparse_swiglu/20261013-validated-final/
+data/expert_audit/databricks-dolly-15k.jsonl
+data/expert_audit/alpaca_data.json
+artifacts/expert_construction/**/cache-*.pt

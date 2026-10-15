@@ -1,0 +1,762 @@
+{
+  "best_fixed": {
+    "greedy_agreement": 0.9302554027504911,
+    "mean_hidden_mse": 0.11226096686455174,
+    "mean_kl": 0.05400156500103861,
+    "p95_kl": 0.2594965994358062
+  },
+  "by_dense_margin": [
+    {
+      "cheap_coverage": 0.55,
+      "fixed_cheap_coverage": 0.3,
+      "margin_max_exclusive": 0.1,
+      "margin_min_inclusive": 0.0,
+      "n_states": 20
+    },
+    {
+      "cheap_coverage": 0.6574074074074074,
+      "fixed_cheap_coverage": 0.32407407407407407,
+      "margin_max_exclusive": 0.5,
+      "margin_min_inclusive": 0.1,
+      "n_states": 108
+    },
+    {
+      "cheap_coverage": 0.7070707070707071,
+      "fixed_cheap_coverage": 0.32323232323232326,
+      "margin_max_exclusive": 1.0,
+      "margin_min_inclusive": 0.5,
+      "n_states": 99
+    },
+    {
+      "cheap_coverage": 0.7804878048780488,
+      "fixed_cheap_coverage": 0.4329268292682927,
+      "margin_max_exclusive": 2.0,
+      "margin_min_inclusive": 1.0,
+      "n_states": 164
+    },
+    {
+      "cheap_coverage": 0.9776714513556619,
+      "fixed_cheap_coverage": 0.8086124401913876,
+      "margin_max_exclusive": null,
+      "margin_min_inclusive": 2.0,
+      "n_states": 627
+    }
+  ],
+  "candidate_count": 28,
+  "candidate_schema_sha256": "2f1b7397ed3ff59e49e5b137480dd0b4d890afaea4718ef0aff6d9e093ab3374",
+  "cheap_coverage": 0.8772102161100196,
+  "confidence_intervals": {
+    "cheap_coverage": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.8772102161100196,
+      "lower": 0.8558788171794723,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.898248330046073,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "fixed_agreement": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.9302554027504911,
+      "lower": 0.9145383104125737,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.945705824284304,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "fixed_cheap_coverage": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.6394891944990176,
+      "lower": 0.6082667043272383,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.6702836958709807,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "fixed_ideal_active_width": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.8401277013752456,
+      "lower": 0.8324290760322548,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.8479333239181905,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "fixed_kl": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.05400156500103861,
+      "lower": 0.03963282167750637,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.0694094395332984,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "fixed_with_dense_kl": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.0015096630862217017,
+      "lower": 0.0013625365353050738,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.001659137616967872,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "ideal_active_width": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.7806974459724951,
+      "lower": 0.7754379174884818,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.7860302957051318,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "oracle_agreement": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 1.0,
+      "lower": 1.0,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 1.0,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "oracle_kl": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.004578663974606018,
+      "lower": 0.0037439368262110477,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.005598885288714906,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "oracle_with_dense_kl": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.0015433765899449745,
+      "lower": 0.0014065693144221488,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.001684948208825771,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "portfolio_advantage": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.059430255402750494,
+      "lower": 0.0531496062992126,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.065932050685887,
+      "weighting": "token_states_with_whole_context_resampling"
+    }
+  },
+  "cost_interpretation": "ideal_arithmetic_proxy_excludes_routing_and_hardware_overhead",
+  "engineering_gate": {
+    "advantage_statistically_resolved": true,
+    "advantage_threshold": 0.05,
+    "coverage_point_pass": true,
+    "coverage_statistically_resolved": true,
+    "coverage_threshold": 0.8,
+    "numerically_interpretable": true,
+    "point_pass": true,
+    "portfolio_advantage_point_pass": true,
+    "statistically_resolved_pass": true
+  },
+  "fixed_cheap_coverage": 0.6394891944990176,
+  "fixed_oracle_with_dense": {
+    "cheap_fraction": 0.6394891944990176,
+    "dense_fraction": 0.3605108055009823,
+    "deployable": false,
+    "greedy_agreement": 1.0,
+    "ideal_active_width": 0.8401277013752456,
+    "mean_hidden_mse": 0.06780645308909986,
+    "mean_kl": 0.0015096630862217017,
+    "p95_kl": 0.007496650423854589
+  },
+  "fixed_selection": {
+    "candidate_schema_sha256": "2f1b7397ed3ff59e49e5b137480dd0b4d890afaea4718ef0aff6d9e093ab3374",
+    "development_coverage": 0.6394891944990176,
+    "development_mean_kl": 0.05400156500103861,
+    "development_states": 1018,
+    "experts": [
+      0,
+      1,
+      3,
+      4,
+      5,
+      7
+    ],
+    "index": 11,
+    "selected_on": "development",
+    "selection_rule": "maximum_acceptable_coverage_then_minimum_mean_kl_then_index"
+  },
+  "local_acceptance": {
+    "kl_strictly_less_than": 0.01,
+    "same_greedy_token": true
+  },
+  "measured_dram_bytes": null,
+  "measured_latency": null,
+  "n_contexts": 256,
+  "n_states": 1018,
+  "numerical_control": {
+    "agreement_ci": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 1.0,
+      "lower": 1.0,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 1.0,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "greedy_agreement": 1.0,
+    "mean_kl": 0.0,
+    "mean_kl_ci": {
+      "bootstrap_seed": 17,
+      "confidence": 0.95,
+      "estimate": 0.0,
+      "lower": 0.0,
+      "method": "percentile_context_bootstrap",
+      "n_contexts": 256,
+      "n_states": 1018,
+      "resamples": 2000,
+      "upper": 0.0,
+      "weighting": "token_states_with_whole_context_resampling"
+    },
+    "point_pass": true,
+    "reference": "original_dense_model",
+    "statistically_resolved_pass": true
+  },
+  "oracle_cheap_only": {
+    "candidate_counts": [
+      57,
+      84,
+      186,
+      26,
+      49,
+      51,
+      1,
+      1,
+      1,
+      1,
+      55,
+      114,
+      108,
+      28,
+      0,
+      28,
+      49,
+      54,
+      20,
+      1,
+      26,
+      12,
+      16,
+      12,
+      12,
+      0,
+      9,
+      17
+    ],
+    "deployable": false,
+    "greedy_agreement": 1.0,
+    "mean_hidden_mse": 0.08498155532042498,
+    "mean_kl": 0.004578663974606018,
+    "p95_kl": 0.017403351888060567,
+    "selection_rule": "greedy_agreement_then_minimum_kl_then_index"
+  },
+  "oracle_is_deployable": false,
+  "oracle_with_dense": {
+    "cheap_fraction": 0.8772102161100196,
+    "dense_fraction": 0.12278978388998035,
+    "deployable": false,
+    "greedy_agreement": 1.0,
+    "ideal_active_width": 0.7806974459724951,
+    "mean_hidden_mse": 0.06612770522767147,
+    "mean_kl": 0.0015433765899449745,
+    "p95_kl": 0.007095571048557756
+  },
+  "per_candidate": [
+    {
+      "cheap_coverage": 0.5795677799607073,
+      "experts": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "greedy_agreement": 0.9155206286836935,
+      "index": 0,
+      "mean_hidden_mse": 0.10306212930136849,
+      "mean_kl": 0.06065675841230454,
+      "p95_kl": 0.2834471419453621
+    },
+    {
+      "cheap_coverage": 0.5834970530451866,
+      "experts": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "greedy_agreement": 0.9165029469548134,
+      "index": 1,
+      "mean_hidden_mse": 0.09785358632836044,
+      "mean_kl": 0.05710507896158793,
+      "p95_kl": 0.23767323046922678
+    },
+    {
+      "cheap_coverage": 0.6286836935166994,
+      "experts": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7
+      ],
+      "greedy_agreement": 0.9332023575638507,
+      "index": 2,
+      "mean_hidden_mse": 0.08855589559623762,
+      "mean_kl": 0.05800476933342386,
+      "p95_kl": 0.23439321145415284
+    },
+    {
+      "cheap_coverage": 0.4037328094302554,
+      "experts": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "greedy_agreement": 0.8939096267190569,
+      "index": 3,
+      "mean_hidden_mse": 0.11776656135623956,
+      "mean_kl": 0.145791444197443,
+      "p95_kl": 0.6336678892374036
+    },
+    {
+      "cheap_coverage": 0.4223968565815324,
+      "experts": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7
+      ],
+      "greedy_agreement": 0.9007858546168959,
+      "index": 4,
+      "mean_hidden_mse": 0.10817628769910288,
+      "mean_kl": 0.14605385658044065,
+      "p95_kl": 0.605223387479782
+    },
+    {
+      "cheap_coverage": 0.43418467583497056,
+      "experts": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8968565815324165,
+      "index": 5,
+      "mean_hidden_mse": 0.1016894927676511,
+      "mean_kl": 0.14540478916806768,
+      "p95_kl": 0.6179442256689069
+    },
+    {
+      "cheap_coverage": 0.12475442043222004,
+      "experts": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6
+      ],
+      "greedy_agreement": 0.8369351669941061,
+      "index": 6,
+      "mean_hidden_mse": 3.3895732707148216,
+      "mean_kl": 0.3124997703159802,
+      "p95_kl": 1.0584267795085907
+    },
+    {
+      "cheap_coverage": 0.12868369351669942,
+      "experts": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7
+      ],
+      "greedy_agreement": 0.843811394891945,
+      "index": 7,
+      "mean_hidden_mse": 3.382275123024736,
+      "mean_kl": 0.29938733639079584,
+      "p95_kl": 1.0407429814338682
+    },
+    {
+      "cheap_coverage": 0.1237721021611002,
+      "experts": [
+        0,
+        1,
+        2,
+        4,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.843811394891945,
+      "index": 8,
+      "mean_hidden_mse": 3.3576668017856734,
+      "mean_kl": 0.29950276885276544,
+      "p95_kl": 1.009009915590286
+    },
+    {
+      "cheap_coverage": 0.15913555992141454,
+      "experts": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8408644400785854,
+      "index": 9,
+      "mean_hidden_mse": 3.441910903615427,
+      "mean_kl": 0.3089581979461859,
+      "p95_kl": 1.1017493724822998
+    },
+    {
+      "cheap_coverage": 0.5471512770137524,
+      "experts": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        6
+      ],
+      "greedy_agreement": 0.9135559921414538,
+      "index": 10,
+      "mean_hidden_mse": 0.1251110567204464,
+      "mean_kl": 0.06258412107541521,
+      "p95_kl": 0.2848455265164375
+    },
+    {
+      "cheap_coverage": 0.6394891944990176,
+      "experts": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        7
+      ],
+      "greedy_agreement": 0.9302554027504911,
+      "index": 11,
+      "mean_hidden_mse": 0.11226096686455174,
+      "mean_kl": 0.05400156500103861,
+      "p95_kl": 0.2594965994358062
+    },
+    {
+      "cheap_coverage": 0.6296660117878192,
+      "experts": [
+        0,
+        1,
+        3,
+        4,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.9302554027504911,
+      "index": 12,
+      "mean_hidden_mse": 0.1070090823656786,
+      "mean_kl": 0.055421205915390605,
+      "p95_kl": 0.19011196121573387
+    },
+    {
+      "cheap_coverage": 0.4066797642436149,
+      "experts": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8939096267190569,
+      "index": 13,
+      "mean_hidden_mse": 0.12630374373754666,
+      "mean_kl": 0.14787312760289723,
+      "p95_kl": 0.6525908648967743
+    },
+    {
+      "cheap_coverage": 0.11394891944990176,
+      "experts": [
+        0,
+        1,
+        4,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8565815324165029,
+      "index": 14,
+      "mean_hidden_mse": 3.417581165644884,
+      "mean_kl": 0.3027385772882061,
+      "p95_kl": 1.0813715994358062
+    },
+    {
+      "cheap_coverage": 0.46954813359528486,
+      "experts": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "greedy_agreement": 0.9096267190569745,
+      "index": 15,
+      "mean_hidden_mse": 0.1193039529263417,
+      "mean_kl": 0.0930606580400712,
+      "p95_kl": 0.408411136269569
+    },
+    {
+      "cheap_coverage": 0.5068762278978389,
+      "experts": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        7
+      ],
+      "greedy_agreement": 0.9165029469548134,
+      "index": 16,
+      "mean_hidden_mse": 0.11013628096705803,
+      "mean_kl": 0.09857607764025876,
+      "p95_kl": 0.4792631879448889
+    },
+    {
+      "cheap_coverage": 0.5039292730844793,
+      "experts": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.9174852652259332,
+      "index": 17,
+      "mean_hidden_mse": 0.10335679534248174,
+      "mean_kl": 0.09996124234345201,
+      "p95_kl": 0.5007499098777769
+    },
+    {
+      "cheap_coverage": 0.3555992141453831,
+      "experts": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8870333988212181,
+      "index": 18,
+      "mean_hidden_mse": 0.12583047840451503,
+      "mean_kl": 0.1735107471191898,
+      "p95_kl": 0.7580914556980127
+    },
+    {
+      "cheap_coverage": 0.12573673870333987,
+      "experts": [
+        0,
+        2,
+        4,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8536345776031434,
+      "index": 19,
+      "mean_hidden_mse": 3.584405023714414,
+      "mean_kl": 0.3009616316956405,
+      "p95_kl": 1.0843089878559107
+    },
+    {
+      "cheap_coverage": 0.481335952848723,
+      "experts": [
+        0,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.9204322200392927,
+      "index": 20,
+      "mean_hidden_mse": 0.12910701666934843,
+      "mean_kl": 0.09962424158814995,
+      "p95_kl": 0.48743260055780385
+    },
+    {
+      "cheap_coverage": 0.3654223968565815,
+      "experts": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "greedy_agreement": 0.8713163064833006,
+      "index": 21,
+      "mean_hidden_mse": 0.17599846653215778,
+      "mean_kl": 0.1372593687125812,
+      "p95_kl": 0.5960176289081573
+    },
+    {
+      "cheap_coverage": 0.3889980353634578,
+      "experts": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7
+      ],
+      "greedy_agreement": 0.8909626719056974,
+      "index": 22,
+      "mean_hidden_mse": 0.1650833274331127,
+      "mean_kl": 0.1299799420838267,
+      "p95_kl": 0.5663594931364058
+    },
+    {
+      "cheap_coverage": 0.3948919449901768,
+      "experts": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8889980353634578,
+      "index": 23,
+      "mean_hidden_mse": 0.15575284205289275,
+      "mean_kl": 0.12553459797722674,
+      "p95_kl": 0.557460084557533
+    },
+    {
+      "cheap_coverage": 0.325147347740668,
+      "experts": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8860510805500982,
+      "index": 24,
+      "mean_hidden_mse": 0.18275761159689463,
+      "mean_kl": 0.18155546058375133,
+      "p95_kl": 0.6943090617656708
+    },
+    {
+      "cheap_coverage": 0.13948919449901767,
+      "experts": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8408644400785854,
+      "index": 25,
+      "mean_hidden_mse": 3.712314081918046,
+      "mean_kl": 0.330783006546125,
+      "p95_kl": 1.1544946372508997
+    },
+    {
+      "cheap_coverage": 0.39096267190569745,
+      "experts": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.8948919449901768,
+      "index": 26,
+      "mean_hidden_mse": 0.18313895656282636,
+      "mean_kl": 0.1304178026224485,
+      "p95_kl": 0.6248354673385618
+    },
+    {
+      "cheap_coverage": 0.34970530451866405,
+      "experts": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "greedy_agreement": 0.888015717092338,
+      "index": 27,
+      "mean_hidden_mse": 0.19073831102278355,
+      "mean_kl": 0.161625854605171,
+      "p95_kl": 0.6905750244855879
+    }
+  ],
+  "portfolio_advantage": 0.059430255402750494,
+  "split": "development"
+}

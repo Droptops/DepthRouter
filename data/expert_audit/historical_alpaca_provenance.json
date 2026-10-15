@@ -1,0 +1,49 @@
+{
+  "attribution": "Stanford Alpaca, tatsu-lab",
+  "license": "CC-BY-NC-4.0",
+  "policies": [
+    {
+      "recorded_hash_validation": false,
+      "split_seed": 20261012,
+      "test_count": 200,
+      "test_sha256": "a78db14a26d7cf7700b04dbb8fbbb362a36f26e9f7fcc4701a823a3a0c2d38f1",
+      "training_or_calibration_count": 800,
+      "training_or_calibration_sha256": "878a6a4ac170d21ced191d15974476303d458f9a2509ed23a3d07326048181bb"
+    },
+    {
+      "recorded_hash_validation": true,
+      "split_seed": 20261013,
+      "test_count": 200,
+      "test_sha256": "1fbbb60460087a328e2eb05d6317d2a61b19eab502d71bb6d9e4ba946afc8d34",
+      "training_or_calibration_count": 200,
+      "training_or_calibration_sha256": "179d79464522abc570d79fc14e01cec1c8337e07e109e673fdf0c678f747ecec"
+    },
+    {
+      "recorded_hash_validation": true,
+      "split_seed": 20261014,
+      "test_count": 200,
+      "test_sha256": "87df512fa0fb3c01fd2bacdf48496c82e2af18bd11fa1c75f643aa8800622607",
+      "training_or_calibration_count": 200,
+      "training_or_calibration_sha256": "e8730be6138d580d9f22c6fd24185c905e63774b1ed2bcecd290489f81105831"
+    },
+    {
+      "recorded_hash_validation": true,
+      "split_seed": 20261015,
+      "test_count": 200,
+      "test_sha256": "c82e88f40a69149d0f8aa5a4e8afd44eb3ed20ebcf2a0bedfab84dd8934e0943",
+      "training_or_calibration_count": 200,
+      "training_or_calibration_sha256": "2bff383819dc9ff8557926d97d6b19fd1723d1d9753c4255092225c0d933e4af"
+    }
+  ],
+  "prompt_rows": 2200,
+  "provenance": "Existing sibling DepthRouter research/results/block_lowbit_fallback_alpaca_split_{20261013,20261014,20261015}.json and artifacts/overnight/block_causal_alpaca1000_{screen,capacity,balanced_topk}.json",
+  "source_prompts": 52002,
+  "source_prompts_sha256": "a6867486baba6e273959daae7c1adcb29ccd222fb5f88257d955c4b99237eefb",
+  "source_revision": "761dc5bfbdeeffa89b8bff5d038781a4055f796a",
+  "source_sha256": "2eddafc6b977608d778aaab8dfc7e50e547b3af9826dfb9e909d9fc362e4a419",
+  "source_url": "https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/761dc5bfbdeeffa89b8bff5d038781a4055f796a/alpaca_data.json",
+  "split_algorithm": "torch.randperm(cpu Generator.manual_seed); first train/cal; last test",
+  "torch_version_for_reconstruction": "2.6.0+cu124",
+  "unique_prompts": 2171,
+  "use": "Historical exclusion only; no answers or model outputs included"
+}

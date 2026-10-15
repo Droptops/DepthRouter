@@ -1,0 +1,35 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "base_commit": "ec696fddabc59c51292ba1e8f500c9000a50c79b",
+  "manifest": "data/expert_audit/evaluation_manifest.jsonl",
+  "seeds": [17, 29, 43],
+  "dtype": "bfloat16",
+  "attention": "sdpa",
+  "batch_size": 16,
+  "max_prompt_tokens": 512,
+  "continuation_positions": [1, 3, 7, 11],
+  "gpu_wall_budget_seconds": 14400,
+  "bootstrap_repetitions": 2000,
+  "bootstrap_seed": 17,
+  "assignment": {
+    "steps": 100, "batch_size": 16, "candidates_per_step": 4,
+    "learning_rate": 0.03, "sinkhorn_iterations": 10,
+    "temperature_start": 1.0, "temperature_end": 0.2,
+    "initial_assignment_strength": 0.1, "initial_noise_std": 0.01
+  },
+  "coactivation": {"sketch_dim": 32, "iterations": 8},
+  "gates": {"coverage": 0.8, "portfolio_advantage": 0.05, "agreement": 0.99, "mean_kl": 0.01},
+  "phase2_if_pass": {
+    "family_selection": "largest_mean_development_portfolio_advantage_then_coverage_then_arm_name",
+    "require_all_three_seeds": true,
+    "architectures": ["linear", "mlp_64"],
+    "steps": 200, "batch_size": 64, "learning_rate": 0.001,
+    "loss": "multi_label_binary_cross_entropy_for_28_acceptable_candidates",
+    "thresholds": [0.5, 0.7, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995, 1.0],
+    "selection": "maximum_development_cheap_fraction_subject_to_fidelity_then_smaller_architecture",
+    "baseline": "matched_binary_fixed_vs_dense_selector",
+    "runtime_inputs": ["final_mlp_input"],
+    "no_task_quality_claim_without_generation": true
+  }
+}

@@ -1,2 +1,4 @@
 # Preserve exact experiment evidence bytes, including registered CRLF sources.
 /artifacts/output_gap_completion/** -text whitespace=cr-at-eol
+/artifacts/expert_construction/** -text whitespace=cr-at-eol
+/data/expert_audit/** -text whitespace=cr-at-eol
