@@ -1,0 +1,17 @@
+{
+  "confirmation_pass": false,
+  "cost_note": "cycle wall time is not inference latency or measured bandwidth",
+  "free_generation_task_quality": null,
+  "global_bandwidth_solver_promotion": false,
+  "gpu_budget_ceiling_seconds": 14400,
+  "measured_dram_bytes": null,
+  "measured_latency": null,
+  "original_weights_unchanged": true,
+  "physical_counter_attempt": "not_attempted_prerequisite_quality_gate",
+  "prior_construction_negative_result_unchanged": true,
+  "promote": false,
+  "promotion_scope": "this_frozen_recognition_study_only_not_global_bandwidth_solver",
+  "recognition": "not_run_confirmation_failed",
+  "runtime": "not_run_confirmation_failed",
+  "single_gpu_wall_elapsed_seconds": 13.42125470100018
+}

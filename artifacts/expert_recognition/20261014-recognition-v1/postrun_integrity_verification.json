@@ -1,0 +1,31 @@
+{
+  "confirmation_failure_stop_verified": true,
+  "confirmation_recomputed": true,
+  "current_newline_only_differences_explicitly_allowed": false,
+  "current_source_hashes_match_exactly": true,
+  "current_source_newline_only_differences": [],
+  "fresh_data_exclusions_recomputed": true,
+  "full_model_parity_checks": 29,
+  "gpu_used": false,
+  "heldout_artifacts_opened": false,
+  "language_model_loaded": false,
+  "matrices": {
+    "confirmation": {
+      "activation_cache_available_and_hash_checked": true,
+      "candidates": 28,
+      "contexts_evaluated": 128,
+      "sha256": "cc635f455e09bf7081bf48d0ede9bde86829652c363d782f1dc933758b355896",
+      "state_metadata_sha256": "7ad1d331656ad18b78adb228e0c0550e1f40c3e4c5247794ca2f14c6462a2fec",
+      "states": 511,
+      "zero_state_contexts": 0
+    }
+  },
+  "original_weight_claim_scope": "saved execution assertion; language-model weights not reloaded",
+  "pass": true,
+  "registered_files_checked": 26,
+  "registered_utc": "2026-10-15T04:41:00.925796+00:00",
+  "report_or_verifier_part_of_scientific_seal": false,
+  "scope": "complete_recognition_integrity",
+  "selector_checkpoint_cpu_replays": 0,
+  "snapshot_source_hashes_match": true
+}

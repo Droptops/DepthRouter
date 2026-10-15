@@ -24,3 +24,5 @@ artifacts/fused_sparse_swiglu/20261013-validated-final/
 data/expert_audit/databricks-dolly-15k.jsonl
 data/expert_audit/alpaca_data.json
 artifacts/expert_construction/**/cache-*.pt
+artifacts/expert_recognition/**/cache-*.pt
+data/expert_recognition/databricks-dolly-15k.jsonl

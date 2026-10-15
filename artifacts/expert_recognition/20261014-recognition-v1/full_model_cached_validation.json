@@ -1,0 +1,381 @@
+[
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      4,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      3,
+      4,
+      5,
+      6
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      3,
+      4,
+      5,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      3,
+      4,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      3,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      2,
+      3,
+      4,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      2,
+      3,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      2,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      1,
+      2,
+      3,
+      4,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      1,
+      2,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  },
+  {
+    "exact_logits": true,
+    "experts": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "max_abs_logit_error": 0.0,
+    "states": 16
+  }
+]
