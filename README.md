@@ -98,3 +98,10 @@ confirmation coverage was 75.78%, below the 80% engineering gate (95% context
 interval 70.69%-81.25%). It stopped before selector training or timing; the
 interval spans the threshold, so this is not a resolved population-level failure.
 Prior negative findings and the project's hardware-counter gate remain unchanged.
+
+The bounded nested-granularity follow-up is preregistered in
+[`EXPERT_GRANULARITY_PREREGISTRATION.md`](EXPERT_GRANULARITY_PREREGISTRATION.md).
+It compares the original 28-mask portfolio with calibration-selected 28-mask
+portfolios drawn from finer balanced subdivisions, keeping 75% active width.
+The full 1,820-mask oracle is diagnostic only; this cycle excludes router
+training and runtime claims.
