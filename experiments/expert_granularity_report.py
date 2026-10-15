@@ -213,7 +213,10 @@ def build_report(run_dir, *, repo=ROOT):
                    f"{verification['matrix_manifests_checked']} matrix archives and "
                    f"{verification['candidate_cells_checked']:,} candidate-state cells checked."),
                   "Saved evidence: `postrun_integrity_verification.json`. Selections, metrics, paired intervals,",
-                  "gates, inherited equality, data exclusions and quarantine were independently recomputed.", ""]
+                  "gates and inherited equality were independently recomputed."]
+        lines += [("Data exclusions and quarantine were also independently recomputed."
+                   if verification["fresh_data_exclusions_and_quarantine_recomputed"] else
+                   "This saved verification did not rerun the data-exclusion and quarantine audit."), ""]
     parity_path = run / "full_model_cached_validation.json"
     if parity_path.exists():
         parity = _json(parity_path)

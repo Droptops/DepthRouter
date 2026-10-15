@@ -164,6 +164,11 @@ All 28 selection steps, marginal gains, KL tie-breaks, candidate IDs and seals a
 
 ## Numerical integrity
 
+Independent CPU-only post-run verification passed: 29 registered sources, 16 matrix archives and 34,942,096 candidate-state cells checked.
+Saved evidence: `postrun_integrity_verification.json`. Selections, metrics, paired intervals,
+gates and inherited equality were independently recomputed.
+Data exclusions and quarantine were also independently recomputed.
+
 Cached evaluator versus actual full-model substitution: 144 retained layout checks, 16 calibration prefixes per layout. Exact logits in every saved check: `True`.
 The prospective sample includes inherited masks, first/last new masks, seeded random new
 masks and both full-width controls. This is sampled full-model validation, not replay of every
